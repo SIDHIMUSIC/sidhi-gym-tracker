@@ -1,13 +1,3 @@
-const DAYS_HI = {
-  Sunday: "Raviwar",
-  Monday: "Somwar",
-  Tuesday: "Mangalwar",
-  Wednesday: "Budhwar",
-  Thursday: "Guruwar",
-  Friday: "Shukrawar",
-  Saturday: "Shaniwar"
-};
-
 const SPLIT = {
   Monday: "Chest and triceps",
   Tuesday: "Back and biceps",
@@ -17,23 +7,28 @@ const SPLIT = {
   Saturday: "Shoulders and triceps",
   Sunday: "Off"
 };
-
+const DAYS_HI = {
+  Sunday: "Raviwar",
+  Monday: "Somwar",
+  Tuesday: "Mangalwar",
+  Wednesday: "Budhwar",
+  Thursday: "Guruwar",
+  Friday: "Shukrawar",
+  Saturday: "Shaniwar"
+};
 const $ = (id) => document.getElementById(id);
-let token = sessionStorage.getItem("sidhi-gym-token") || "";
-let sessions = [];
+const TOKEN_KEY = "sidhi-gym-token";
+const USER_KEY = "sidhi-gym-username";
 
-function apiBase() {
-  const saved = localStorage.getItem("sidhi-gym-api") || "";
-  if (saved) return saved.replace(/\/$/, "");
-  if (location.port === "5500" || location.protocol === "file:") return "http://localhost:3000";
-  return "";
-}
+let token = localStorage.getItem(TOKEN_KEY) || "";
+let username = localStorage.getItem(USER_KEY) || "";
+let sessions = [];
 
 function toast(msg) {
   const t = $("toast");
   t.textContent = msg;
   t.style.display = "block";
-  setTimeout(function () { t.style.display = "none"; }, 2200);
+  setTimeout(function () { t.style.display = "none"; }, 2400);
 }
 
 function todayISO() {
@@ -42,92 +37,38 @@ function todayISO() {
   return new Date(d - z).toISOString().slice(0, 10);
 }
 
-function dayFromDate(dateStr) {
-  return ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][new Date(dateStr + "T12:00:00").getDay()];
-}
-
 function nowTime() {
   const d = new Date();
   return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
 }
 
-async function api(path, opt) {
-  const headers = { "Content-Type": "application/json" };
+async function api(path, opts) {
+  opts = opts || {};
+  const headers = Object.assign({ "Content-Type": "application/json" }, opts.headers || {});
   if (token) headers.Authorization = "Bearer " + token;
-  const res = await fetch(apiBase() + path, Object.assign({ headers: headers }, opt || {}));
-  const data = await res.json().catch(function () { return {}; });
-  if (!res.ok) throw new Error(data.error || "Request fail");
+  const res = await fetch(path, {
+    method: opts.method || "GET",
+    headers: headers,
+    body: opts.body ? JSON.stringify(opts.body) : undefined
+  });
+  let data = {};
+  try { data = await res.json(); } catch (e) {}
+  if (!res.ok) throw new Error(data.error || ("Error " + res.status));
   return data;
 }
 
-async function login() {
-  const user = $("loginUser").value.trim();
-  const pass = $("loginPass").value;
-  const url = $("apiUrl").value.trim();
-  if (url) localStorage.setItem("sidhi-gym-api", url);
-  else localStorage.removeItem("sidhi-gym-api");
-  try {
-    const out = await api("/api/login", { method: "POST", body: JSON.stringify({ user: user, pass: pass }) });
-    token = out.token;
-    sessionStorage.setItem("sidhi-gym-token", token);
-    sessionStorage.setItem("sidhi-gym-user", out.user);
-    openApp();
-  } catch (err) {
-    toast(err.message);
-  }
+function currentRow() {
+  const date = $("date").value;
+  return sessions.find(function (s) { return s.date === date; });
 }
 
-async function openApp() {
-  $("gate").classList.add("hidden");
-  $("app").classList.remove("hidden");
-  $("hello").textContent = "Namaste " + (sessionStorage.getItem("sidhi-gym-user") || "Sidhi");
-  if (!$("date").value) $("date").value = todayISO();
-  if (!$("entryTime").value) $("entryTime").value = nowTime();
-  paintDay();
-  await reload();
-  fillForm();
-}
-
-function paintDay() {
+function paintDay(row) {
   const date = $("date").value || todayISO();
-  const day = dayFromDate(date);
-  $("dateLine").textContent = date + "  •  " + DAYS_HI[day] + " (" + day + ")";
-  $("splitLine").textContent = SPLIT[day];
+  const day = (row && row.day) || ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][new Date(date + "T12:00:00").getDay()];
+  $("dateLine").textContent = date + "  •  " + (DAYS_HI[day] || "") + " (" + day + ")";
+  $("splitLine").textContent = (row && row.workoutName) || SPLIT[day] || "";
   $("splitLine").classList.toggle("off", day === "Sunday");
   $("offNote").classList.toggle("hidden", day !== "Sunday");
-}
-
-function currentForm() {
-  const date = $("date").value;
-  const day = dayFromDate(date);
-  return {
-    date: date,
-    day: day,
-    workoutName: SPLIT[day],
-    entryTime: $("entryTime").value,
-    entryWeight: $("entryWeight").value,
-    after1HourTime: $("after1HourTime").value,
-    after1HourNote: $("after1HourNote").value,
-    beforeTreadmillTime: $("beforeTreadmillTime").value,
-    beforeTreadmillNote: $("beforeTreadmillNote").value,
-    afterTreadmillTime: $("afterTreadmillTime").value,
-    afterTreadmillNote: $("afterTreadmillNote").value,
-    finished: false
-  };
-}
-
-function fillForm() {
-  const date = $("date").value;
-  const row = sessions.find(function (s) { return s.date === date; });
-  $("entryTime").value = row && row.entryTime ? row.entryTime : nowTime();
-  $("entryWeight").value = row && row.entryWeight != null ? row.entryWeight : "";
-  $("after1HourTime").value = (row && row.after1HourTime) || "";
-  $("after1HourNote").value = (row && row.after1HourNote) || "";
-  $("beforeTreadmillTime").value = (row && row.beforeTreadmillTime) || "";
-  $("beforeTreadmillNote").value = (row && row.beforeTreadmillNote) || "";
-  $("afterTreadmillTime").value = (row && row.afterTreadmillTime) || "";
-  $("afterTreadmillNote").value = (row && row.afterTreadmillNote) || "";
-  paintResult(row);
 }
 
 function paintResult(row) {
@@ -143,24 +84,37 @@ function paintResult(row) {
   if (row.prevWeight == null) {
     box.className = "today-box";
     box.textContent = "Aaj " + w + " kg";
-    sub.textContent = "Pehla record hai. Kal se ghata/badha dikhega.";
+    sub.textContent = "Pehla record. Kal se ghata/badha dikhega.";
     return;
   }
-  const d = Number(row.diff) || 0;
-  const abs = Math.abs(d);
+  const abs = Math.abs(Number(row.diff) || 0);
   if (row.trend === "down") {
     box.className = "today-box delta down";
     box.textContent = "Aaj " + w + " kg  •  " + abs + " kg ghata";
-    sub.textContent = "Kal " + row.prevWeight + " kg tha. Aaj ka workout " + (row.finished ? "khatam." : "chal raha hai.");
+    sub.textContent = "Kal " + row.prevWeight + " kg tha. " + (row.finished ? "Workout khatam." : "Workout chal raha hai.");
   } else if (row.trend === "up") {
     box.className = "today-box delta up";
     box.textContent = "Aaj " + w + " kg  •  " + abs + " kg badha";
-    sub.textContent = "Kal " + row.prevWeight + " kg tha. Aaj ka workout " + (row.finished ? "khatam." : "chal raha hai.");
+    sub.textContent = "Kal " + row.prevWeight + " kg tha. " + (row.finished ? "Workout khatam." : "Workout chal raha hai.");
   } else {
     box.className = "today-box delta same";
     box.textContent = "Aaj " + w + " kg  •  same";
-    sub.textContent = "Kal jaisa hi weight. " + (row.finished ? "Workout khatam." : "");
+    sub.textContent = "Kal jaisa hi weight.";
   }
+}
+
+function fillForm() {
+  const row = currentRow();
+  paintDay(row);
+  $("entryTime").value = row && row.entryTime ? row.entryTime : nowTime();
+  $("entryWeight").value = row && row.entryWeight != null ? row.entryWeight : "";
+  $("after1HourTime").value = (row && row.after1HourTime) || "";
+  $("after1HourNote").value = (row && row.after1HourNote) || "";
+  $("beforeTreadmillTime").value = (row && row.beforeTreadmillTime) || "";
+  $("beforeTreadmillNote").value = (row && row.beforeTreadmillNote) || "";
+  $("afterTreadmillTime").value = (row && row.afterTreadmillTime) || "";
+  $("afterTreadmillNote").value = (row && row.afterTreadmillNote) || "";
+  paintResult(row);
 }
 
 function paintHist() {
@@ -175,60 +129,119 @@ function paintHist() {
       "<div class=\"sub\" style=\"margin:0\">" + delta + "</div></td><td>" +
       "<button class=\"btn ghost\" data-open=\"" + s.date + "\">Open</button> " +
       "<button class=\"btn danger\" data-del=\"" + s.date + "\">X</button></td></tr>";
-  }).join("") || "<tr><td colspan=\"4\" class=\"sub\">Abhi Mongo me session nahi</td></tr>";
+  }).join("") || "<tr><td colspan=\"4\" class=\"sub\">Abhi koi session nahi</td></tr>";
 }
 
-async function reload() {
-  sessions = await api("/api/sessions");
+function openApp() {
+  $("gate").classList.add("hidden");
+  $("app").classList.remove("hidden");
+  $("hello").textContent = "Namaste " + username;
+  if (!$("date").value) $("date").value = todayISO();
+  fillForm();
   paintHist();
-  paintResult(sessions.find(function (s) { return s.date === $("date").value; }));
+}
+
+async function loadSessions() {
+  const data = await api("/api/sessions");
+  sessions = data.sessions || [];
+}
+
+function setAuth(data) {
+  token = data.token;
+  username = data.username;
+  localStorage.setItem(TOKEN_KEY, token);
+  localStorage.setItem(USER_KEY, username);
+}
+
+async function register() {
+  const user = $("loginUser").value.trim().toLowerCase();
+  const pass = $("loginPass").value;
+  if (user.length < 2) return toast("Username chhota hai");
+  if (pass.length < 4) return toast("Password kam se kam 4 character");
+  try {
+    const data = await api("/api/register", { method: "POST", body: { username: user, password: pass } });
+    setAuth(data);
+    sessions = [];
+    toast("Account ban gaya. Mongo me save ho gaya.");
+    openApp();
+  } catch (err) { toast(err.message); }
+}
+
+async function login() {
+  const user = $("loginUser").value.trim().toLowerCase();
+  const pass = $("loginPass").value;
+  if (pass.length < 4) return toast("Password kam se kam 4 character");
+  try {
+    const data = await api("/api/login", { method: "POST", body: { username: user, password: pass } });
+    setAuth(data);
+    await loadSessions();
+    toast("Login ok");
+    openApp();
+  } catch (err) { toast(err.message); }
+}
+
+function formBody(finished) {
+  const old = currentRow() || {};
+  return {
+    date: $("date").value,
+    entryTime: $("entryTime").value,
+    entryWeight: $("entryWeight").value === "" ? null : Number($("entryWeight").value),
+    after1HourTime: $("after1HourTime").value,
+    after1HourNote: $("after1HourNote").value,
+    beforeTreadmillTime: $("beforeTreadmillTime").value,
+    beforeTreadmillNote: $("beforeTreadmillNote").value,
+    afterTreadmillTime: $("afterTreadmillTime").value,
+    afterTreadmillNote: $("afterTreadmillNote").value,
+    finished: finished || !!old.finished
+  };
 }
 
 async function save(finished) {
   try {
-    const body = currentForm();
-    const old = sessions.find(function (s) { return s.date === body.date; }) || {};
-    body.finished = finished || !!old.finished;
-    if (finished) body.finished = true;
-    const out = await api("/api/sessions/" + body.date, { method: "PUT", body: JSON.stringify(body) });
-    sessions = out.sessions;
+    const data = await api("/api/session", { method: "PUT", body: formBody(finished) });
+    sessions = data.sessions || [];
+    fillForm();
     paintHist();
-    paintResult(sessions.find(function (s) { return s.date === body.date; }));
-    toast(finished ? "Aaj ka workout khatam. Mongo me save." : "Mongo me save ho gaya");
-  } catch (err) {
-    toast(err.message);
-  }
+    toast(finished ? "Aaj ka workout khatam" : "Mongo me save ho gaya");
+  } catch (err) { toast(err.message); }
 }
 
 $("loginBtn").onclick = login;
+$("setupBtn").onclick = register;
 $("loginPass").addEventListener("keydown", function (e) { if (e.key === "Enter") login(); });
 $("logoutBtn").onclick = function () {
-  sessionStorage.removeItem("sidhi-gym-token");
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
   location.reload();
 };
-$("date").addEventListener("change", function () {
-  paintDay();
-  fillForm();
-});
+$("date").addEventListener("change", fillForm);
 $("saveBtn").onclick = function () { save(false); };
 $("finishBtn").onclick = function () { save(true); };
 $("hist").addEventListener("click", async function (e) {
   const open = e.target.dataset.open;
   const del = e.target.dataset.del;
-  if (open) {
-    $("date").value = open;
-    paintDay();
-    fillForm();
-  }
+  if (open) { $("date").value = open; fillForm(); }
   if (del) {
     if (!confirm(del + " mitaye?")) return;
-    sessions = await api("/api/sessions/" + del, { method: "DELETE" });
-    paintHist();
-    fillForm();
+    try {
+      const data = await api("/api/session/" + del, { method: "DELETE" });
+      sessions = data.sessions || [];
+      fillForm();
+      paintHist();
+    } catch (err) { toast(err.message); }
   }
 });
 
-$("apiUrl").value = localStorage.getItem("sidhi-gym-api") || "";
-if (token) openApp().catch(function () {
-  sessionStorage.removeItem("sidhi-gym-token");
-});
+(async function boot() {
+  if (!token) return;
+  try {
+    await api("/api/me");
+    await loadSessions();
+    openApp();
+  } catch (e) {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+    token = "";
+    username = "";
+  }
+})();

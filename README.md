@@ -1,48 +1,30 @@
-# Sidhi Gym Tracker (MongoDB)
+# Sidhi Gym Tracker
 
-Roz ka gym log. Data **MongoDB** me save hota hai.
+Daily gym log. Username/password MongoDB me save. Vercel pe deploy.
 
-## Flow
+## Vercel (1 minute)
 
-1. Gym entry time + aaj ka weight
-2. 1 hour ke baad exercise note
-3. Treadmill se pehle
-4. Treadmill ke baad
-5. **Aaj ka workout khatam**
-6. Niche dikhega: aaj itna kg, kal se **ghata / badha**
+1. [vercel.com](https://vercel.com) → Add New → Import `SIDHIMUSIC/sidhi-gym-tracker`
+2. Environment Variable:
+   - Name: `MONGODB_URI`
+   - Value: Atlas connection string (database `sidhi_gym`)
+3. Deploy
+4. MongoDB Atlas → Network Access → `0.0.0.0/0` allow
 
-Date ke saath day bhi dikhta hai.
+## Use
 
-## Split
+1. Site kholo
+2. **Create account** — username + password (min 4)
+3. Roz **Enter** se login
+4. Entry time + aaj ka weight → 1 hour exercise → treadmill pehle/baad
+5. **Aaj ka workout khatam** — neeche ghata/badha dikhega
 
-- Monday — Chest and triceps
-- Tuesday — Back and biceps
-- Wednesday — Shoulders and legs
-- Thursday — Chest and triceps
-- Friday — Back and biceps
-- Saturday — Shoulders and triceps
-- Sunday — Off
+Split auto:
 
-## Local run
+- Mon / Thu — Chest and triceps
+- Tue / Fri — Back and biceps
+- Wed — Shoulders and legs
+- Sat — Shoulders and triceps
+- Sun — Off
 
-```bash
-cp .env.example .env
-# .env me MONGODB_URI, LOGIN_USER, LOGIN_PASS daalo
-npm install
-npm start
-```
-
-Browser: http://localhost:3000
-
-## Deploy (Render / Railway / Heroku)
-
-Env vars:
-
-- `MONGODB_URI` — Atlas connection string
-- `LOGIN_USER` — jo ID se login karoge
-- `LOGIN_PASS` — password
-- `PORT` — host khud set karta hai
-
-GitHub Pages akela Mongo nahi jod sakta. Pages use karo to API URL me Render wala link daalna.
-
-Repo: https://github.com/SIDHIMUSIC/sidhi-gym-tracker
+Password Mongo me plain nahi, hash ho ke save hota hai.

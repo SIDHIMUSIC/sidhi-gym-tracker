@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Hind:wght@400;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
   <style>
-    :root { --bg:#071018; --card:#101a26; --line:#223246; --gold:#e8b86d; --mint:#7ee0b1; --rose:#ff8b8b; --text:#f3f1ea; --muted:#9aa8b6; }
+    :root { --gold:#e8b86d; --mint:#7ee0b1; --text:#f3f1ea; --muted:#9aa8b6; --line:#223246; }
     * { box-sizing: border-box; }
     body { margin:0; min-height:100vh; color:var(--text); font-family:Hind,system-ui,sans-serif;
       background: radial-gradient(900px 420px at 0 -10%, #16324a 0%, transparent 55%), #071018; }
@@ -29,7 +29,7 @@
     .pill { display:inline-block; padding:6px 10px; border-radius:999px; background:#162334; color:var(--gold); font-weight:700; font-size:13px; }
     .off { color:#ffd4d4; background:#3a1d1d; }
     .delta.up { color:#ff8b8b; } .delta.down { color:var(--mint); } .delta.same { color:var(--muted); }
-    .today-box { font-size:28px; font-weight:800; margin:8px 0 0; }
+    .today-box { font-size:26px; font-weight:800; margin:8px 0 0; }
     table { width:100%; border-collapse:collapse; font-size:14px; }
     th,td { text-align:left; padding:8px 6px; border-bottom:1px solid var(--line); }
     .hidden { display:none !important; }
@@ -43,12 +43,13 @@
   <div id="gate" class="gate">
     <div class="card">
       <h1 class="brand">Sidhi <span>Gym</span></h1>
-      <p class="sub">Mongo me save hoga. Apna ID/password daalo.</p>
-      <label>ID</label><input id="loginUser" />
-      <label>Password</label><input id="loginPass" type="password" />
-      <label>API URL (Render/Railway). Local par khali chhod do.</label>
-      <input id="apiUrl" placeholder="https://your-app.onrender.com" />
-      <div class="row" style="margin-top:14px"><button class="btn" id="loginBtn">Enter</button></div>
+      <p class="sub" id="gateHint">Pehle account banao: username + password (min 4). Data MongoDB me save hoga.</p>
+      <label>Username</label><input id="loginUser" autocomplete="username" placeholder="sidhi" />
+      <label>Password (min 4)</label><input id="loginPass" type="password" autocomplete="current-password" />
+      <div class="row" style="margin-top:14px">
+        <button class="btn" id="loginBtn">Enter</button>
+        <button class="btn ghost" id="setupBtn">Create account</button>
+      </div>
     </div>
   </div>
   <div id="app" class="wrap hidden">
@@ -67,7 +68,7 @@
         </div>
         <div><label style="margin:0">Date</label><input type="date" id="date" /></div>
       </div>
-      <div id="offNote" class="hidden sub" style="margin-top:10px">Sunday off hai. Weight note karna ho to entry save kar sakte ho.</div>
+      <div id="offNote" class="hidden sub" style="margin-top:10px">Sunday off hai. Weight likhna ho to save kar sakte ho.</div>
     </div>
     <div class="card">
       <h2 style="margin:0 0 8px;font-size:18px">1. Gym entry</h2>
@@ -79,7 +80,7 @@
     <div class="card">
       <h2 style="margin:0 0 8px;font-size:18px">2. 1 hour ke baad exercise</h2>
       <label>Time</label><input type="time" id="after1HourTime" />
-      <label>Kya kiya / note</label><textarea id="after1HourNote" placeholder="Workout sets, feel..."></textarea>
+      <label>Kya kiya</label><textarea id="after1HourNote"></textarea>
     </div>
     <div class="card">
       <h2 style="margin:0 0 8px;font-size:18px">3. Treadmill se pehle</h2>
@@ -92,10 +93,10 @@
       <label>Note</label><textarea id="afterTreadmillNote"></textarea>
     </div>
     <div class="row">
-      <button class="btn" id="saveBtn">Mongo me save</button>
+      <button class="btn" id="saveBtn">Save</button>
       <button class="btn ok" id="finishBtn">Aaj ka workout khatam</button>
     </div>
-    <div class="card" id="resultCard" style="margin-top:14px">
+    <div class="card" style="margin-top:14px">
       <h2 style="margin:0 0 6px;font-size:18px">Aaj ka result</h2>
       <div id="resultText" class="today-box">Pehle weight save karo</div>
       <p class="sub" id="resultSub">Kal se compare yahin dikhega.</p>
@@ -111,6 +112,6 @@
     </div>
   </div>
   <div class="toast" id="toast"></div>
-  <script src="app.js"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>
