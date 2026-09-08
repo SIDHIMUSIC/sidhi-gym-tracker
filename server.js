@@ -57,8 +57,10 @@ const gymSchema = new mongoose.Schema(
       after1HourTime: String,
       after1HourNote: String,
       beforeTreadmillTime: String,
+      beforeTreadmillWeight: Number,
       beforeTreadmillNote: String,
       afterTreadmillTime: String,
+      afterTreadmillWeight: Number,
       afterTreadmillNote: String,
       finished: { type: Boolean, default: false }
     },
@@ -69,6 +71,12 @@ const GymSession = model("GymSession", gymSchema);
 
 function hashPass(pass, salt) {
   return crypto.scryptSync(String(pass), salt, 32).toString("hex");
+}
+
+function num(v) {
+  if (v === "" || v == null) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
 }
 
 function dayFromDate(dateStr) {
@@ -193,20 +201,20 @@ app.put("/api/session", auth, async (req, res) => {
   const date = String(req.body.date || "").slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: "Date galat" });
   const day = dayFromDate(date);
-  const weightRaw = req.body.entryWeight;
-  const entryWeight = weightRaw === "" || weightRaw == null ? null : Number(weightRaw);
   const doc = {
     owner: req.gymUser,
     date,
     day,
     workoutName: SPLIT[day],
     entryTime: req.body.entryTime || "",
-    entryWeight: Number.isFinite(entryWeight) ? entryWeight : null,
+    entryWeight: num(req.body.entryWeight),
     after1HourTime: req.body.after1HourTime || "",
     after1HourNote: req.body.after1HourNote || "",
     beforeTreadmillTime: req.body.beforeTreadmillTime || "",
+    beforeTreadmillWeight: num(req.body.beforeTreadmillWeight),
     beforeTreadmillNote: req.body.beforeTreadmillNote || "",
     afterTreadmillTime: req.body.afterTreadmillTime || "",
+    afterTreadmillWeight: num(req.body.afterTreadmillWeight),
     afterTreadmillNote: req.body.afterTreadmillNote || "",
     finished: !!req.body.finished
   };

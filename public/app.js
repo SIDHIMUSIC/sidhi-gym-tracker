@@ -74,32 +74,45 @@ function paintDay(row) {
 function paintResult(row) {
   const box = $("resultText");
   const sub = $("resultSub");
+  const tm = $("tmResult");
+  if (tm) tm.textContent = "";
   if (!row || row.entryWeight == null || row.entryWeight === "") {
     box.className = "today-box";
     box.textContent = "Pehle aaj ka weight daalo";
     sub.textContent = "Kal ke weight se compare yahin aayega.";
-    return;
-  }
-  const w = Number(row.entryWeight);
-  if (row.prevWeight == null) {
-    box.className = "today-box";
-    box.textContent = "Aaj " + w + " kg";
-    sub.textContent = "Pehla record. Kal se ghata/badha dikhega.";
-    return;
-  }
-  const abs = Math.abs(Number(row.diff) || 0);
-  if (row.trend === "down") {
-    box.className = "today-box delta down";
-    box.textContent = "Aaj " + w + " kg  •  " + abs + " kg ghata";
-    sub.textContent = "Kal " + row.prevWeight + " kg tha. " + (row.finished ? "Workout khatam." : "Workout chal raha hai.");
-  } else if (row.trend === "up") {
-    box.className = "today-box delta up";
-    box.textContent = "Aaj " + w + " kg  •  " + abs + " kg badha";
-    sub.textContent = "Kal " + row.prevWeight + " kg tha. " + (row.finished ? "Workout khatam." : "Workout chal raha hai.");
   } else {
-    box.className = "today-box delta same";
-    box.textContent = "Aaj " + w + " kg  •  same";
-    sub.textContent = "Kal jaisa hi weight.";
+    const w = Number(row.entryWeight);
+    if (row.prevWeight == null) {
+      box.className = "today-box";
+      box.textContent = "Aaj " + w + " kg";
+      sub.textContent = "Pehla record. Kal se ghata/badha dikhega.";
+    } else {
+      const abs = Math.abs(Number(row.diff) || 0);
+      if (row.trend === "down") {
+        box.className = "today-box delta down";
+        box.textContent = "Aaj " + w + " kg  •  " + abs + " kg ghata";
+        sub.textContent = "Kal " + row.prevWeight + " kg tha. " + (row.finished ? "Workout khatam." : "Workout chal raha hai.");
+      } else if (row.trend === "up") {
+        box.className = "today-box delta up";
+        box.textContent = "Aaj " + w + " kg  •  " + abs + " kg badha";
+        sub.textContent = "Kal " + row.prevWeight + " kg tha. " + (row.finished ? "Workout khatam." : "Workout chal raha hai.");
+      } else {
+        box.className = "today-box delta same";
+        box.textContent = "Aaj " + w + " kg  •  same";
+        sub.textContent = "Kal jaisa hi weight.";
+      }
+    }
+  }
+  const before = Number(row && row.beforeTreadmillWeight);
+  const after = Number(row && row.afterTreadmillWeight);
+  if (tm && Number.isFinite(before) && Number.isFinite(after)) {
+    const d = Math.round((after - before) * 10) / 10;
+    const abs = Math.abs(d);
+    tm.textContent = d < 0
+      ? "Treadmill: " + before + " → " + after + " kg  •  " + abs + " kg ghata"
+      : d > 0
+        ? "Treadmill: " + before + " → " + after + " kg  •  " + abs + " kg badha"
+        : "Treadmill: " + before + " → " + after + " kg  •  same";
   }
 }
 
@@ -111,8 +124,10 @@ function fillForm() {
   $("after1HourTime").value = (row && row.after1HourTime) || "";
   $("after1HourNote").value = (row && row.after1HourNote) || "";
   $("beforeTreadmillTime").value = (row && row.beforeTreadmillTime) || "";
+  $("beforeTreadmillWeight").value = row && row.beforeTreadmillWeight != null ? row.beforeTreadmillWeight : "";
   $("beforeTreadmillNote").value = (row && row.beforeTreadmillNote) || "";
   $("afterTreadmillTime").value = (row && row.afterTreadmillTime) || "";
+  $("afterTreadmillWeight").value = row && row.afterTreadmillWeight != null ? row.afterTreadmillWeight : "";
   $("afterTreadmillNote").value = (row && row.afterTreadmillNote) || "";
   paintResult(row);
 }
@@ -126,6 +141,9 @@ function paintHist() {
     return "<tr><td>" + s.date + "<div class=\"sub\" style=\"margin:0\">" + (DAYS_HI[s.day] || "") + " / " + (s.day || "") + "</div></td><td>" +
       (s.workoutName || "") + (s.finished ? "<div class=\"sub\" style=\"margin:0\">khatam</div>" : "") +
       "</td><td>" + (s.entryWeight != null ? s.entryWeight + " kg" : "-") +
+      (s.beforeTreadmillWeight != null || s.afterTreadmillWeight != null
+        ? "<div class=\"sub\" style=\"margin:0\">TM " + (s.beforeTreadmillWeight != null ? s.beforeTreadmillWeight : "-") + " → " + (s.afterTreadmillWeight != null ? s.afterTreadmillWeight : "-") + "</div>"
+        : "") +
       "<div class=\"sub\" style=\"margin:0\">" + delta + "</div></td><td>" +
       "<button class=\"btn ghost\" data-open=\"" + s.date + "\">Open</button> " +
       "<button class=\"btn danger\" data-del=\"" + s.date + "\">X</button></td></tr>";
@@ -189,8 +207,10 @@ function formBody(finished) {
     after1HourTime: $("after1HourTime").value,
     after1HourNote: $("after1HourNote").value,
     beforeTreadmillTime: $("beforeTreadmillTime").value,
+    beforeTreadmillWeight: $("beforeTreadmillWeight").value === "" ? null : Number($("beforeTreadmillWeight").value),
     beforeTreadmillNote: $("beforeTreadmillNote").value,
     afterTreadmillTime: $("afterTreadmillTime").value,
+    afterTreadmillWeight: $("afterTreadmillWeight").value === "" ? null : Number($("afterTreadmillWeight").value),
     afterTreadmillNote: $("afterTreadmillNote").value,
     finished: finished || !!old.finished
   };
