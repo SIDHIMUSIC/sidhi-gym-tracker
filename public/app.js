@@ -71,48 +71,46 @@ function paintDay(row) {
   $("offNote").classList.toggle("hidden", day !== "Sunday");
 }
 
+function kg(v) {
+  if (v == null || v === "") return null;
+  const n = Number(v);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return Math.round(n * 1000) / 1000;
+}
+
 function paintResult(row) {
   const box = $("resultText");
   const sub = $("resultSub");
   const tm = $("tmResult");
   if (tm) tm.textContent = "";
-  if (!row || row.entryWeight == null || row.entryWeight === "") {
+  const start = kg(row && row.entryWeight);
+  const end = kg(row && row.afterTreadmillWeight);
+  if (start == null) {
     box.className = "today-box";
-    box.textContent = "Pehle aaj ka weight daalo";
-    sub.textContent = "Kal ke weight se compare yahin aayega.";
-  } else {
-    const w = Number(row.entryWeight);
-    if (row.prevWeight == null) {
-      box.className = "today-box";
-      box.textContent = "Aaj " + w + " kg";
-      sub.textContent = "Pehla record. Kal se ghata/badha dikhega.";
-    } else {
-      const abs = Math.abs(Number(row.diff) || 0);
-      if (row.trend === "down") {
-        box.className = "today-box delta down";
-        box.textContent = "Aaj " + w + " kg  •  " + abs + " kg ghata";
-        sub.textContent = "Kal " + row.prevWeight + " kg tha. " + (row.finished ? "Workout khatam." : "Workout chal raha hai.");
-      } else if (row.trend === "up") {
-        box.className = "today-box delta up";
-        box.textContent = "Aaj " + w + " kg  •  " + abs + " kg badha";
-        sub.textContent = "Kal " + row.prevWeight + " kg tha. " + (row.finished ? "Workout khatam." : "Workout chal raha hai.");
-      } else {
-        box.className = "today-box delta same";
-        box.textContent = "Aaj " + w + " kg  •  same";
-        sub.textContent = "Kal jaisa hi weight.";
-      }
-    }
+    box.textContent = "Pehle gym start wala weight daalo";
+    sub.textContent = "Shuruat (entry) se last (treadmill ke baad) tak ghata/badha dikhega.";
+    return;
   }
-  const before = Number(row && row.beforeTreadmillWeight);
-  const after = Number(row && row.afterTreadmillWeight);
-  if (tm && Number.isFinite(before) && Number.isFinite(after)) {
-    const d = Math.round((after - before) * 10) / 10;
-    const abs = Math.abs(d);
-    tm.textContent = d < 0
-      ? "Treadmill: " + before + " → " + after + " kg  •  " + abs + " kg ghata"
-      : d > 0
-        ? "Treadmill: " + before + " → " + after + " kg  •  " + abs + " kg badha"
-        : "Treadmill: " + before + " → " + after + " kg  •  same";
+  if (end == null) {
+    box.className = "today-box";
+    box.textContent = "Shuruat me " + start + " kg";
+    sub.textContent = "Treadmill ke baad wala weight daalo, phir ghata/badha dikhega.";
+    return;
+  }
+  const d = Math.round((end - start) * 1000) / 1000;
+  const abs = Math.abs(d);
+  if (d < 0) {
+    box.className = "today-box delta down";
+    box.textContent = "Ghat ke " + end + " kg aaya";
+    sub.textContent = "Shuruat me " + start + " kg tha  •  " + abs + " kg kam";
+  } else if (d > 0) {
+    box.className = "today-box delta up";
+    box.textContent = "Badh ke " + end + " kg aaya";
+    sub.textContent = "Shuruat me " + start + " kg tha  •  " + abs + " kg zyada";
+  } else {
+    box.className = "today-box delta same";
+    box.textContent = "Khatam bhi " + end + " kg";
+    sub.textContent = "Shuruat me " + start + " kg  •  same";
   }
 }
 
@@ -134,16 +132,21 @@ function fillForm() {
 
 function paintHist() {
   $("hist").innerHTML = sessions.map(function (s) {
+    const start = kg(s.entryWeight);
+    const end = kg(s.afterTreadmillWeight);
     let delta = "-";
-    if (s.trend === "down") delta = s.diff + " kg ghata";
-    if (s.trend === "up") delta = "+" + s.diff + " kg badha";
-    if (s.trend === "same" && s.prevWeight != null) delta = "same";
+    let line = start != null ? start + " kg start" : "-";
+    if (start != null && end != null) {
+      const d = Math.round((end - start) * 1000) / 1000;
+      const abs = Math.abs(d);
+      line = start + " → " + end + " kg";
+      if (d < 0) delta = abs + " kg ghata";
+      else if (d > 0) delta = abs + " kg badha";
+      else delta = "same";
+    }
     return "<tr><td>" + s.date + "<div class=\"sub\" style=\"margin:0\">" + (DAYS_HI[s.day] || "") + " / " + (s.day || "") + "</div></td><td>" +
       (s.workoutName || "") + (s.finished ? "<div class=\"sub\" style=\"margin:0\">khatam</div>" : "") +
-      "</td><td>" + (s.entryWeight != null ? s.entryWeight + " kg" : "-") +
-      (s.beforeTreadmillWeight != null || s.afterTreadmillWeight != null
-        ? "<div class=\"sub\" style=\"margin:0\">TM " + (s.beforeTreadmillWeight != null ? s.beforeTreadmillWeight : "-") + " → " + (s.afterTreadmillWeight != null ? s.afterTreadmillWeight : "-") + "</div>"
-        : "") +
+      "</td><td>" + line +
       "<div class=\"sub\" style=\"margin:0\">" + delta + "</div></td><td>" +
       "<button class=\"btn ghost\" data-open=\"" + s.date + "\">Open</button> " +
       "<button class=\"btn danger\" data-del=\"" + s.date + "\">X</button></td></tr>";
