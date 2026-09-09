@@ -106,7 +106,7 @@
   <div class="glass card">
     <p class="badge">SIDHI • GYM LOG</p>
     <h1 class="brand">Sidhi <span>Gym</span></h1>
-    <p class="sub" id="gateHint">Enter username + password every time.</p>
+    <p class="sub" id="gateHint">Login stays until you tap Logout.</p>
     <label>ᴜsєʀɴᴧᴍє</label><input id="loginUser" autocomplete="username" placeholder="harry" />
     <label>ᴘᴧssᴡσʀᴅ (min 4)</label><input id="loginPass" type="password" autocomplete="current-password" />
     <div class="row" style="margin-top:16px">
@@ -168,22 +168,18 @@
       <h2><span class="step">1</span> ɢʏᴍ єɴᴛʀʏ</h2>
       <div class="grid">
         <div><label>єɴᴛʀʏ ᴛɪᴍє</label><input type="time" id="entryTime" /></div>
-        <div><label>ᴡєɪɢʜᴛ (kg)</label><input id="entryWeight" inputmode="decimal" placeholder="72.4" /></div>
+        <div><label>sᴛᴧʀᴛ ᴡєɪɢʜᴛ (kg)</label><input id="entryWeight" inputmode="decimal" placeholder="72.4" /></div>
       </div>
     </div>
     <div class="glass card">
       <h2><span class="step">2</span> ᴡσꝛᴋσᴜᴛ & єxєʀᴄɪsєs</h2>
-      <div class="grid">
-        <div><label>ᴛɪᴍє</label><input type="time" id="after1HourTime" /></div>
-        <div><label>ᴡєɪɢʜᴛ (kg)</label><input id="after1HourWeight" inputmode="decimal" placeholder="72.3" /></div>
-      </div>
+      <label>ᴛɪᴍє</label><input type="time" id="after1HourTime" />
       <label>єxєʀᴄɪsєs</label><textarea id="after1HourNote" placeholder="Chest press, fly, tricep pushdown..."></textarea>
     </div>
     <div class="glass card">
       <h2><span class="step">3</span> ᴛʀєᴧᴅᴍɪʟʟ • ɴσʀᴍᴧʟ</h2>
       <div class="grid">
         <div><label>ᴛɪᴍє</label><input type="time" id="beforeTreadmillTime" /></div>
-        <div><label>ᴡєɪɢʜᴛ (kg)</label><input id="beforeTreadmillWeight" inputmode="decimal" placeholder="72.2" /></div>
         <div><label>ᴅɪsᴛᴧɴᴄє (km)</label><input id="beforeTreadmillKm" inputmode="decimal" placeholder="1.5" /></div>
         <div><label>ᴍɪɴs</label><input id="beforeTreadmillMins" inputmode="decimal" placeholder="15" /></div>
         <div><label>sᴘєєᴅ (km/h)</label><input id="beforeTreadmillSpeed" inputmode="decimal" placeholder="6.0" /></div>
@@ -194,13 +190,16 @@
       <h2><span class="step">4</span> ᴛʀєᴧᴅᴍɪʟʟ • ɪɴᴄʟɪɴє</h2>
       <div class="grid">
         <div><label>ᴛɪᴍє</label><input type="time" id="afterTreadmillTime" /></div>
-        <div><label>ᴡєɪɢʜᴛ (kg)</label><input id="afterTreadmillWeight" inputmode="decimal" placeholder="71.8" /></div>
         <div><label>ᴅɪsᴛᴧɴᴄє (km)</label><input id="afterTreadmillKm" inputmode="decimal" placeholder="2.0" /></div>
         <div><label>ᴍɪɴs</label><input id="afterTreadmillMins" inputmode="decimal" placeholder="20" /></div>
         <div><label>sᴘєєᴅ (km/h)</label><input id="afterTreadmillSpeed" inputmode="decimal" placeholder="5.5" /></div>
         <div><label>ɪɴᴄʟɪɴє %</label><input id="afterTreadmillIncline" inputmode="decimal" placeholder="8" /></div>
       </div>
       <label>ɴσᴛє</label><textarea id="afterTreadmillNote"></textarea>
+    </div>
+    <div class="glass card">
+      <h2><span class="step">5</span> єɴᴅ ᴡєɪɢʜᴛ</h2>
+      <label>ᴡєɪɢʜᴛ (kg)</label><input id="afterTreadmillWeight" inputmode="decimal" placeholder="71.8" />
     </div>
     <div class="actions">
       <button class="btn full" id="saveBtn">sᴧᴠє</button>
@@ -306,6 +305,6 @@
     addEventListener("resize", function () { resize(); make(); });
   })();
 </script>
-<script src="app.js?v=9"></script>
+<script src="app.js?v=10"></script>
 </body>
 </html>

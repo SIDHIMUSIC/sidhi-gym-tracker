@@ -10,12 +10,10 @@ const SPLIT = {
 const DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 const $ = (id) => document.getElementById(id);
 
-let token = "";
-let username = "";
-try {
-  localStorage.removeItem("sidhi-gym-token");
-  localStorage.removeItem("sidhi-gym-username");
-} catch (e) {}
+const TOKEN_KEY = "sidhi-gym-token";
+const USER_KEY = "sidhi-gym-username";
+let token = localStorage.getItem(TOKEN_KEY) || "";
+let username = localStorage.getItem(USER_KEY) || "";
 let sessions = [];
 let goalWeight = null;
 let calCursor = new Date();
@@ -107,7 +105,7 @@ function paintResult(row) {
   } else if (end == null) {
     box.className = "today-box";
     box.textContent = "Start " + start + " kg";
-    sub.textContent = "Add incline treadmill finish weight.";
+    sub.textContent = "Add end weight after workout.";
   } else {
     const d = Math.round((end - start) * 1000) / 1000;
     const abs = Math.abs(d);
@@ -150,10 +148,8 @@ function fillForm() {
   $("entryTime").value = row.entryTime || nowTime();
   fillVal("entryWeight", row.entryWeight);
   fillVal("after1HourTime", row.after1HourTime);
-  fillVal("after1HourWeight", row.after1HourWeight);
   fillVal("after1HourNote", row.after1HourNote);
   fillVal("beforeTreadmillTime", row.beforeTreadmillTime);
-  fillVal("beforeTreadmillWeight", row.beforeTreadmillWeight);
   fillVal("beforeTreadmillKm", row.beforeTreadmillKm);
   fillVal("beforeTreadmillMins", row.beforeTreadmillMins);
   fillVal("beforeTreadmillSpeed", row.beforeTreadmillSpeed);
@@ -329,11 +325,9 @@ function formBody(finished) {
     entryTime: $("entryTime").value,
     entryWeight: nOrNull("entryWeight"),
     after1HourTime: $("after1HourTime").value,
-    after1HourWeight: nOrNull("after1HourWeight"),
     after1HourNote: $("after1HourNote").value,
     beforeTreadmillTime: $("beforeTreadmillTime").value,
     beforeTreadmillType: "normal",
-    beforeTreadmillWeight: nOrNull("beforeTreadmillWeight"),
     beforeTreadmillKm: nOrNull("beforeTreadmillKm"),
     beforeTreadmillMins: nOrNull("beforeTreadmillMins"),
     beforeTreadmillSpeed: nOrNull("beforeTreadmillSpeed"),
@@ -372,6 +366,8 @@ function openApp() {
 function setAuth(data) {
   token = data.token;
   username = data.username;
+  localStorage.setItem(TOKEN_KEY, token);
+  localStorage.setItem(USER_KEY, username);
 }
 
 async function afterAuth() {
@@ -416,6 +412,8 @@ $("logoutBtn").onclick = function () {
   token = "";
   username = "";
   sessions = [];
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
   $("app").classList.add("hidden");
   $("tabbar").classList.add("hidden");
   $("gate").classList.remove("hidden");
@@ -459,3 +457,14 @@ $("goalBtn").onclick = async function () {
     paintHome();
   } catch (err) { toast(err.message); }
 };
+
+(async function boot() {
+  if (!token) return;
+  try { await afterAuth(); }
+  catch (e) {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+    token = "";
+    username = "";
+  }
+})();
