@@ -28,7 +28,8 @@ const User = model(
     {
       username: { type: String, unique: true, required: true, lowercase: true, trim: true },
       salt: { type: String, required: true },
-      passHash: { type: String, required: true }
+      passHash: { type: String, required: true },
+      goalWeight: Number
     },
     { timestamps: true }
   )
@@ -57,10 +58,20 @@ const gymSchema = new mongoose.Schema(
       after1HourTime: String,
       after1HourNote: String,
       beforeTreadmillTime: String,
+      beforeTreadmillType: String,
       beforeTreadmillWeight: Number,
+      beforeTreadmillKm: Number,
+      beforeTreadmillMins: Number,
+      beforeTreadmillSpeed: Number,
+      beforeTreadmillIncline: Number,
       beforeTreadmillNote: String,
       afterTreadmillTime: String,
+      afterTreadmillType: String,
       afterTreadmillWeight: Number,
+      afterTreadmillKm: Number,
+      afterTreadmillMins: Number,
+      afterTreadmillSpeed: Number,
+      afterTreadmillIncline: Number,
       afterTreadmillNote: String,
       finished: { type: Boolean, default: false }
     },
@@ -188,8 +199,19 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-app.get("/api/me", auth, (req, res) => {
-  res.json({ ok: true, username: req.gymUser });
+app.get("/api/me", auth, async (req, res) => {
+  const u = await User.findOne({ username: req.gymUser }).lean();
+  res.json({ ok: true, username: req.gymUser, goalWeight: u && u.goalWeight != null ? u.goalWeight : null });
+});
+
+app.patch("/api/me", auth, async (req, res) => {
+  const goalWeight = num(req.body.goalWeight);
+  const u = await User.findOneAndUpdate(
+    { username: req.gymUser },
+    { $set: { goalWeight } },
+    { new: true }
+  ).lean();
+  res.json({ ok: true, username: req.gymUser, goalWeight: u && u.goalWeight != null ? u.goalWeight : null });
 });
 
 app.get("/api/sessions", auth, async (req, res) => {
@@ -211,10 +233,20 @@ app.put("/api/session", auth, async (req, res) => {
     after1HourTime: req.body.after1HourTime || "",
     after1HourNote: req.body.after1HourNote || "",
     beforeTreadmillTime: req.body.beforeTreadmillTime || "",
+    beforeTreadmillType: req.body.beforeTreadmillType === "run" ? "run" : "walk",
     beforeTreadmillWeight: num(req.body.beforeTreadmillWeight),
+    beforeTreadmillKm: num(req.body.beforeTreadmillKm),
+    beforeTreadmillMins: num(req.body.beforeTreadmillMins),
+    beforeTreadmillSpeed: num(req.body.beforeTreadmillSpeed),
+    beforeTreadmillIncline: num(req.body.beforeTreadmillIncline),
     beforeTreadmillNote: req.body.beforeTreadmillNote || "",
     afterTreadmillTime: req.body.afterTreadmillTime || "",
+    afterTreadmillType: req.body.afterTreadmillType === "run" ? "run" : "walk",
     afterTreadmillWeight: num(req.body.afterTreadmillWeight),
+    afterTreadmillKm: num(req.body.afterTreadmillKm),
+    afterTreadmillMins: num(req.body.afterTreadmillMins),
+    afterTreadmillSpeed: num(req.body.afterTreadmillSpeed),
+    afterTreadmillIncline: num(req.body.afterTreadmillIncline),
     afterTreadmillNote: req.body.afterTreadmillNote || "",
     finished: !!req.body.finished
   };
