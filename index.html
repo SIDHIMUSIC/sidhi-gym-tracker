@@ -1,40 +1,52 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Sidhi Gym • by 𓆩◕🇭𝐀𝐑𝐑𝐘◕𓆪 =‌𐏓 𝄗⃝🇮🇳™</title>
+  <title>Sidhi Gym • by Harry</title>
   <meta name="theme-color" content="#070b12" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Hind:wght@400;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;700&family=Pacifico&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
   <style>
     :root {
       --gold:#f0c27a; --gold2:#c9923d; --mint:#63e2b3; --text:#f6f1e8;
       --muted:#9aa7b8; --line:rgba(255,255,255,.14); --bg:#070b12;
     }
     * { box-sizing: border-box; }
-    html, body { margin:0; min-height:100%; color:var(--text); font-family:Hind,system-ui,sans-serif; background:var(--bg); }
+    html, body { margin:0; min-height:100%; color:var(--text); font-family:Comfortaa,system-ui,sans-serif; background:var(--bg); }
     #fx { position:fixed; inset:0; z-index:0; pointer-events:none; }
     .layer { position:relative; z-index:1; }
-    h1,h2,.brand { font-family:Syne,Hind,sans-serif; letter-spacing:-.02em; }
+    h1,h2,.brand { font-family:Syne,Comfortaa,sans-serif; letter-spacing:.02em; }
     .brand { margin:0; font-size:26px; line-height:1; }
-    .brand span { background:linear-gradient(90deg,#fff3d4,var(--gold),var(--gold2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .brand span { background:linear-gradient(90deg,#ff8bd4,#f0c27a,#63e2b3,#7ab8ff); -webkit-background-clip:text; background-clip:text; color:transparent; }
     .sub { color:var(--muted); margin:6px 0 0; }
+    .hello {
+      font-family:Pacifico,cursive; font-size:22px; line-height:1.3; margin:6px 0 0;
+      background:linear-gradient(90deg,#ff8bd4,#f0c27a,#63e2b3,#7ab8ff,#ff8bd4);
+      background-size:200% auto; -webkit-background-clip:text; background-clip:text; color:transparent;
+      animation: flow 6s linear infinite;
+    }
+    @keyframes flow { to { background-position:200% center; } }
     .glass {
       background:rgba(16,24,34,.42);
       backdrop-filter:blur(18px) saturate(160%);
       -webkit-backdrop-filter:blur(18px) saturate(160%);
       border:1px solid var(--line);
-      border-radius:22px;
+      border-radius:28px;
       box-shadow:0 10px 40px #0005, inset 0 1px 0 rgba(255,255,255,.08);
     }
     .card { padding:16px; margin:0 0 14px; }
-    .btn { border:0; border-radius:16px; min-height:52px; padding:14px 16px; cursor:pointer; font:700 16px Hind,sans-serif; color:#120d06; background:linear-gradient(180deg,#f8deaa,var(--gold) 40%,var(--gold2)); box-shadow:0 8px 20px #c9923d44; }
-    .btn.ghost { background:rgba(255,255,255,.06); color:var(--text); border:1px solid var(--line); box-shadow:none; }
-    .btn.ok { color:#04140d; background:linear-gradient(180deg,#b8f6d8,var(--mint)); }
-    .btn.danger { background:#4a1c1c; color:#ffd0d0; min-height:44px; padding:10px 12px; }
+    .btn {
+      border:0; border-radius:999px; min-height:52px; padding:14px 18px; cursor:pointer;
+      font:700 14px Comfortaa,sans-serif; letter-spacing:.06em; color:#120d06;
+      background:linear-gradient(135deg,#ff9a9e,#fad0c4,#f0c27a);
+      box-shadow:0 8px 20px #ff9a9e44;
+    }
+    .btn.ghost { background:rgba(255,255,255,.08); color:#fff; border:1px solid rgba(255,255,255,.18); box-shadow:none; }
+    .btn.ok { color:#04140d; background:linear-gradient(135deg,#a8edea,#63e2b3,#7ab8ff); box-shadow:0 8px 20px #63e2b344; }
+    .btn.danger { background:linear-gradient(135deg,#ff6b6b,#c0392b); color:#fff; min-height:44px; padding:10px 12px; }
     .btn.full { flex:1; width:100%; }
-    label { display:block; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin:10px 0 6px; }
+    label { display:block; font-size:12px; letter-spacing:.08em; color:#d7c4ff; margin:10px 0 6px; }
     input, textarea { width:100%; padding:14px 13px; border-radius:16px; border:1px solid var(--line); background:rgba(8,14,22,.55); color:var(--text); font:inherit; }
     input:focus, textarea:focus { outline:2px solid #f0c27a55; border-color:var(--gold); }
     textarea { min-height:70px; }
@@ -43,29 +55,27 @@
     .pill { display:inline-flex; align-items:center; gap:6px; padding:7px 12px; border-radius:999px; background:rgba(240,194,122,.12); color:var(--gold); font-weight:800; font-size:13px; }
     .off { color:#ffd4d4; background:rgba(90,30,30,.45); }
     .delta.up { color:#ff8b8b; } .delta.down { color:var(--mint); } .delta.same { color:var(--muted); }
-    .today-box { font-size:26px; font-weight:800; margin:8px 0 0; font-family:Syne,Hind,sans-serif; }
-    .hero-kg { font:800 42px Syne,sans-serif; margin:4px 0; }
+    .today-box { font-size:24px; font-weight:800; margin:8px 0 0; font-family:Comfortaa,sans-serif; }
+    .hero-kg { font:800 42px Comfortaa,sans-serif; margin:4px 0;
+      background:linear-gradient(90deg,#ff8bd4,#f0c27a,#63e2b3); -webkit-background-clip:text; background-clip:text; color:transparent; }
     table { width:100%; border-collapse:collapse; font-size:14px; }
     th,td { text-align:left; padding:10px 6px; border-bottom:1px solid var(--line); vertical-align:top; }
     .hidden { display:none !important; }
     .gate { min-height:100vh; display:grid; place-items:center; padding:22px 14px; }
     .gate .card { width:min(440px,100%); }
     .step { width:28px; height:28px; border-radius:50%; display:inline-grid; place-items:center; font:800 13px Syne,sans-serif; color:#120d06; background:linear-gradient(180deg,var(--gold),var(--gold2)); margin-right:8px; flex:none; }
-    h2 { margin:0 0 10px; font-size:18px; display:flex; align-items:center; }
+    h2 { margin:0 0 10px; font-size:17px; display:flex; align-items:center; color:#ffe4b5; }
+    .tabbar { position:fixed; left:10px; right:10px; bottom:8px; z-index:15; display:flex; justify-content:space-around; padding:8px 6px calc(8px + env(safe-area-inset-bottom)); background:rgba(10,16,24,.72); backdrop-filter:blur(18px); border:1px solid var(--line); border-radius:28px; }
+    .tab { flex:1; background:none; border:0; color:var(--muted); font:700 10px Comfortaa,sans-serif; padding:6px 0; cursor:pointer; border-radius:18px; }
+    .tab.on { color:#120d06; background:linear-gradient(135deg,#ff9a9e,#f0c27a,#63e2b3); }
     .toast { position:fixed; bottom:92px; left:50%; transform:translateX(-50%); background:rgba(20,32,44,.9); border:1px solid var(--gold); color:var(--gold); padding:10px 14px; border-radius:999px; display:none; z-index:20; max-width:90%; backdrop-filter:blur(12px); }
     .wrap { max-width:860px; margin:0 auto; padding:14px 14px 118px; }
-    .actions { position:sticky; bottom:76px; z-index:8; display:flex; gap:8px; padding:10px 0 8px; background:linear-gradient(180deg, transparent, rgba(7,11,18,.9) 35%); }
-    .tabbar { position:fixed; left:0; right:0; bottom:0; z-index:15; display:flex; justify-content:space-around; padding:8px 8px calc(8px + env(safe-area-inset-bottom)); background:rgba(10,16,24,.72); backdrop-filter:blur(18px); border-top:1px solid var(--line); }
-    .tab { flex:1; background:none; border:0; color:var(--muted); font:700 11px Hind,sans-serif; padding:6px 0; cursor:pointer; }
-    .tab.on { color:var(--gold); }
+    .actions { position:sticky; bottom:86px; z-index:8; display:flex; gap:8px; padding:10px 0 8px; background:linear-gradient(180deg, transparent, rgba(7,11,18,.9) 35%); }
     .tab svg { display:block; margin:0 auto 3px; }
     .stats { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
     .stat { text-align:center; padding:12px 6px; }
-    .stat b { display:block; font:800 16px Syne,sans-serif; color:var(--gold); }
-    .stat span { font-size:11px; color:var(--muted); }
-    .seg { display:flex; gap:6px; background:rgba(0,0,0,.25); padding:4px; border-radius:999px; }
-    .seg button { flex:1; border:0; border-radius:999px; padding:10px; background:transparent; color:var(--muted); font:700 14px Hind,sans-serif; }
-    .seg button.on { background:linear-gradient(180deg,var(--gold),var(--gold2)); color:#120d06; }
+    .stat b { display:block; font:800 16px Comfortaa,sans-serif; color:var(--gold); }
+    .stat span { font-size:11px; color:#d7c4ff; }
     .cal { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; text-align:center; }
     .cal .d { font-size:10px; color:var(--muted); }
     .cal .c { aspect-ratio:1; border-radius:50%; display:grid; place-items:center; font-size:12px; background:rgba(255,255,255,.04); }
@@ -73,7 +83,8 @@
     .cal .c.rest { background:rgba(255,255,255,.18); color:#fff; }
     .cal .c.today { outline:2px solid var(--gold); }
     .creator { margin-top:18px; padding-top:14px; border-top:1px solid var(--line); text-align:center; }
-    .sig { font-family:Cinzel,serif; font-size:13px; letter-spacing:.22em; color:var(--gold); margin:0 0 10px; }
+    .sig { font-family:Pacifico,cursive; font-size:16px; letter-spacing:.04em; margin:0 0 10px;
+      background:linear-gradient(90deg,#f0c27a,#ff8bd4,#7ab8ff); -webkit-background-clip:text; background-clip:text; color:transparent; }
     .socials { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
     .soc { display:flex; align-items:center; gap:8px; text-decoration:none; color:var(--text); background:rgba(12,20,29,.5); border:1px solid var(--line); padding:8px 12px; border-radius:999px; font-size:12px; font-weight:700; }
     .soc svg { width:20px; height:20px; display:block; }
@@ -82,8 +93,8 @@
     .kv { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line); }
     .btn.logout {
       min-height:42px; border-radius:999px; padding:8px 14px; display:inline-flex; align-items:center; gap:7px;
-      background:rgba(255,90,90,.12); border:1px solid rgba(255,140,140,.35); color:#ffc4c4;
-      font:700 12px Hind,sans-serif; letter-spacing:.12em; text-transform:uppercase; box-shadow:none;
+      background:linear-gradient(135deg,#ff6b6b,#ff8bd4); border:0; color:#fff;
+      font:700 11px Comfortaa,sans-serif; letter-spacing:.08em; box-shadow:0 6px 16px #ff6b6b44;
     }
     .btn.logout svg { width:16px; height:16px; }
     @media (max-width:700px){ .grid{grid-template-columns:1fr 1fr;} .brand{font-size:22px;} }
@@ -93,11 +104,11 @@
 <canvas id="fx"></canvas>
 <div id="gate" class="gate layer">
   <div class="glass card">
-    <p class="badge">sɪᴅʜɪ • ɢʏᴍ ʟᴏɢs</p>
-    <h1 class="brand">sɪᴅʜɪ <span>ɢʏᴍ</span></h1>
-      <p class="sub" id="gateHint">ᴜsᴇʀɴᴀᴍᴇ + ᴘᴀssᴡᴏʀᴅ.</p>
-    <label>Username</label><input id="loginUser" autocomplete="username" placeholder="harry" />
-    <label>Password (min 4)</label><input id="loginPass" type="password" autocomplete="current-password" />
+    <p class="badge">SIDHI • GYM LOG</p>
+    <h1 class="brand">Sidhi <span>Gym</span></h1>
+    <p class="sub" id="gateHint">Enter username + password every time.</p>
+    <label>ᴜsєʀɴᴧᴍє</label><input id="loginUser" autocomplete="username" placeholder="harry" />
+    <label>ᴘᴧssᴡσʀᴅ (min 4)</label><input id="loginPass" type="password" autocomplete="current-password" />
     <div class="row" style="margin-top:16px">
       <button class="btn full" id="loginBtn">єɴᴛєʀ</button>
       <button class="btn ghost full" id="setupBtn">ᴄʀєᴧᴛє ᴧᴄᴄσᴜɴᴛ</button>
@@ -109,31 +120,31 @@
 <div id="app" class="wrap layer hidden">
   <div class="row" style="justify-content:space-between;margin-bottom:12px">
     <div>
-      <p class="badge">sɪᴅʜɪ ɢʏᴍ</p>
-      <p class="sub" id="hello"></p>
+      <p class="badge">SIDHI GYM</p>
+      <p class="hello" id="hello"></p>
     </div>
     <button class="btn logout" id="logoutBtn" type="button">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
-      Logout
+      ʟσɢσᴜᴛ
     </button>
   </div>
   <div id="view-home">
     <div class="glass card" style="text-align:center">
       <div class="hero-kg" id="homeKg">— kg</div>
-      <p class="sub" id="homeWeek">ᴄʜᴧɴɢєs ᴛʜɪs ᴡєєᴋ</p>
+      <p class="sub" id="homeWeek">ᴛʜɪs ᴡєєᴋ</p>
     </div>
     <div class="stats">
       <div class="glass stat"><b id="stStreak">0</b><span>ᴅᴧʏ sᴛʀєᴧᴋ</span></div>
-      <div class="glass stat"><b id="stWorkouts">0</b><span>ᴡσꝛᴋσᴜᴛ</span></div>
+      <div class="glass stat"><b id="stWorkouts">0</b><span>ᴡσꝛᴋσᴜᴛs</span></div>
       <div class="glass stat"><b id="stGoal">—</b><span>ᴛσ ɢσᴧʟ</span></div>
     </div>
     <div class="glass card" style="margin-top:14px">
-      <h2>Today's workout</h2>
+      <h2>ᴛσᴅᴧʏ's ᴡσꝛᴋσᴜᴛ</h2>
       <p class="pill" id="homeSplit"></p>
       <div class="kv"><span>ᴡєɪɢʜᴛ</span><b id="homeW">—</b></div>
       <div class="kv"><span>ᴅᴜʀᴧᴛɪσɴ</span><b id="homeDur">—</b></div>
-      <div class="kv"><span>Treadmill</span><b id="homeTm">—</b></div>
-      <button class="btn ok full" id="homeFinish" style="margin-top:12px">Finish workout</button>
+      <div class="kv"><span>ᴛʀєᴧᴅᴍɪʟʟ</span><b id="homeTm">—</b></div>
+      <button class="btn ok full" id="homeFinish" style="margin-top:12px">ғɪɴɪsʜ ᴡσꝛᴋσᴜᴛ</button>
     </div>
     <div class="glass card">
       <h2>ᴡєɪɢʜᴛ</h2>
@@ -142,70 +153,70 @@
     <div class="creator" data-creator></div>
   </div>
 
-  <div id="view-ᴡσꝛᴋσᴜᴛ" class="hidden">
+  <div id="view-workout" class="hidden">
     <div class="glass card">
       <div class="row" style="justify-content:space-between">
         <div>
           <div id="dateLine" style="font-size:18px;font-weight:800"></div>
           <div id="splitLine" class="pill" style="margin-top:8px"></div>
         </div>
-        <div><label style="margin:0">Date</label><input type="date" id="date" /></div>
+        <div><label style="margin:0">ᴅᴧᴛє</label><input type="date" id="date" /></div>
       </div>
-      <div id="offNote" class="hidden sub" style="margin-top:10px">sᴜɴᴅᴧʏ ʀєsᴛ. ᴡєɪɢʜᴛ sᴧᴠє ᴋᴧʀ sᴧᴋᴛє ʜσ.</div>
+      <div id="offNote" class="hidden sub" style="margin-top:10px">Sunday rest. You can still save weight.</div>
     </div>
     <div class="glass card">
-      <h2><span class="step">1</span> Gym entry</h2>
+      <h2><span class="step">1</span> ɢʏᴍ єɴᴛʀʏ</h2>
       <div class="grid">
-        <div><label>Entry time</label><input type="time" id="entryTime" /></div>
-        <div><label>Weight (kg)</label><input id="entryWeight" inputmode="decimal" placeholder="72.4" /></div>
+        <div><label>єɴᴛʀʏ ᴛɪᴍє</label><input type="time" id="entryTime" /></div>
+        <div><label>ᴡєɪɢʜᴛ (kg)</label><input id="entryWeight" inputmode="decimal" placeholder="72.4" /></div>
       </div>
     </div>
     <div class="glass card">
       <h2><span class="step">2</span> ᴡσꝛᴋσᴜᴛ & єxєʀᴄɪsєs</h2>
       <div class="grid">
-        <div><label>Time</label><input type="time" id="after1HourTime" /></div>
-        <div><label>Weight (kg)</label><input id="after1HourWeight" inputmode="decimal" placeholder="72.3" /></div>
+        <div><label>ᴛɪᴍє</label><input type="time" id="after1HourTime" /></div>
+        <div><label>ᴡєɪɢʜᴛ (kg)</label><input id="after1HourWeight" inputmode="decimal" placeholder="72.3" /></div>
       </div>
       <label>єxєʀᴄɪsєs</label><textarea id="after1HourNote" placeholder="Chest press, fly, tricep pushdown..."></textarea>
     </div>
     <div class="glass card">
-      <h2><span class="step">3</span> ᴛʀєᴧᴅᴍɪʟʟ • Normal</h2>
+      <h2><span class="step">3</span> ᴛʀєᴧᴅᴍɪʟʟ • ɴσʀᴍᴧʟ</h2>
       <div class="grid">
-        <div><label>Time</label><input type="time" id="beforeTreadmillTime" /></div>
-        <div><label>Weight (kg)</label><input id="beforeTreadmillWeight" inputmode="decimal" placeholder="72.2" /></div>
-        <div><label>Distance (km)</label><input id="beforeTreadmillKm" inputmode="decimal" placeholder="1.5" /></div>
-        <div><label>Mins</label><input id="beforeTreadmillMins" inputmode="decimal" placeholder="15" /></div>
-        <div><label>Speed (km/h)</label><input id="beforeTreadmillSpeed" inputmode="decimal" placeholder="6.0" /></div>
+        <div><label>ᴛɪᴍє</label><input type="time" id="beforeTreadmillTime" /></div>
+        <div><label>ᴡєɪɢʜᴛ (kg)</label><input id="beforeTreadmillWeight" inputmode="decimal" placeholder="72.2" /></div>
+        <div><label>ᴅɪsᴛᴧɴᴄє (km)</label><input id="beforeTreadmillKm" inputmode="decimal" placeholder="1.5" /></div>
+        <div><label>ᴍɪɴs</label><input id="beforeTreadmillMins" inputmode="decimal" placeholder="15" /></div>
+        <div><label>sᴘєєᴅ (km/h)</label><input id="beforeTreadmillSpeed" inputmode="decimal" placeholder="6.0" /></div>
       </div>
-      <label>Note</label><textarea id="beforeTreadmillNote"></textarea>
+      <label>ɴσᴛє</label><textarea id="beforeTreadmillNote"></textarea>
     </div>
     <div class="glass card">
-      <h2><span class="step">4</span> Treadmill • Incline</h2>
+      <h2><span class="step">4</span> ᴛʀєᴧᴅᴍɪʟʟ • ɪɴᴄʟɪɴє</h2>
       <div class="grid">
-        <div><label>Time</label><input type="time" id="afterTreadmillTime" /></div>
-        <div><label>Weight (kg)</label><input id="afterTreadmillWeight" inputmode="decimal" placeholder="71.8" /></div>
-        <div><label>Distance (km)</label><input id="afterTreadmillKm" inputmode="decimal" placeholder="2.0" /></div>
-        <div><label>Mins</label><input id="afterTreadmillMins" inputmode="decimal" placeholder="20" /></div>
-        <div><label>Speed (km/h)</label><input id="afterTreadmillSpeed" inputmode="decimal" placeholder="5.5" /></div>
-        <div><label>Incline %</label><input id="afterTreadmillIncline" inputmode="decimal" placeholder="8" /></div>
+        <div><label>ᴛɪᴍє</label><input type="time" id="afterTreadmillTime" /></div>
+        <div><label>ᴡєɪɢʜᴛ (kg)</label><input id="afterTreadmillWeight" inputmode="decimal" placeholder="71.8" /></div>
+        <div><label>ᴅɪsᴛᴧɴᴄє (km)</label><input id="afterTreadmillKm" inputmode="decimal" placeholder="2.0" /></div>
+        <div><label>ᴍɪɴs</label><input id="afterTreadmillMins" inputmode="decimal" placeholder="20" /></div>
+        <div><label>sᴘєєᴅ (km/h)</label><input id="afterTreadmillSpeed" inputmode="decimal" placeholder="5.5" /></div>
+        <div><label>ɪɴᴄʟɪɴє %</label><input id="afterTreadmillIncline" inputmode="decimal" placeholder="8" /></div>
       </div>
-      <label>Note</label><textarea id="afterTreadmillNote"></textarea>
+      <label>ɴσᴛє</label><textarea id="afterTreadmillNote"></textarea>
     </div>
     <div class="actions">
-      <button class="btn full" id="saveBtn">Save</button>
-      <button class="btn ok full" id="finishBtn">ᴡσꝛᴋσᴜᴛ khatam</button>
+      <button class="btn full" id="saveBtn">sᴧᴠє</button>
+      <button class="btn ok full" id="finishBtn">ғɪɴɪsʜ ᴡσꝛᴋσᴜᴛ</button>
     </div>
     <div class="glass card">
-      <h2>Aaj ka result</h2>
-      <div id="resultText" class="today-box">Pehle weight daalo</div>
-      <p class="sub" id="resultSub">Shuruat se khatam tak.</p>
+      <h2>ᴛσᴅᴧʏ's ʀєsᴜʟᴛ</h2>
+      <div id="resultText" class="today-box">Add start weight</div>
+      <p class="sub" id="resultSub">Start vs finish weight.</p>
       <p class="sub" id="tmResult"></p>
     </div>
   </div>
 
   <div id="view-progress" class="hidden">
     <div class="glass card">
-      <h2>Calendar</h2>
+      <h2>ᴄᴧʟєɴᴅᴧʀ</h2>
       <div class="row" style="justify-content:space-between;margin-bottom:10px">
         <button class="btn ghost" id="calPrev" style="min-height:40px">‹</button>
         <b id="calTitle"></b>
@@ -215,24 +226,24 @@
       <p class="sub">🟢 completed &nbsp; ⚪ rest / Sunday</p>
     </div>
     <div class="glass card">
-      <h2>Goal weight</h2>
+      <h2>ɢσᴧʟ ᴡєɪɢʜᴛ</h2>
       <div class="grid">
-        <div><label>Target kg</label><input id="goalWeight" inputmode="decimal" placeholder="65" /></div>
-        <div style="display:flex;align-items:flex-end"><button class="btn full" id="goalBtn" style="min-height:48px">Save goal</button></div>
+        <div><label>ᴛᴧʀɢєᴛ kg</label><input id="goalWeight" inputmode="decimal" placeholder="65" /></div>
+        <div style="display:flex;align-items:flex-end"><button class="btn full" id="goalBtn" style="min-height:48px">sᴧᴠє ɢσᴧʟ</button></div>
       </div>
     </div>
     <div class="glass card">
-      <h2>Weight graph</h2>
+      <h2>ᴡєɪɢʜᴛ ɢʀᴧᴘʜ</h2>
       <canvas id="progChart" width="640" height="200" style="width:100%;height:160px"></canvas>
     </div>
   </div>
 
   <div id="view-history" class="hidden">
     <div class="glass card">
-      <h2>Pehle ke din</h2>
+      <h2>ʜɪsᴛσʀʏ</h2>
       <div style="overflow:auto">
         <table>
-          <thead><tr><th>Date</th><th>Workout</th><th>Weight</th><th></th></tr></thead>
+          <thead><tr><th>ᴅᴧᴛє</th><th>ᴡσꝛᴋσᴜᴛ</th><th>ᴡєɪɢʜᴛ</th><th></th></tr></thead>
           <tbody id="hist"></tbody>
         </table>
       </div>
@@ -241,27 +252,27 @@
 </div>
 
 <nav class="tabbar hidden" id="tabbar">
-  <button class="tab on" data-tab="home"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11 11 4l8 7"/><path d="M5 10v8h12v-8"/></svg>Home</button>
-  <button class="tab" data-tab="workout"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 8h10M7 12h10M7 16h6"/></svg>Workout</button>
-  <button class="tab" data-tab="progress"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16l5-5 3 3 6-7"/><path d="M4 19h16"/></svg>Progress</button>
-  <button class="tab" data-tab="history"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="14" height="14" rx="2"/><path d="M8 3v4M16 3v4M4 10h14"/></svg>History</button>
+  <button class="tab on" data-tab="home"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11 11 4l8 7"/><path d="M5 10v8h12v-8"/></svg>ʜσᴍє</button>
+  <button class="tab" data-tab="workout"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 8h10M7 12h10M7 16h6"/></svg>ᴡσꝛᴋσᴜᴛ</button>
+  <button class="tab" data-tab="progress"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16l5-5 3 3 6-7"/><path d="M4 19h16"/></svg>ᴘʀσɢʀєss</button>
+  <button class="tab" data-tab="history"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="14" height="14" rx="2"/><path d="M8 3v4M16 3v4M4 10h14"/></svg>ʜɪsᴛσʀʏ</button>
 </nav>
 <div class="toast" id="toast"></div>
 <script>
   const CREATOR = `
-    <p class="sig">CREATED BY HARRY</p>
+    <p class="sig">created by harry</p>
     <div class="socials">
       <a class="soc ig" href="https://instagram.com/unkwnon_lucifer" target="_blank" rel="noopener" aria-label="Insta">
         <svg viewBox="0 0 24 24"><defs><linearGradient id="ig" x1="0" y1="24" x2="24" y2="0"><stop offset="0" stop-color="#f58529"/><stop offset=".4" stop-color="#dd2a7b"/><stop offset="1" stop-color="#515bd4"/></linearGradient></defs><rect x="2" y="2" width="20" height="20" rx="6" fill="url(#ig)"/><rect x="5.2" y="5.2" width="13.6" height="13.6" rx="4" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="12" cy="12" r="3.4" fill="none" stroke="#fff" stroke-width="1.6"/><circle cx="16.6" cy="7.4" r="1.05" fill="#fff"/></svg>
-        Insta
+        ɪɴsᴛᴧ
       </a>
       <a class="soc tg" href="https://t.me/SANATANI_BACCHA" target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#2AABEE"/><path d="M6.8 12.1 16.4 8.4c.9-.4 1.4.2 1.1 1.2l-1.6 7.6c-.2.9-.7 1.1-1.5.7l-2.1-1.6-1.1 1.1c-.1.1-.3.3-.6.3l.2-2.3 4.2-3.8c.2-.2 0-.3-.3-.1l-5.2 3.3-2.2-.7c-.9-.3-.9-.9.2-1.3Z" fill="#fff"/></svg>
-        Telegram
+        ᴛєʟєɢʀᴧᴍ
       </a>
       <a class="soc gh" href="https://github.com/SIDHIMUSIC" target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24"><path fill="#fff" d="M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.2-3.4-1.2-.5-1.1-1.1-1.4-1.1-1.4-.9-.6.1-.6.1-.6 1 .1 1.6 1.1 1.6 1.1.9 1.6 2.4 1.1 3 .9.1-.7.4-1.1.6-1.4-2.2-.3-4.6-1.1-4.6-5a3.9 3.9 0 0 1 1-2.7c-.1-.3-.4-1.3.1-2.7 0 0 .8-.3 2.7 1a9.3 9.3 0 0 1 5 0c1.9-1.3 2.7-1 2.7-1 .5 1.4.2 2.4.1 2.7a3.9 3.9 0 0 1 1 2.7c0 3.9-2.3 4.7-4.6 5 .4.3.7 1 .7 2v2.3c0 .3.2.6.7.5A10 10 0 0 0 12 2Z"/></svg>
-        GitHub
+        ɢɪᴛʜᴜʙ
       </a>
     </div>`;
   document.querySelectorAll("[data-creator]").forEach(function (el, i) {
@@ -295,6 +306,6 @@
     addEventListener("resize", function () { resize(); make(); });
   })();
 </script>
-<script src="app.js?v=8"></script>
+<script src="app.js?v=9"></script>
 </body>
 </html>

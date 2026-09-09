@@ -7,10 +7,7 @@ const SPLIT = {
   Saturday: "Shoulders and triceps",
   Sunday: "Off"
 };
-const DAYS_HI = {
-  Sunday: "Raviwar", Monday: "Somwar", Tuesday: "Mangalwar", Wednesday: "Budhwar",
-  Thursday: "Guruwar", Friday: "Shukrawar", Saturday: "Shaniwar"
-};
+const DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 const $ = (id) => document.getElementById(id);
 
 let token = "";
@@ -47,7 +44,7 @@ function nOrNull(id) {
   return v === "" ? null : Number(v);
 }
 function dayFromDate(dateStr) {
-  return ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][new Date(dateStr + "T12:00:00").getDay()];
+  return DAYS[new Date(dateStr + "T12:00:00").getDay()];
 }
 function greet() {
   const h = Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hour12: false, timeZone: "Asia/Kolkata" }).format(new Date()));
@@ -91,7 +88,7 @@ function getSeg(id) {
 function paintDay() {
   const date = $("date").value || todayISO();
   const day = dayFromDate(date);
-  $("dateLine").textContent = date + "  •  " + DAYS_HI[day];
+  $("dateLine").textContent = date + "  •  " + day;
   $("splitLine").textContent = SPLIT[day];
   $("splitLine").classList.toggle("off", day === "Sunday");
   $("offNote").classList.toggle("hidden", day !== "Sunday");
@@ -105,27 +102,27 @@ function paintResult(row) {
   const end = kg(row && row.afterTreadmillWeight);
   if (start == null) {
     box.className = "today-box";
-    box.textContent = "Pehle gym start wala weight daalo";
-    sub.textContent = "Shuruat se last (treadmill 2) tak ghata/badha.";
+    box.textContent = "Add gym start weight";
+    sub.textContent = "Start vs last treadmill weight.";
   } else if (end == null) {
     box.className = "today-box";
-    box.textContent = "Shuruat me " + start + " kg";
-    sub.textContent = "Treadmill 2 ke baad wala weight daalo.";
+    box.textContent = "Start " + start + " kg";
+    sub.textContent = "Add incline treadmill finish weight.";
   } else {
     const d = Math.round((end - start) * 1000) / 1000;
     const abs = Math.abs(d);
     if (d < 0) {
       box.className = "today-box delta down";
-      box.textContent = "Ghat ke " + end + " kg aaya";
-      sub.textContent = "Shuruat me " + start + " kg tha  •  " + abs + " kg kam";
+      box.textContent = "Down to " + end + " kg";
+      sub.textContent = "Started at " + start + " kg  •  " + abs + " kg less";
     } else if (d > 0) {
       box.className = "today-box delta up";
-      box.textContent = "Badh ke " + end + " kg aaya";
-      sub.textContent = "Shuruat me " + start + " kg tha  •  " + abs + " kg zyada";
+      box.textContent = "Up to " + end + " kg";
+      sub.textContent = "Started at " + start + " kg  •  " + abs + " kg more";
     } else {
       box.className = "today-box delta same";
-      box.textContent = "Khatam bhi " + end + " kg";
-      sub.textContent = "Shuruat me " + start + " kg";
+      box.textContent = "Still " + end + " kg";
+      sub.textContent = "Started at " + start + " kg";
     }
   }
   const bits = [];
@@ -180,15 +177,15 @@ function paintHist() {
     if (start != null && end != null) {
       const d = Math.round((end - start) * 1000) / 1000;
       line = start + " → " + end;
-      delta = d < 0 ? Math.abs(d) + " kg ghata" : d > 0 ? d + " kg badha" : "same";
+      delta = d < 0 ? Math.abs(d) + " kg down" : d > 0 ? d + " kg up" : "same";
     }
     const km = (Number(s.beforeTreadmillKm) || 0) + (Number(s.afterTreadmillKm) || 0);
-    return "<tr><td>" + s.date + "<div class=\"sub\" style=\"margin:0\">" + (DAYS_HI[s.day] || "") + "</div></td><td>" +
-      (s.workoutName || "") + (s.finished ? "<div class=\"sub\" style=\"margin:0\">khatam</div>" : "") +
+    return "<tr><td>" + s.date + "<div class=\"sub\" style=\"margin:0\">" + (s.day || "") + "</div></td><td>" +
+      (s.workoutName || "") + (s.finished ? "<div class=\"sub\" style=\"margin:0\">done</div>" : "") +
       "</td><td>" + line + "<div class=\"sub\" style=\"margin:0\">" + delta + (km ? " • " + km + " km" : "") + "</div></td><td>" +
-      "<button class=\"btn ghost\" data-open=\"" + s.date + "\">Open</button> " +
+      "<button class=\"btn ghost\" data-open=\"" + s.date + "\">σᴘєɴ</button> " +
       "<button class=\"btn danger\" data-del=\"" + s.date + "\">X</button></td></tr>";
-  }).join("") || "<tr><td colspan=\"4\" class=\"sub\">Abhi koi session nahi</td></tr>";
+  }).join("") || "<tr><td colspan=\"4\" class=\"sub\">No sessions yet</td></tr>";
 }
 
 function durationText(row) {
@@ -240,7 +237,7 @@ function drawChart(canvas, rows) {
   ctx.clearRect(0, 0, w, h);
   const pts = rows.filter(function (s) { return kg(s.entryWeight) != null; }).slice().sort(function (a, b) { return a.date.localeCompare(b.date); }).slice(-14);
   if (pts.length < 1) {
-    ctx.fillStyle = "#9aa7b8"; ctx.font = "22px Hind"; ctx.fillText("Weight save karo, graph yahin aayega", 24, h / 2);
+    ctx.fillStyle = "#9aa7b8"; ctx.font = "22px Comfortaa"; ctx.fillText("Save weight to see graph", 24, h / 2);
     return;
   }
   const ys = pts.map(function (p) { return kg(p.entryWeight); });
@@ -276,7 +273,7 @@ function paintHome() {
   if (wd && wd.diff != null) {
     $("homeWeek").textContent = (wd.diff < 0 ? "↓ " + Math.abs(wd.diff) : wd.diff > 0 ? "↑ " + wd.diff : "same") + " kg this week";
     $("homeWeek").className = "sub " + (wd.diff < 0 ? "delta down" : wd.diff > 0 ? "delta up" : "");
-  } else $("homeWeek").textContent = "Is hafte ka change yahin";
+  } else $("homeWeek").textContent = "this week";
   $("stStreak").textContent = streakCount();
   $("stWorkouts").textContent = sessions.filter(function (s) { return s.finished; }).length;
   if (goalWeight && latest != null) {
@@ -360,7 +357,7 @@ async function save(finished) {
     fillForm();
     paintHist();
     paintHome();
-    toast(finished ? "Workout khatam" : "Mongo me save");
+    toast(finished ? "Workout done" : "Saved");
   } catch (err) { toast(err.message); }
 }
 
@@ -388,22 +385,22 @@ async function afterAuth() {
 async function register() {
   const user = $("loginUser").value.trim().toLowerCase();
   const pass = $("loginPass").value;
-  if (!user || !pass) return toast("Username aur password dono do");
-  if (user.length < 2) return toast("Username chhota hai");
+  if (!user || !pass) return toast("Enter username and password");
+  if (user.length < 2) return toast("Username too short");
   if (pass.length < 4) return toast("Password min 4");
   try {
     await api("/api/register", { method: "POST", body: { username: user, password: pass } });
     token = "";
     username = "";
     $("loginPass").value = "";
-    toast("Account ban gaya. Ab login karo.");
+    toast("Account created. Now login.");
   } catch (err) { toast(err.message); }
 }
 async function login() {
   const user = $("loginUser").value.trim().toLowerCase();
   const pass = $("loginPass").value;
-  if (!user || !pass) return toast("Username aur password dono do");
-  if (user.length < 2) return toast("Username chhota hai");
+  if (!user || !pass) return toast("Enter username and password");
+  if (user.length < 2) return toast("Username too short");
   if (pass.length < 4) return toast("Password min 4");
   try {
     setAuth(await api("/api/login", { method: "POST", body: { username: user, password: pass } }));
@@ -424,7 +421,7 @@ $("logoutBtn").onclick = function () {
   $("gate").classList.remove("hidden");
   $("loginUser").value = "";
   $("loginPass").value = "";
-  toast("Logout ho gaya");
+  toast("Logged out");
 };
 $("date").addEventListener("change", fillForm);
 $("saveBtn").onclick = function () { save(false); };
@@ -438,7 +435,7 @@ $("hist").addEventListener("click", async function (e) {
   const del = e.target.dataset.del;
   if (open) { $("date").value = open; showTab("workout"); }
   if (del) {
-    if (!confirm(del + " mitaye?")) return;
+    if (!confirm("Delete " + del + "?")) return;
     try {
       const data = await api("/api/session/" + del, { method: "DELETE" });
       sessions = data.sessions || [];
