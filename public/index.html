@@ -80,7 +80,12 @@
     .soc.ig svg { width:22px; height:22px; }
     .badge { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--gold); margin:0 0 8px; }
     .kv { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line); }
-    .kv:last-child { border:0; }
+    .btn.logout {
+      min-height:42px; border-radius:999px; padding:8px 14px; display:inline-flex; align-items:center; gap:7px;
+      background:rgba(255,90,90,.12); border:1px solid rgba(255,140,140,.35); color:#ffc4c4;
+      font:700 12px Hind,sans-serif; letter-spacing:.12em; text-transform:uppercase; box-shadow:none;
+    }
+    .btn.logout svg { width:16px; height:16px; }
     @media (max-width:700px){ .grid{grid-template-columns:1fr 1fr;} .brand{font-size:22px;} }
   </style>
 </head>
@@ -90,7 +95,7 @@
   <div class="glass card">
     <p class="badge">SIDHI • GYM LOG</p>
     <h1 class="brand">Sidhi <span>Gym</span></h1>
-    <p class="sub">Username + password (min 4). Mongo me save.</p>
+      <p class="sub" id="gateHint">Har baar username + password. Refresh par login nahi rahega.</p>
     <label>Username</label><input id="loginUser" autocomplete="username" placeholder="harry" />
     <label>Password (min 4)</label><input id="loginPass" type="password" autocomplete="current-password" />
     <div class="row" style="margin-top:16px">
@@ -102,15 +107,17 @@
 </div>
 
 <div id="app" class="wrap layer hidden">
-  <div id="view-home">
-    <div class="row" style="justify-content:space-between;margin-bottom:12px">
-      <div>
-        <p class="badge">SIDHI GYM</p>
-        <h1 class="brand">Sidhi <span>Gym</span></h1>
-        <p class="sub" id="hello"></p>
-      </div>
-      <button class="btn ghost" id="logoutBtn" style="min-height:44px;border-radius:999px">Lock</button>
+  <div class="row" style="justify-content:space-between;margin-bottom:12px">
+    <div>
+      <p class="badge">SIDHI GYM</p>
+      <p class="sub" id="hello"></p>
     </div>
+    <button class="btn logout" id="logoutBtn" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+      Logout
+    </button>
+  </div>
+  <div id="view-home">
     <div class="glass card" style="text-align:center">
       <div class="hero-kg" id="homeKg">— kg</div>
       <p class="sub" id="homeWeek">Is hafte ka change yahin</p>
@@ -154,33 +161,33 @@
       </div>
     </div>
     <div class="glass card">
-      <h2><span class="step">2</span> 1 hour exercise</h2>
-      <label>Time</label><input type="time" id="after1HourTime" />
-      <label>Kya kiya</label><textarea id="after1HourNote" placeholder="Chest press, fly..."></textarea>
+      <h2><span class="step">2</span> Workout & exercise</h2>
+      <div class="grid">
+        <div><label>Time</label><input type="time" id="after1HourTime" /></div>
+        <div><label>Weight (kg)</label><input id="after1HourWeight" inputmode="decimal" placeholder="72.3" /></div>
+      </div>
+      <label>Exercises</label><textarea id="after1HourNote" placeholder="Chest press, fly, tricep pushdown..."></textarea>
     </div>
     <div class="glass card">
-      <h2><span class="step">3</span> Treadmill 1 • pehle</h2>
-      <div class="seg" id="beforeTreadmillType"><button type="button" data-v="walk" class="on">Walk</button><button type="button" data-v="run">Run</button></div>
+      <h2><span class="step">3</span> Treadmill • Normal</h2>
       <div class="grid">
         <div><label>Time</label><input type="time" id="beforeTreadmillTime" /></div>
         <div><label>Weight (kg)</label><input id="beforeTreadmillWeight" inputmode="decimal" placeholder="72.2" /></div>
         <div><label>Distance (km)</label><input id="beforeTreadmillKm" inputmode="decimal" placeholder="1.5" /></div>
         <div><label>Mins</label><input id="beforeTreadmillMins" inputmode="decimal" placeholder="15" /></div>
         <div><label>Speed (km/h)</label><input id="beforeTreadmillSpeed" inputmode="decimal" placeholder="6.0" /></div>
-        <div><label>Incline %</label><input id="beforeTreadmillIncline" inputmode="decimal" placeholder="4" /></div>
       </div>
       <label>Note</label><textarea id="beforeTreadmillNote"></textarea>
     </div>
     <div class="glass card">
-      <h2><span class="step">4</span> Treadmill 2 • baad</h2>
-      <div class="seg" id="afterTreadmillType"><button type="button" data-v="walk">Walk</button><button type="button" data-v="run" class="on">Run</button></div>
+      <h2><span class="step">4</span> Treadmill • Incline</h2>
       <div class="grid">
         <div><label>Time</label><input type="time" id="afterTreadmillTime" /></div>
         <div><label>Weight (kg)</label><input id="afterTreadmillWeight" inputmode="decimal" placeholder="71.8" /></div>
         <div><label>Distance (km)</label><input id="afterTreadmillKm" inputmode="decimal" placeholder="2.0" /></div>
         <div><label>Mins</label><input id="afterTreadmillMins" inputmode="decimal" placeholder="20" /></div>
-        <div><label>Speed (km/h)</label><input id="afterTreadmillSpeed" inputmode="decimal" placeholder="8.5" /></div>
-        <div><label>Incline %</label><input id="afterTreadmillIncline" inputmode="decimal" placeholder="2" /></div>
+        <div><label>Speed (km/h)</label><input id="afterTreadmillSpeed" inputmode="decimal" placeholder="5.5" /></div>
+        <div><label>Incline %</label><input id="afterTreadmillIncline" inputmode="decimal" placeholder="8" /></div>
       </div>
       <label>Note</label><textarea id="afterTreadmillNote"></textarea>
     </div>
@@ -288,6 +295,6 @@
     addEventListener("resize", function () { resize(); make(); });
   })();
 </script>
-<script src="app.js?v=7"></script>
+<script src="app.js?v=8"></script>
 </body>
 </html>

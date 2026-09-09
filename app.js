@@ -11,13 +11,14 @@ const DAYS_HI = {
   Sunday: "Raviwar", Monday: "Somwar", Tuesday: "Mangalwar", Wednesday: "Budhwar",
   Thursday: "Guruwar", Friday: "Shukrawar", Saturday: "Shaniwar"
 };
-const TM_IDS = ["Time","Weight","Km","Mins","Speed","Incline","Note"];
 const $ = (id) => document.getElementById(id);
-const TOKEN_KEY = "sidhi-gym-token";
-const USER_KEY = "sidhi-gym-username";
 
-let token = localStorage.getItem(TOKEN_KEY) || "";
-let username = localStorage.getItem(USER_KEY) || "";
+let token = "";
+let username = "";
+try {
+  localStorage.removeItem("sidhi-gym-token");
+  localStorage.removeItem("sidhi-gym-username");
+} catch (e) {}
 let sessions = [];
 let goalWeight = null;
 let calCursor = new Date();
@@ -128,17 +129,19 @@ function paintResult(row) {
     }
   }
   const bits = [];
-  [["1", row && row.beforeTreadmillType, row && row.beforeTreadmillKm, row && row.beforeTreadmillMins, row && row.beforeTreadmillSpeed, row && row.beforeTreadmillIncline],
-   ["2", row && row.afterTreadmillType, row && row.afterTreadmillKm, row && row.afterTreadmillMins, row && row.afterTreadmillSpeed, row && row.afterTreadmillIncline]
-  ].forEach(function (t) {
-    if (t[2] || t[3] || t[4]) {
-      bits.push("TM " + t[0] + " " + (t[1] === "run" ? "Run" : "Walk") + ": " +
-        (t[2] != null ? t[2] + " km" : "") +
-        (t[3] != null ? " • " + t[3] + " min" : "") +
-        (t[4] != null ? " • " + t[4] + " km/h" : "") +
-        (t[5] != null ? " • " + t[5] + "%" : ""));
-    }
-  });
+  if (row && (row.beforeTreadmillKm || row.beforeTreadmillMins || row.beforeTreadmillSpeed)) {
+    bits.push("Normal: " +
+      (row.beforeTreadmillKm != null ? row.beforeTreadmillKm + " km" : "") +
+      (row.beforeTreadmillMins != null ? " • " + row.beforeTreadmillMins + " min" : "") +
+      (row.beforeTreadmillSpeed != null ? " • " + row.beforeTreadmillSpeed + " km/h" : ""));
+  }
+  if (row && (row.afterTreadmillKm || row.afterTreadmillMins || row.afterTreadmillSpeed)) {
+    bits.push("Incline: " +
+      (row.afterTreadmillKm != null ? row.afterTreadmillKm + " km" : "") +
+      (row.afterTreadmillMins != null ? " • " + row.afterTreadmillMins + " min" : "") +
+      (row.afterTreadmillSpeed != null ? " • " + row.afterTreadmillSpeed + " km/h" : "") +
+      (row.afterTreadmillIncline != null ? " • " + row.afterTreadmillIncline + "%" : ""));
+  }
   tm.textContent = bits.join("  |  ");
 }
 
@@ -150,13 +153,13 @@ function fillForm() {
   $("entryTime").value = row.entryTime || nowTime();
   fillVal("entryWeight", row.entryWeight);
   fillVal("after1HourTime", row.after1HourTime);
+  fillVal("after1HourWeight", row.after1HourWeight);
   fillVal("after1HourNote", row.after1HourNote);
   fillVal("beforeTreadmillTime", row.beforeTreadmillTime);
   fillVal("beforeTreadmillWeight", row.beforeTreadmillWeight);
   fillVal("beforeTreadmillKm", row.beforeTreadmillKm);
   fillVal("beforeTreadmillMins", row.beforeTreadmillMins);
   fillVal("beforeTreadmillSpeed", row.beforeTreadmillSpeed);
-  fillVal("beforeTreadmillIncline", row.beforeTreadmillIncline);
   fillVal("beforeTreadmillNote", row.beforeTreadmillNote);
   fillVal("afterTreadmillTime", row.afterTreadmillTime);
   fillVal("afterTreadmillWeight", row.afterTreadmillWeight);
@@ -165,8 +168,6 @@ function fillForm() {
   fillVal("afterTreadmillSpeed", row.afterTreadmillSpeed);
   fillVal("afterTreadmillIncline", row.afterTreadmillIncline);
   fillVal("afterTreadmillNote", row.afterTreadmillNote);
-  setSeg("beforeTreadmillType", row.beforeTreadmillType || "walk");
-  setSeg("afterTreadmillType", row.afterTreadmillType || "run");
   paintResult(row);
 }
 
@@ -331,17 +332,17 @@ function formBody(finished) {
     entryTime: $("entryTime").value,
     entryWeight: nOrNull("entryWeight"),
     after1HourTime: $("after1HourTime").value,
+    after1HourWeight: nOrNull("after1HourWeight"),
     after1HourNote: $("after1HourNote").value,
     beforeTreadmillTime: $("beforeTreadmillTime").value,
-    beforeTreadmillType: getSeg("beforeTreadmillType"),
+    beforeTreadmillType: "normal",
     beforeTreadmillWeight: nOrNull("beforeTreadmillWeight"),
     beforeTreadmillKm: nOrNull("beforeTreadmillKm"),
     beforeTreadmillMins: nOrNull("beforeTreadmillMins"),
     beforeTreadmillSpeed: nOrNull("beforeTreadmillSpeed"),
-    beforeTreadmillIncline: nOrNull("beforeTreadmillIncline"),
     beforeTreadmillNote: $("beforeTreadmillNote").value,
     afterTreadmillTime: $("afterTreadmillTime").value,
-    afterTreadmillType: getSeg("afterTreadmillType"),
+    afterTreadmillType: "incline",
     afterTreadmillWeight: nOrNull("afterTreadmillWeight"),
     afterTreadmillKm: nOrNull("afterTreadmillKm"),
     afterTreadmillMins: nOrNull("afterTreadmillMins"),
@@ -374,8 +375,6 @@ function openApp() {
 function setAuth(data) {
   token = data.token;
   username = data.username;
-  localStorage.setItem(TOKEN_KEY, token);
-  localStorage.setItem(USER_KEY, username);
 }
 
 async function afterAuth() {
@@ -389,18 +388,22 @@ async function afterAuth() {
 async function register() {
   const user = $("loginUser").value.trim().toLowerCase();
   const pass = $("loginPass").value;
+  if (!user || !pass) return toast("Username aur password dono do");
   if (user.length < 2) return toast("Username chhota hai");
   if (pass.length < 4) return toast("Password min 4");
   try {
-    setAuth(await api("/api/register", { method: "POST", body: { username: user, password: pass } }));
-    sessions = [];
-    toast("Account ban gaya");
-    await afterAuth();
+    await api("/api/register", { method: "POST", body: { username: user, password: pass } });
+    token = "";
+    username = "";
+    $("loginPass").value = "";
+    toast("Account ban gaya. Ab login karo.");
   } catch (err) { toast(err.message); }
 }
 async function login() {
   const user = $("loginUser").value.trim().toLowerCase();
   const pass = $("loginPass").value;
+  if (!user || !pass) return toast("Username aur password dono do");
+  if (user.length < 2) return toast("Username chhota hai");
   if (pass.length < 4) return toast("Password min 4");
   try {
     setAuth(await api("/api/login", { method: "POST", body: { username: user, password: pass } }));
@@ -413,7 +416,15 @@ $("loginBtn").onclick = login;
 $("setupBtn").onclick = register;
 $("loginPass").addEventListener("keydown", function (e) { if (e.key === "Enter") login(); });
 $("logoutBtn").onclick = function () {
-  localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY); location.reload();
+  token = "";
+  username = "";
+  sessions = [];
+  $("app").classList.add("hidden");
+  $("tabbar").classList.add("hidden");
+  $("gate").classList.remove("hidden");
+  $("loginUser").value = "";
+  $("loginPass").value = "";
+  toast("Logout ho gaya");
 };
 $("date").addEventListener("change", fillForm);
 $("saveBtn").onclick = function () { save(false); };
@@ -421,14 +432,6 @@ $("finishBtn").onclick = function () { save(true); };
 $("homeFinish").onclick = function () { showTab("workout"); };
 document.querySelectorAll(".tab").forEach(function (b) {
   b.onclick = function () { showTab(b.dataset.tab); };
-});
-document.querySelectorAll(".seg").forEach(function (seg) {
-  seg.addEventListener("click", function (e) {
-    const b = e.target.closest("button");
-    if (!b) return;
-    seg.querySelectorAll("button").forEach(function (x) { x.classList.remove("on"); });
-    b.classList.add("on");
-  });
 });
 $("hist").addEventListener("click", async function (e) {
   const open = e.target.dataset.open;
@@ -459,12 +462,3 @@ $("goalBtn").onclick = async function () {
     paintHome();
   } catch (err) { toast(err.message); }
 };
-
-(async function boot() {
-  if (!token) return;
-  try { await afterAuth(); }
-  catch (e) {
-    localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY);
-    token = ""; username = "";
-  }
-})();
