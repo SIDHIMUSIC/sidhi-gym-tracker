@@ -74,6 +74,7 @@ const gymSchema = new mongoose.Schema(
       afterTreadmillSpeed: Number,
       afterTreadmillIncline: Number,
       afterTreadmillNote: String,
+      runs: { type: Array, default: [] },
       finished: { type: Boolean, default: false }
     },
     { timestamps: true }
@@ -250,6 +251,7 @@ app.put("/api/session", auth, async (req, res) => {
     afterTreadmillSpeed: num(req.body.afterTreadmillSpeed),
     afterTreadmillIncline: num(req.body.afterTreadmillIncline),
     afterTreadmillNote: req.body.afterTreadmillNote || "",
+    runs: Array.isArray(req.body.runs) ? req.body.runs : [],
     finished: !!req.body.finished
   };
   const saved = await GymSession.findOneAndUpdate(
