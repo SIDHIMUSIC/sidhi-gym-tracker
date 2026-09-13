@@ -2,6 +2,12 @@
   const RUN_KEY = "sidhi-gym-run";
   const run = { state: "idle", mode: "auto", speed: 0, incline: 0, startedAt: 0, elapsedMs: 0, distanceKm: 0, maxSpeed: 0, tick: null, watch: null, lastFix: null, wake: null };
   function el(id) { return document.getElementById(id); }
+  function fancy(s) {
+    const map = { a:"ꜰ",b:"ʙ",c:"ᴄ",d:"ᴅ",e:"ᴇ",f:"ꜰ",g:"ɢ",h:"ʜ",i:"ɪ",j:"ᴊ",k:"ᴋ",l:"ʟ",m:"ᴍ",n:"ɴ",o:"ᴏ",p:"ᴘ",q:"ǫ",r:"ʀ",s:"s",t:"ᴛ",u:"ᴜ",v:"ᴠ",w:"ᴡ",x:"x",y:"ʏ",z:"ᴢ" };
+    map.a = "ᴀ"; map.f = "ꜰ";
+    const m = {a:"ᴀ",b:"ʙ",c:"ᴄ",d:"ᴅ",e:"ᴇ",f:"ꜰ",g:"ɢ",h:"ʜ",i:"ɪ",j:"ᴊ",k:"ᴋ",l:"ʟ",m:"ᴍ",n:"ɴ",o:"ᴏ",p:"ᴘ",q:"ǫ",r:"ʀ",s:"s",t:"ᴛ",u:"ᴜ",v:"ᴠ",w:"ᴡ",x:"x",y:"ʏ",z:"ᴢ"};
+    return String(s).replace(/[A-Za-z]/g, function (ch) { return m[ch.toLowerCase()] || ch; });
+  }
   function fmtClock(ms) {
     const s = Math.max(0, Math.floor(ms / 1000));
     const m = Math.floor(s / 60);
@@ -34,7 +40,7 @@
     if (run.mode !== "auto") km = Math.round((run.speed * hours) * 1000) / 1000;
     const spd = run.mode === "auto" ? run.speed : Number(run.speed) || 0;
     const cal = Math.round(runMet(spd, run.incline) * runWeight() * hours);
-    const pace = km > 0.05 ? fmtClock(run.elapsedMs / km) : "\u2014";
+    const pace = km > 0.05 ? fmtClock(run.elapsedMs / km) : "—";
     return { km: km, cal: cal, pace: pace, spd: spd };
   }
   function paintRun() {
@@ -43,18 +49,22 @@
     el("livebar").classList.toggle("on", run.state !== "idle");
     if (el("runOpenBtn")) {
       el("runOpenBtn").classList.toggle("live", run.state === "running");
-      el("runOpenBtn").textContent = run.state === "running" ? "\u25cf RUN" : run.state === "paused" ? "PAUSED" : "RUN";
+      el("runOpenBtn").textContent = run.state === "running" ? "● " + fancy("run") : run.state === "paused" ? fancy("paused") : fancy("run");
     }
     el("liveTime").textContent = fmtClock(run.elapsedMs);
-    el("liveKm").textContent = snap.km.toFixed(2) + " km";
-    el("liveSpd").textContent = snap.spd.toFixed(1) + " km/h";
-    el("liveCal").textContent = snap.cal + " kcal";
+    el("liveKm").textContent = snap.km.toFixed(2) + " " + fancy("km");
+    el("liveSpd").textContent = snap.spd.toFixed(1) + " " + fancy("km/h");
+    el("liveCal").textContent = snap.cal + " " + fancy("kcal");
     if (el("runClock")) el("runClock").textContent = fmtClock(run.elapsedMs);
     if (el("ovKm")) el("ovKm").textContent = snap.km.toFixed(2);
     if (el("ovSpd")) el("ovSpd").textContent = snap.spd.toFixed(1);
     if (el("ovCal")) el("ovCal").textContent = String(snap.cal);
     if (el("ovPace")) el("ovPace").textContent = snap.pace;
-    if (el("runStatus")) el("runStatus").textContent = run.state === "running" ? (run.mode === "auto" ? "Auto GPS live" : run.mode + " live") : run.state === "paused" ? "paused" : "Auto speed on. Start.";
+    if (el("runStatus")) {
+      el("runStatus").textContent = run.state === "running"
+        ? fancy(run.mode === "auto" ? "auto gps live" : run.mode + " live")
+        : run.state === "paused" ? fancy("paused") : fancy("auto speed on  start");
+    }
     if (el("runStartBtn")) el("runStartBtn").classList.toggle("hidden", run.state !== "idle");
     if (el("runPauseBtn")) el("runPauseBtn").classList.toggle("hidden", run.state !== "running");
     if (el("runResumeBtn")) el("runResumeBtn").classList.toggle("hidden", run.state !== "paused");
@@ -79,8 +89,8 @@
   }
   function startGps() {
     stopGps();
-    if (!navigator.geolocation) { if (typeof toast === "function") toast("GPS nahi mila"); return; }
-    run.watch = navigator.geolocation.watchPosition(onFix, function () { if (typeof toast === "function") toast("Location allow karo"); }, { enableHighAccuracy: true, maximumAge: 1000, timeout: 8000 });
+    if (!navigator.geolocation) { if (typeof toast === "function") toast(fancy("gps nahi mila")); return; }
+    run.watch = navigator.geolocation.watchPosition(onFix, function () { if (typeof toast === "function") toast(fancy("location allow karo")); }, { enableHighAccuracy: true, maximumAge: 1000, timeout: 8000 });
   }
   function stopGps() {
     if (run.watch != null && navigator.geolocation) navigator.geolocation.clearWatch(run.watch);
@@ -115,19 +125,19 @@
     persistRun(); lockScreen(); startTicker();
     if (run.mode === "auto") startGps();
     paintRun();
-    if (typeof toast === "function") toast(run.mode === "auto" ? "Auto run start" : "Run start");
+    if (typeof toast === "function") toast(fancy(run.mode === "auto" ? "auto run start" : "run start"));
   }
   function pauseRun() {
     if (run.state !== "running") return;
     run.elapsedMs = Date.now() - run.startedAt;
     run.state = "paused"; clearInterval(run.tick); stopGps(); persistRun(); paintRun();
-    if (typeof toast === "function") toast("Paused");
+    if (typeof toast === "function") toast(fancy("paused"));
   }
   function resumeRun() {
     if (run.state !== "paused") return;
     run.state = "running"; run.startedAt = Date.now() - run.elapsedMs;
     persistRun(); startTicker(); if (run.mode === "auto") startGps(); paintRun();
-    if (typeof toast === "function") toast("Resume");
+    if (typeof toast === "function") toast(fancy("resume"));
   }
   async function endRun(silent) {
     if (run.state === "idle") return;
@@ -162,7 +172,7 @@
       if (typeof fillForm === "function") fillForm();
       if (typeof paintHome === "function") paintHome();
       if (typeof paintHist === "function") paintHist();
-      if (!silent && typeof toast === "function") toast("Run saved " + rec.distanceKm.toFixed(2) + " km");
+      if (!silent && typeof toast === "function") toast(fancy("run saved") + " " + rec.distanceKm.toFixed(2) + " km");
     } catch (err) { if (!silent && typeof toast === "function") toast(err.message); }
   }
   function restoreRun() {
@@ -184,11 +194,11 @@
     paintHome = function () {
       _paintHome();
       const box = el("homeRun"); const row = typeof todayRow === "function" ? todayRow() : null; const runs = (row && row.runs) || [];
-      if (!box) return; if (!runs.length) { box.textContent = "\u2014"; return; }
+      if (!box) return; if (!runs.length) { box.textContent = "—"; return; }
       const rkm = runs.reduce(function (a, r) { return a + (Number(r.distanceKm) || 0); }, 0);
       const rcal = runs.reduce(function (a, r) { return a + (Number(r.calories) || 0); }, 0);
       const rsec = runs.reduce(function (a, r) { return a + (Number(r.durationSec) || 0); }, 0);
-      box.textContent = rkm.toFixed(2) + " km \u2022 " + Math.round(rsec / 60) + " min \u2022 " + Math.round(rcal) + " kcal";
+      box.textContent = rkm.toFixed(2) + " km • " + Math.round(rsec / 60) + " min • " + Math.round(rcal) + " kcal";
     };
   }
   if (typeof formBody === "function") {
@@ -209,30 +219,33 @@
     };
   }
   (function ensureUI() {
-    if (!document.getElementById("run-css")) {
-      var st = document.createElement("style"); st.id = "run-css";
-      st.textContent = ".head-actions{display:flex;flex-direction:column;align-items:flex-end;gap:8px}.head-btns{display:flex;gap:8px;align-items:center}.btn.run{min-height:42px;border-radius:999px;padding:8px 14px;background:linear-gradient(135deg,#63e2b3,#7ab8ff);border:0;color:#04140d;font:700 11px Comfortaa,sans-serif}.livebar{display:none;gap:6px;flex-wrap:wrap;justify-content:flex-end}.livebar.on{display:flex}.chip{padding:5px 8px;border-radius:999px;background:rgba(99,226,179,.14);font:800 10px Comfortaa,sans-serif;color:#c8ffe8}.run-ov{position:fixed;inset:0;z-index:80;display:none;overflow:auto;background:#070b12;padding:14px 14px 40px}.run-ov.on{display:block}.run-clock{font:800 56px Comfortaa,sans-serif;text-align:center;margin:10px 0;color:#f0c27a}.modes{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0}.modes button{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#fff;border-radius:999px;padding:10px 12px;font:700 12px Comfortaa,sans-serif}.modes button.on{color:#04140d;background:linear-gradient(135deg,#a8edea,#63e2b3)}.run-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.run-stat{text-align:center;padding:14px 8px}.run-stat b{display:block;font:800 22px Comfortaa,sans-serif;color:#f0c27a}";
-      document.head.appendChild(st);
-    }
+    var css = ".head-actions{display:flex;flex-direction:column;align-items:flex-end;gap:8px}.head-btns{display:flex;gap:8px;align-items:center}.btn.run{min-height:42px;border-radius:999px;padding:8px 16px;background:linear-gradient(135deg,#63e2b3,#7ab8ff);border:0;color:#04140d;font:700 13px Comfortaa,sans-serif;letter-spacing:.08em}.livebar{display:none;gap:6px;flex-wrap:wrap;justify-content:flex-end}.livebar.on{display:flex}.chip{padding:6px 10px;border-radius:999px;background:rgba(99,226,179,.14);font:800 11px Comfortaa,sans-serif;color:#c8ffe8}.run-ov{position:fixed;inset:0;z-index:80;display:none;overflow:auto;background:#070b12;padding:14px 14px 36px}.run-ov.on{display:block}.run-clock{font:800 64px Comfortaa,sans-serif;text-align:center;margin:8px 0 4px;color:#f0c27a}.modes{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:14px 0}.modes button{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#fff;border-radius:999px;padding:12px 14px;min-height:46px;font:700 13px Comfortaa,sans-serif}.modes button.on{color:#04140d;background:linear-gradient(135deg,#a8edea,#63e2b3)}.run-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.run-stat{text-align:center;padding:16px 8px}.run-stat b{display:block;font:800 24px Comfortaa,sans-serif;color:#f0c27a}.run-stat span{font-size:12px;letter-spacing:.08em}.run-acts{display:flex;flex-direction:column;gap:10px;margin-top:16px}.run-acts .row{display:flex;gap:10px}.run-ov .btn{min-height:58px;font-size:16px;letter-spacing:.1em}.run-ov #runEndBtn,.run-ov #runPauseBtn,.run-ov #runResumeBtn,.run-ov #runStartBtn{flex:1}";
+    var st = document.getElementById("run-css");
+    if (!st) { st = document.createElement("style"); st.id = "run-css"; document.head.appendChild(st); }
+    st.textContent = css;
     var logout = el("logoutBtn");
     if (logout && !el("runOpenBtn")) {
       var wrap = document.createElement("div"); wrap.className = "head-actions";
-      wrap.innerHTML = '<div class="head-btns"><button class="btn run" id="runOpenBtn" type="button">RUN</button></div><div class="livebar" id="livebar"><span class="chip" id="liveTime">00:00</span><span class="chip" id="liveKm">0.00 km</span><span class="chip" id="liveSpd">0.0</span><span class="chip" id="liveCal">0</span></div>';
+      wrap.innerHTML = '<div class="head-btns"><button class="btn run" id="runOpenBtn" type="button">' + fancy("run") + '</button></div><div class="livebar" id="livebar"><span class="chip" id="liveTime">00:00</span><span class="chip" id="liveKm">0.00</span><span class="chip" id="liveSpd">0.0</span><span class="chip" id="liveCal">0</span></div>';
       logout.parentNode.insertBefore(wrap, logout);
       wrap.querySelector(".head-btns").appendChild(logout);
     }
     if (!el("homeRun")) {
       var tm = el("homeTm");
       if (tm && tm.parentNode && tm.parentNode.parentNode) {
-        var row = document.createElement("div"); row.className = "kv"; row.innerHTML = "<span>run</span><b id=\"homeRun\">\u2014</b>";
+        var row = document.createElement("div"); row.className = "kv"; row.innerHTML = "<span>" + fancy("run") + "</span><b id=\"homeRun\">—</b>";
         tm.parentNode.parentNode.insertBefore(row, tm.parentNode.nextSibling);
       }
     }
-    if (!el("runOv")) {
-      var ov = document.createElement("div"); ov.className = "run-ov"; ov.id = "runOv";
-      ov.innerHTML = '<div class="wrap" style="padding-top:8px"><div class="row" style="justify-content:space-between"><p class="badge">LIVE RUN</p><button class="btn ghost" id="runCloseBtn" type="button">close</button></div><div class="run-clock" id="runClock">00:00</div><p class="sub" id="runStatus" style="text-align:center">Auto speed on</p><div class="modes" id="runModes"><button type="button" data-mode="auto" data-spd="0" class="on">Auto GPS</button><button type="button" data-mode="walk" data-spd="4.5">Walk 4.5</button><button type="button" data-mode="jog" data-spd="6.5">Jog 6.5</button><button type="button" data-mode="run" data-spd="8.5">Run 8.5</button><button type="button" data-mode="incline" data-spd="5.5">Incline 5.5</button><button type="button" data-mode="sprint" data-spd="11">Sprint 11</button></div><div class="grid"><div><label>speed km/h</label><input id="runSpeedIn" value="0"></div><div><label>incline %</label><input id="runInclineIn" value="0"></div></div><div class="run-stats"><div class="glass run-stat"><b id="ovKm">0.00</b><span>km</span></div><div class="glass run-stat"><b id="ovSpd">0.0</b><span>km/h</span></div><div class="glass run-stat"><b id="ovCal">0</b><span>kcal</span></div><div class="glass run-stat"><b id="ovPace">-</b><span>pace</span></div></div><div class="row" style="margin-top:8px"><button class="btn ok full" id="runStartBtn">start</button><button class="btn ghost full hidden" id="runPauseBtn">stop</button><button class="btn full hidden" id="runResumeBtn">resume</button><button class="btn danger full hidden" id="runEndBtn">end run</button></div></div>';
+    var ovHtml = '<div class="wrap" style="padding-top:8px"><div class="row" style="justify-content:space-between"><p class="badge">' + fancy("live run") + '</p><button class="btn ghost" id="runCloseBtn" type="button">' + fancy("close") + '</button></div><div class="run-clock" id="runClock">00:00</div><p class="sub" id="runStatus" style="text-align:center">' + fancy("auto speed on") + '</p><div class="modes" id="runModes"><button type="button" data-mode="auto" data-spd="0" class="on">' + fancy("auto gps") + '</button><button type="button" data-mode="walk" data-spd="4.5">' + fancy("walk") + ' 4.5</button><button type="button" data-mode="jog" data-spd="6.5">' + fancy("jog") + ' 6.5</button><button type="button" data-mode="run" data-spd="8.5">' + fancy("run") + ' 8.5</button><button type="button" data-mode="incline" data-spd="5.5">' + fancy("incline") + ' 5.5</button><button type="button" data-mode="sprint" data-spd="11">' + fancy("sprint") + ' 11</button></div><div class="grid"><div><label>' + fancy("speed km/h") + '</label><input id="runSpeedIn" value="0"></div><div><label>' + fancy("incline") + ' %</label><input id="runInclineIn" value="0"></div></div><div class="run-stats"><div class="glass run-stat"><b id="ovKm">0.00</b><span>' + fancy("km") + '</span></div><div class="glass run-stat"><b id="ovSpd">0.0</b><span>' + fancy("km/h") + '</span></div><div class="glass run-stat"><b id="ovCal">0</b><span>' + fancy("kcal") + '</span></div><div class="glass run-stat"><b id="ovPace">-</b><span>' + fancy("pace") + '</span></div></div><div class="run-acts"><button class="btn ok full" id="runStartBtn" type="button">' + fancy("start") + '</button><div class="row"><button class="btn ghost full hidden" id="runPauseBtn" type="button">' + fancy("stop") + '</button><button class="btn full hidden" id="runResumeBtn" type="button">' + fancy("resume") + '</button></div><button class="btn danger full hidden" id="runEndBtn" type="button">' + fancy("end run") + '</button></div></div>';
+    var ov = el("runOv");
+    if (!ov) {
+      ov = document.createElement("div");
+      ov.className = "run-ov";
+      ov.id = "runOv";
       document.body.appendChild(ov);
     }
+    ov.innerHTML = ovHtml;
   })();
   if (el("runOpenBtn")) el("runOpenBtn").onclick = function () { el("runOv").classList.add("on"); paintRun(); };
   if (el("runCloseBtn")) el("runCloseBtn").onclick = function () { el("runOv").classList.remove("on"); };
