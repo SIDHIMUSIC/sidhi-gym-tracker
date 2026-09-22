@@ -1,6 +1,6 @@
 (function () {
   const RUN_KEY = "sidhi-gym-run";
-  const MIN_MOVE_KMH = 6;
+  const MODE_MIN = { walk: 2.8, jog: 5.5, run: 7, sprint: 10, auto: 3.2 };
   const MAX_ACC_M = 22;
   const MIN_DT = 1.2;
   const MAX_DT = 8;
@@ -12,17 +12,19 @@
     tick: null, watch: null, lastFix: null, wake: null,
     moving: 0, points: []
   };
+
   function el(id) { return document.getElementById(id); }
   function fancy(s) {
-    const m = { a:"ꜰ", b:"ʙ", c:"ᴄ", d:"ᴅ", e:"ᴇ", f:"ꜰ", g:"ɢ", h:"ʜ", i:"ɪ", j:"ᴊ", k:"ᴋ", l:"ʟ", m:"ᴍ", n:"ɴ", o:"ᴏ", p:"ᴘ", q:"ǫ", r:"ʀ", s:"s", t:"ᴛ", u:"ᴜ", v:"ᴠ", w:"ᴡ", x:"x", y:"ʏ", z:"ᴢ" };
-    m.a = "ᴀ";
+    const m = { a: "ᴀ", b: "ʙ", c: "ᴄ", d: "ᴅ", e: "ᴇ", f: "ꜰ", g: "ɢ", h: "ʜ", i: "ɪ", j: "ᴊ", k: "ᴋ", l: "ʟ", m: "ᴍ", n: "ɴ", o: "ᴏ", p: "ᴘ", q: "ǫ", r: "ʀ", s: "s", t: "ᴛ", u: "ᴜ", v: "ᴠ", w: "ᴡ", x: "x", y: "ʏ", z: "ᴢ" };
     return String(s).replace(/[A-Za-z]/g, function (ch) { return m[ch.toLowerCase()] || ch; });
   }
   function fmtClock(ms) {
     const s = Math.max(0, Math.floor(ms / 1000));
     const m = Math.floor(s / 60);
     const h = Math.floor(m / 60);
-    return h ? (h + ":" + String(m % 60).padStart(2,"0") + ":" + String(s % 60).padStart(2,"0")) : (String(m % 60).padStart(2,"0") + ":" + String(s % 60).padStart(2,"0"));
+    const ss = String(s % 60).padStart(2, "0");
+    const mm = String(m % 60).padStart(2, "0");
+    return h ? (h + ":" + mm + ":" + ss) : (mm + ":" + ss);
   }
   function runWeight() {
     const row = (typeof todayRow === "function" && todayRow()) || (typeof currentRow === "function" && currentRow()) || {};
@@ -33,7 +35,7 @@
     const s = Number(spd) || 0;
     let met = 3.5;
     if (s >= 12) met = 12.5; else if (s >= 10) met = 10; else if (s >= 8) met = 8.5; else if (s >= 6) met = 6; else if (s >= 4) met = 3.8; else if (s > 0) met = 2.5;
-    return met + (Number(inc) || 0) * 0.4;
+    return met;
   }
   function haversine(a, b) {
     const R = 6371;
@@ -45,13 +47,17 @@
   function zoneOf(spd) {
     if (spd >= 11) return "fast";
     if (spd >= 7) return "medium";
-    if (spd >= MIN_MOVE_KMH) return "slow";
+    if (spd >= 3.2) return "slow";
     return "idle";
   }
   function allRuns() {
     const list = (typeof sessions !== "undefined" && sessions) || [];
     const out = [];
-    list.forEach(function (s) { (s.runs || []).forEach(function (r) { out.push(Object.assign({ date: s.date, day: s.day }, r)); }); });
+    list.forEach(function (s) {
+      (s.runs || []).forEach(function (r) {
+        out.push(Object.assign({ date: s.date, day: s.day }, r));
+      });
+    });
     return out;
   }
   function inRange(iso, days) {
@@ -60,10 +66,9 @@
   }
   function runSnap() {
     const hours = run.elapsedMs / 3600000;
-    let km = run.distanceKm;
-    if (run.mode !== "auto") km = Math.round((run.speed * hours) * 1000) / 1000;
-    const spd = run.mode === "auto" ? run.speed : Number(run.speed) || 0;
-    const cal = Math.round(runMet(spd, run.incline) * runWeight() * hours);
+    const km = run.distanceKm;
+    const spd = Number(run.speed) || 0;
+    const cal = Math.round(runMet(spd, 0) * runWeight() * hours);
     const pace = km > 0.2 ? fmtClock(run.elapsedMs / km) : "—";
     return { km: km, cal: cal, pace: pace, spd: spd, zone: zoneOf(spd) };
   }
@@ -72,7 +77,7 @@
     if (!fig) return;
     fig.className = "run-fig zone-" + zone;
     const lab = el("runZoneLab");
-    if (lab) lab.textContent = fancy(zone === "idle" ? "stand still" : zone + " run");
+    if (lab) lab.textContent = fancy(zone === "idle" ? "waiting for gps move" : zone + " pace");
   }
   function drawGraph() {
     const c = el("runGraph");
@@ -86,7 +91,7 @@
     if (pts.length < 2) {
       ctx.fillStyle = "#9aa7b8";
       ctx.font = "12px Comfortaa,sans-serif";
-      ctx.fillText("speed graph — tap after run starts", 12, h / 2);
+      ctx.fillText("speed graph", 12, h / 2);
       return;
     }
     const maxS = Math.max(12, ...pts.map(function (p) { return p.spd; }));
@@ -133,7 +138,7 @@
       '<div class="glass run-stat"><b>' + (bestRun ? Number(bestRun.distanceKm).toFixed(2) : "—") + '</b><span>' + fancy("best run km") + '</span></div>' +
       '<div class="glass run-stat"><b>' + (bestGym ? (bestGym.date || "—") : "—") + '</b><span>' + fancy("top gym day") + '</span></div>' +
       '</div><p class="sub" style="text-align:center;margin-top:8px">' +
-      fancy("pace = min per km") + " • " + fancy("auto only counts 6+ km/h") + '</p>';
+      fancy("pace = min per km") + " • " + fancy("all modes use live gps") + '</p>';
   }
   function paintRun() {
     if (!el("livebar")) return;
@@ -155,8 +160,8 @@
     paintZone(run.state === "running" ? snap.zone : "idle");
     if (el("runStatus")) {
       el("runStatus").textContent = run.state === "running"
-        ? fancy(run.mode === "auto" ? (snap.zone === "idle" ? "gps waiting — run faster" : "auto gps live") : run.mode + " live")
-        : run.state === "paused" ? fancy("paused") : fancy("auto gps — only real run counts");
+        ? fancy(snap.zone === "idle" ? "auto gps waiting" : (run.mode === "walk" ? "morning walk gps live" : run.mode + " gps live"))
+        : run.state === "paused" ? fancy("paused") : fancy("auto gps on every mode");
     }
     if (el("runStartBtn")) el("runStartBtn").classList.toggle("hidden", run.state !== "idle");
     if (el("runPauseBtn")) el("runPauseBtn").classList.toggle("hidden", run.state !== "running");
@@ -167,13 +172,13 @@
   function persistRun() {
     if (run.state === "idle") { localStorage.removeItem(RUN_KEY); return; }
     localStorage.setItem(RUN_KEY, JSON.stringify({
-      state: run.state, mode: run.mode, speed: run.speed, incline: run.incline,
+      state: run.state, mode: run.mode, speed: run.speed,
       startedAt: run.startedAt, elapsedMs: run.elapsedMs, distanceKm: run.distanceKm,
       maxSpeed: run.maxSpeed, points: run.points.slice(-80)
     }));
   }
   function onFix(pos) {
-    if (run.state !== "running" || run.mode !== "auto") return;
+    if (run.state !== "running") return;
     const acc = pos.coords.accuracy;
     if (acc && acc > MAX_ACC_M) return;
     const fix = { lat: pos.coords.latitude, lng: pos.coords.longitude, t: Date.now() };
@@ -186,7 +191,8 @@
       const fromDist = d / dt * 3600;
       if (!gpsKmh) gpsKmh = fromDist;
       const use = Math.min(gpsKmh, fromDist);
-      if (use >= MIN_MOVE_KMH && use < 28) {
+      const need = MODE_MIN[run.mode] || MODE_MIN.auto;
+      if (use >= need && use < 28) {
         run.moving = Math.min(4, run.moving + 1);
         if (run.moving >= 2) {
           run.distanceKm += d;
@@ -220,33 +226,21 @@
     run.tick = setInterval(function () {
       if (run.state !== "running") return;
       run.elapsedMs = Date.now() - run.startedAt;
-      if (run.mode !== "auto") {
-        run.distanceKm = Math.round((Number(run.speed) * (run.elapsedMs / 3600000)) * 1000) / 1000;
-        run.points.push({ t: Date.now(), spd: Number(run.speed) || 0, km: run.distanceKm });
-        if (run.points.length > 120) run.points.shift();
-      }
       persistRun(); paintRun();
     }, 250);
   }
   function applyMode(btn) {
     document.querySelectorAll("#runModes button").forEach(function (b) { b.classList.toggle("on", b === btn); });
     run.mode = btn.dataset.mode;
-    run.speed = Number(btn.dataset.spd) || 0;
-    if (el("runSpeedIn")) el("runSpeedIn").value = run.speed;
-    if (run.mode === "incline" && el("runInclineIn") && !(Number(el("runInclineIn").value) > 0)) el("runInclineIn").value = "8";
-    run.incline = el("runInclineIn") ? Number(el("runInclineIn").value) || 0 : 0;
-    if (run.state === "running") { if (run.mode === "auto") startGps(); else stopGps(); }
+    if (run.state === "running") startGps();
     paintRun();
   }
   function startRun() {
-    run.speed = el("runSpeedIn") ? Number(el("runSpeedIn").value) || run.speed : run.speed;
-    run.incline = el("runInclineIn") ? Number(el("runInclineIn").value) || 0 : 0;
     run.state = "running";
     run.startedAt = Date.now() - run.elapsedMs;
-    persistRun(); lockScreen(); startTicker();
-    if (run.mode === "auto") startGps();
+    persistRun(); lockScreen(); startTicker(); startGps();
     paintRun(); paintSummary();
-    if (typeof toast === "function") toast(fancy(run.mode === "auto" ? "auto run — 6 km/h se upar count" : "run start"));
+    if (typeof toast === "function") toast(fancy(run.mode === "walk" ? "morning walk gps start" : "auto gps start"));
   }
   function pauseRun() {
     if (run.state !== "running") return;
@@ -257,7 +251,7 @@
   function resumeRun() {
     if (run.state !== "paused") return;
     run.state = "running"; run.startedAt = Date.now() - run.elapsedMs;
-    persistRun(); startTicker(); if (run.mode === "auto") startGps(); lockScreen(); paintRun();
+    persistRun(); startTicker(); startGps(); lockScreen(); paintRun();
     if (typeof toast === "function") toast(fancy("resume"));
   }
   async function endRun(silent) {
@@ -265,13 +259,13 @@
     if (run.state === "running") run.elapsedMs = Date.now() - run.startedAt;
     const snap = runSnap();
     const rec = {
-      mode: run.mode, source: run.mode === "auto" ? "gps" : "treadmill",
+      mode: run.mode, source: "gps",
       startedAt: new Date(Date.now() - run.elapsedMs).toISOString(),
       endedAt: new Date().toISOString(),
       durationSec: Math.round(run.elapsedMs / 1000),
       distanceKm: snap.km,
       avgSpeed: snap.km && run.elapsedMs ? Math.round((snap.km / (run.elapsedMs / 3600000)) * 10) / 10 : snap.spd,
-      maxSpeed: run.maxSpeed || snap.spd, inclinePct: run.incline, calories: snap.cal,
+      maxSpeed: run.maxSpeed || snap.spd, calories: snap.cal,
       points: run.points.slice(-80)
     };
     clearInterval(run.tick); stopGps(); unlockScreen();
@@ -285,18 +279,10 @@
       const body = formBody(false);
       body.date = typeof todayISO === "function" ? todayISO() : body.date;
       body.runs = (old.runs || []).concat([rec]);
-      if (rec.mode === "incline") {
-        body.afterTreadmillKm = Math.round(((Number(old.afterTreadmillKm) || 0) + rec.distanceKm) * 1000) / 1000;
-        body.afterTreadmillMins = Math.round((Number(old.afterTreadmillMins) || 0) + rec.durationSec / 60);
-        body.afterTreadmillSpeed = rec.avgSpeed;
-        body.afterTreadmillIncline = rec.inclinePct || old.afterTreadmillIncline;
-        body.afterTreadmillTime = typeof nowTime === "function" ? nowTime() : body.afterTreadmillTime;
-      } else {
-        body.beforeTreadmillKm = Math.round(((Number(old.beforeTreadmillKm) || 0) + rec.distanceKm) * 1000) / 1000;
-        body.beforeTreadmillMins = Math.round((Number(old.beforeTreadmillMins) || 0) + rec.durationSec / 60);
-        body.beforeTreadmillSpeed = rec.avgSpeed;
-        body.beforeTreadmillTime = typeof nowTime === "function" ? nowTime() : body.beforeTreadmillTime;
-      }
+      body.beforeTreadmillKm = Math.round(((Number(old.beforeTreadmillKm) || 0) + rec.distanceKm) * 1000) / 1000;
+      body.beforeTreadmillMins = Math.round((Number(old.beforeTreadmillMins) || 0) + rec.durationSec / 60);
+      body.beforeTreadmillSpeed = rec.avgSpeed;
+      body.beforeTreadmillTime = typeof nowTime === "function" ? nowTime() : body.beforeTreadmillTime;
       const data = await api("/api/session", { method: "PUT", body: body });
       sessions = data.sessions || [];
       if (typeof fillForm === "function") fillForm();
@@ -310,13 +296,11 @@
     try {
       const raw = localStorage.getItem(RUN_KEY); if (!raw) return;
       const s = JSON.parse(raw);
-      run.mode = s.mode || "auto"; run.speed = Number(s.speed) || 0; run.incline = Number(s.incline) || 0;
+      run.mode = s.mode || "auto"; run.speed = Number(s.speed) || 0;
       run.elapsedMs = Number(s.elapsedMs) || 0; run.distanceKm = Number(s.distanceKm) || 0; run.maxSpeed = Number(s.maxSpeed) || 0;
       run.points = Array.isArray(s.points) ? s.points : [];
-      if (el("runSpeedIn")) el("runSpeedIn").value = run.speed;
-      if (el("runInclineIn")) el("runInclineIn").value = run.incline;
       document.querySelectorAll("#runModes button").forEach(function (b) { b.classList.toggle("on", b.dataset.mode === run.mode); });
-      if (s.state === "running") { run.state = "running"; run.startedAt = Date.now() - run.elapsedMs; startTicker(); lockScreen(); if (run.mode === "auto") startGps(); }
+      if (s.state === "running") { run.state = "running"; run.startedAt = Date.now() - run.elapsedMs; startTicker(); lockScreen(); startGps(); }
       else if (s.state === "paused") run.state = "paused";
       paintRun();
     } catch (e) {}
@@ -352,10 +336,8 @@
   }
   document.addEventListener("visibilitychange", function () {
     if (document.visibilityState === "visible" && run.state === "running") {
-      lockScreen();
-      if (run.mode === "auto") startGps();
-      run.startedAt = Date.now() - run.elapsedMs;
-      startTicker();
+      lockScreen(); startGps();
+      run.startedAt = Date.now() - run.elapsedMs; startTicker();
     }
   });
   (function ensureUI() {
@@ -377,16 +359,31 @@
         tm.parentNode.parentNode.insertBefore(row, tm.parentNode.nextSibling);
       }
     }
-    var ovHtml = '<div class="wrap" style="padding-top:8px"><div class="row" style="justify-content:space-between"><p class="badge">' + fancy("live run") + '</p><button class="btn ghost" id="runCloseBtn" type="button">' + fancy("close") + '</button></div><div class="run-fig zone-idle" id="runFig">🏃</div><p class="sub" id="runZoneLab" style="text-align:center">' + fancy("stand still") + '</p><div class="run-clock" id="runClock">00:00</div><p class="sub" id="runStatus" style="text-align:center">' + fancy("auto gps — only real run counts") + '</p><div class="modes" id="runModes"><button type="button" data-mode="auto" data-spd="0" class="on">' + fancy("auto gps") + '</button><button type="button" data-mode="walk" data-spd="4.5">' + fancy("walk") + ' 4.5</button><button type="button" data-mode="jog" data-spd="6.5">' + fancy("jog") + ' 6.5</button><button type="button" data-mode="run" data-spd="8.5">' + fancy("run") + ' 8.5</button><button type="button" data-mode="incline" data-spd="5.5">' + fancy("incline") + ' 5.5</button><button type="button" data-mode="sprint" data-spd="11">' + fancy("sprint") + ' 11</button></div><div class="grid"><div><label>' + fancy("speed km/h") + '</label><input id="runSpeedIn" value="0"></div><div><label>' + fancy("incline") + ' %</label><input id="runInclineIn" value="0"></div></div><div class="run-stats"><div class="glass run-stat"><b id="ovKm">0.00</b><span>' + fancy("km") + '</span></div><div class="glass run-stat"><b id="ovSpd">0.0</b><span>' + fancy("km/h") + '</span></div><div class="glass run-stat"><b id="ovCal">0</b><span>' + fancy("kcal") + '</span></div><div class="glass run-stat"><b id="ovPace">—</b><span>' + fancy("pace min/km") + '</span></div></div><canvas id="runGraph" width="640" height="160"></canvas><p class="sub" id="graphHint" style="text-align:center">' + fancy("tap graph for speed + time") + '</p><div id="runSum"></div><div class="run-acts"><button class="btn ok full" id="runStartBtn" type="button">' + fancy("start") + '</button><div class="row"><button class="btn ghost full hidden" id="runPauseBtn" type="button">' + fancy("stop") + '</button><button class="btn full hidden" id="runResumeBtn" type="button">' + fancy("resume") + '</button></div><button class="btn danger full hidden" id="runEndBtn" type="button">' + fancy("end run") + '</button></div></div>';
+    var ovHtml = '<div class="wrap" style="padding-top:8px"><div class="row" style="justify-content:space-between"><p class="badge">' + fancy("live run") + '</p><button class="btn ghost" id="runCloseBtn" type="button">' + fancy("close") + '</button></div>' +
+      '<div class="run-fig zone-idle" id="runFig">🏃</div><p class="sub" id="runZoneLab" style="text-align:center">' + fancy("waiting for gps move") + '</p>' +
+      '<div class="run-clock" id="runClock">00:00</div><p class="sub" id="runStatus" style="text-align:center">' + fancy("auto gps on every mode") + '</p>' +
+      '<div class="modes" id="runModes"><button type="button" data-mode="auto" class="on">' + fancy("auto gps") + '</button><button type="button" data-mode="walk">' + fancy("morning walk") + '</button><button type="button" data-mode="jog">' + fancy("jog") + '</button><button type="button" data-mode="run">' + fancy("run") + '</button><button type="button" data-mode="sprint">' + fancy("sprint") + '</button></div>' +
+      '<div class="run-stats"><div class="glass run-stat"><b id="ovKm">0.00</b><span>' + fancy("km") + '</span></div><div class="glass run-stat"><b id="ovSpd">0.0</b><span>' + fancy("km/h") + '</span></div><div class="glass run-stat"><b id="ovCal">0</b><span>' + fancy("kcal") + '</span></div><div class="glass run-stat"><b id="ovPace">—</b><span>' + fancy("pace min/km") + '</span></div></div>' +
+      '<canvas id="runGraph" width="640" height="160"></canvas><p class="sub" id="graphHint" style="text-align:center">' + fancy("tap graph for speed + time") + '</p>' +
+      '<div id="runSum"></div>' +
+      '<div class="run-acts"><button class="btn ok full" id="runStartBtn" type="button">' + fancy("start") + '</button><div class="row"><button class="btn ghost full hidden" id="runPauseBtn" type="button">' + fancy("stop") + '</button><button class="btn full hidden" id="runResumeBtn" type="button">' + fancy("resume") + '</button></div><button class="btn danger full hidden" id="runEndBtn" type="button">' + fancy("end run") + '</button></div></div>';
     var ov = el("runOv");
-    if (!ov) { ov = document.createElement("div"); ov.className = "run-ov"; ov.id = "runOv"; document.body.appendChild(ov); }
+    if (!ov) {
+      ov = document.createElement("div");
+      ov.className = "run-ov";
+      ov.id = "runOv";
+      document.body.appendChild(ov);
+    }
+    var incCard = el("afterTreadmillIncline");
+    if (incCard) {
+      var card = incCard.closest(".glass");
+      if (card) card.style.display = "none";
+    }
     ov.innerHTML = ovHtml;
   })();
   if (el("runOpenBtn")) el("runOpenBtn").onclick = function () { el("runOv").classList.add("on"); paintRun(); paintSummary(); };
   if (el("runCloseBtn")) el("runCloseBtn").onclick = function () { el("runOv").classList.remove("on"); };
   if (el("runModes")) el("runModes").addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) applyMode(b); });
-  if (el("runSpeedIn")) el("runSpeedIn").addEventListener("input", function () { run.speed = Number(el("runSpeedIn").value) || 0; paintRun(); });
-  if (el("runInclineIn")) el("runInclineIn").addEventListener("input", function () { run.incline = Number(el("runInclineIn").value) || 0; paintRun(); });
   if (el("runStartBtn")) el("runStartBtn").onclick = startRun;
   if (el("runPauseBtn")) el("runPauseBtn").onclick = pauseRun;
   if (el("runResumeBtn")) el("runResumeBtn").onclick = resumeRun;
