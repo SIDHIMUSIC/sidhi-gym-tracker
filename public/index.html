@@ -60,11 +60,9 @@
     .cal .c.done { background:#1e8a55; color:#fff; }
     .cal .c.today { outline:2px solid var(--gold); }
     .creator { margin-top:18px; padding-top:14px; border-top:1px solid var(--line); text-align:center; }
-    .sig { font-family:Pacifico,cursive; font-size:16px; }
     .badge { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--gold); margin:0 0 8px; }
     .kv { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line); }
     .btn.logout { min-height:42px; border-radius:999px; padding:8px 14px; display:inline-flex; align-items:center; gap:7px; background:linear-gradient(135deg,#ff6b6b,#ff8bd4); border:0; color:#fff; font:700 11px Comfortaa,sans-serif; }
-    @media (prefers-reduced-motion:reduce){*{animation:none !important}}
   </style>
 </head>
 <body>
@@ -111,7 +109,7 @@
     </div>
     <div class="glass card">
       <h2>weight</h2>
-      <canvas id="homeChart" width="640" height="180" style="width:100%;height:140px"></canvas>
+      <canvas id="homeChart" width="640" height="220" style="width:100%;height:180px"></canvas>
     </div>
   </div>
   <div id="view-workout" class="hidden">
@@ -133,7 +131,7 @@
   <div id="view-progress" class="hidden">
     <div class="glass card"><h2>calendar</h2><div class="row" style="justify-content:space-between;margin-bottom:10px"><button class="btn ghost" id="calPrev" style="min-height:40px">‹</button><b id="calTitle"></b><button class="btn ghost" id="calNext" style="min-height:40px">›</button></div><div class="cal" id="cal"></div></div>
     <div class="glass card"><h2>goal weight</h2><div class="grid"><div><label>target kg</label><input id="goalWeight" inputmode="decimal" /></div><div style="display:flex;align-items:flex-end"><button class="btn full" id="goalBtn" style="min-height:48px">save goal</button></div></div></div>
-    <div class="glass card"><h2>weight graph</h2><canvas id="progChart" width="640" height="200" style="width:100%;height:160px"></canvas></div>
+    <div class="glass card"><h2>weight graph</h2><canvas id="progChart" width="640" height="240" style="width:100%;height:200px"></canvas></div>
   </div>
   <div id="view-history" class="hidden">
     <div class="glass card"><h2>history</h2><div style="overflow:auto"><table><thead><tr><th>date</th><th>workout</th><th>weight</th><th></th></tr></thead><tbody id="hist"></tbody></table></div></div>
@@ -152,4 +150,5 @@
 <script src="hist-ui.js?v=2"></script>
 <script src="ex-guide.js?v=3"></script>
 <script src="extra-ui.js?v=1"></script>
+<script src="graph-foot.js?v=1"></script>
 </body></html>
