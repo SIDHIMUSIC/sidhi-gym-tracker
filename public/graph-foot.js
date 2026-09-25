@@ -13,7 +13,6 @@
   }
   var foot = document.getElementById("sidhiFoot");
   if (foot) foot.innerHTML = "<b>SIDHI GYM TRACKER</b><div>Built with ❤️ by Harry</div>" + logos() + "<div>© 2026 SIDHI GYM TRACKER. All rights reserved.</div>";
-
   function shortDate(iso) {
     var p = String(iso || "").split("-");
     return (p[2] || "") + "/" + (p[1] || "");
@@ -86,9 +85,10 @@
       bind(document.getElementById("progChart"));
     }
   }
-  if (!document.querySelector('script[src*="timing-fix.js"]')) {
+  ["timing-fix.js?v=2", "tabs-fix.js?v=1"].forEach(function (src) {
+    if (document.querySelector('script[src*="' + src.split("?")[0] + '"]')) return;
     var t = document.createElement("script");
-    t.src = "timing-fix.js?v=2";
+    t.src = src;
     document.body.appendChild(t);
-  }
+  });
 })();
