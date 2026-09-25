@@ -8,11 +8,84 @@
   if (!document.getElementById("gf-css")) {
     var s = document.createElement("style");
     s.id = "gf-css";
-    s.textContent = ".soc{display:flex;justify-content:center;gap:16px;margin:10px 0;flex-wrap:wrap}.soc a{display:flex;flex-direction:column;align-items:center;gap:4px;color:#cfe8ff;text-decoration:none;font-size:11px;min-width:64px}.soc svg{display:block}.wgt-card{margin-top:8px;font-size:13px;color:#ffe4b5}";
+    s.textContent = ".soc{display:flex;justify-content:center;gap:16px;margin:10px 0;flex-wrap:wrap}.soc a{display:flex;flex-direction:column;align-items:center;gap:4px;color:#cfe8ff;text-decoration:none;font-size:11px;min-width:64px}.wgt-card{margin-top:8px;font-size:13px;color:#ffe4b5}";
     document.head.appendChild(s);
   }
   var foot = document.getElementById("sidhiFoot");
   if (foot) foot.innerHTML = "<b>SIDHI GYM TRACKER</b><div>Built with ❤️ by Harry</div>" + logos() + "<div>© 2026 SIDHI GYM TRACKER. All rights reserved.</div>";
+
+  function shortDate(iso) {
+    var p = String(iso || "").split("-");
+    return (p[2] || "") + "/" + (p[1] || "");
+  }
+  function drawReal(canvas, rows) {
+    if (!canvas || !canvas.getContext) return;
+    var ctx = canvas.getContext("2d");
+    var w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    var pts = (rows || []).filter(function (s) { return s.entryWeight != null && isFinite(Number(s.entryWeight)); }).slice().sort(function (a, b) { return a.date.localeCompare(b.date); }).slice(-10);
+    canvas._wpts = pts;
+    if (!pts.length) {
+      ctx.fillStyle = "#9aa7b8"; ctx.font = "22px Comfortaa,sans-serif";
+      ctx.fillText("No weight data yet", 24, h / 2);
+      return;
+    }
+    var ys = pts.map(function (p) { return Number(p.entryWeight); });
+    var min = Math.min.apply(null, ys) - 0.4;
+    var max = Math.max.apply(null, ys) + 0.4;
+    var left = 52, right = 16, top = 28, bot = 36;
+    ctx.strokeStyle = "rgba(255,255,255,.08)"; ctx.lineWidth = 1;
+    for (var g = 0; g < 4; g++) {
+      var gy = top + g * (h - top - bot) / 3;
+      ctx.beginPath(); ctx.moveTo(left, gy); ctx.lineTo(w - right, gy); ctx.stroke();
+      ctx.fillStyle = "#9aa7b8"; ctx.font = "16px Comfortaa,sans-serif";
+      ctx.fillText((max - g * (max - min) / 3).toFixed(1), 6, gy + 5);
+    }
+    function X(i) { return left + i * ((w - left - right) / Math.max(pts.length - 1, 1)); }
+    function Y(v) { return h - bot - ((v - min) / (max - min || 1)) * (h - top - bot); }
+    ctx.beginPath();
+    pts.forEach(function (p, i) { var x = X(i), y = Y(Number(p.entryWeight)); if (!i) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
+    ctx.strokeStyle = "#f0c27a"; ctx.lineWidth = 3; ctx.stroke();
+    pts.forEach(function (p, i) {
+      var x = X(i), y = Y(Number(p.entryWeight));
+      ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2);
+      ctx.fillStyle = "#63e2b3"; ctx.fill();
+      ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.fillStyle = "#ffe4b5"; ctx.font = "13px Comfortaa,sans-serif"; ctx.textAlign = "center";
+      ctx.fillText(Number(p.entryWeight).toFixed(1), x, y - 10);
+      ctx.fillStyle = "#9aa7b8"; ctx.font = "12px Comfortaa,sans-serif";
+      ctx.fillText(shortDate(p.date), x, h - 10);
+    });
+    ctx.textAlign = "left";
+  }
+  function bind(canvas) {
+    if (!canvas || canvas.dataset.real) return;
+    canvas.dataset.real = "1";
+    function hit(ev) {
+      var pts = canvas._wpts || []; if (!pts.length) return;
+      var r = canvas.getBoundingClientRect();
+      var cx = ((ev.touches ? ev.touches[0].clientX : ev.clientX) - r.left) * (canvas.width / r.width);
+      var i = Math.round((cx - 52) / ((canvas.width - 68) / Math.max(pts.length - 1, 1)));
+      i = Math.max(0, Math.min(pts.length - 1, i));
+      var p = pts[i], prev = i ? pts[i - 1] : null;
+      var d = prev ? Math.round((Number(p.entryWeight) - Number(prev.entryWeight)) * 1000) / 1000 : null;
+      var box = canvas.parentNode.querySelector(".wgt-card") || document.createElement("div");
+      box.className = "wgt-card";
+      box.textContent = p.date + " • " + Number(p.entryWeight).toFixed(1) + " kg" + (d != null ? " • " + (d > 0 ? "+" : "") + d + " kg" : "");
+      canvas.parentNode.appendChild(box);
+    }
+    canvas.addEventListener("click", hit);
+    canvas.addEventListener("touchstart", hit, { passive: true });
+  }
+  if (typeof drawChart === "function") {
+    drawChart = function (canvas, rows) { drawReal(canvas, rows); bind(canvas); };
+    if (typeof sessions !== "undefined") {
+      drawReal(document.getElementById("homeChart"), sessions);
+      bind(document.getElementById("homeChart"));
+      drawReal(document.getElementById("progChart"), sessions);
+      bind(document.getElementById("progChart"));
+    }
+  }
   if (!document.querySelector('script[src*="timing-fix.js"]')) {
     var t = document.createElement("script");
     t.src = "timing-fix.js?v=2";
