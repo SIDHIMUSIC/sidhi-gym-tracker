@@ -29,7 +29,10 @@ const User = model(
       username: { type: String, unique: true, required: true, lowercase: true, trim: true },
       salt: { type: String, required: true },
       passHash: { type: String, required: true },
-      goalWeight: Number
+      goalWeight: Number,
+      displayName: { type: String, default: "" },
+      gender: { type: String, default: "" },
+      schedule: { type: Object, default: {} }
     },
     { timestamps: true }
   )
@@ -85,17 +88,25 @@ const GymSession = model("GymSession", gymSchema);
 function hashPass(pass, salt) {
   return crypto.scryptSync(String(pass), salt, 32).toString("hex");
 }
-
 function num(v) {
   if (v === "" || v == null) return null;
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
 }
-
 function dayFromDate(dateStr) {
   return DAYS[new Date(dateStr + "T12:00:00").getDay()];
 }
-
+function publicUser(u) {
+  if (!u) return { username: "", displayName: "", gender: "", goalWeight: null, schedule: {}, createdAt: null };
+  return {
+    username: u.username,
+    displayName: u.displayName || "",
+    gender: u.gender || "",
+    goalWeight: u.goalWeight != null ? u.goalWeight : null,
+    schedule: u.schedule && typeof u.schedule === "object" ? u.schedule : {},
+    createdAt: u.createdAt || null
+  };
+}
 function withDiff(rows) {
   const oldest = rows.slice().sort((a, b) => a.date.localeCompare(b.date));
   const extra = {};
@@ -116,7 +127,6 @@ function withDiff(rows) {
     .sort((a, b) => b.date.localeCompare(a.date))
     .map((row) => Object.assign(row, extra[row.date] || {}));
 }
-
 async function connectDB() {
   if (mongoose.connection.readyState === 1) return;
   if (!MONGODB_URI) {
@@ -130,17 +140,11 @@ async function connectDB() {
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
-
 app.use(async (req, res, next) => {
   if (req.path === "/" || !req.path.startsWith("/api")) return next();
-  try {
-    await connectDB();
-    next();
-  } catch (err) {
-    res.status(500).json({ error: "Mongo connect nahi hua. Vercel me MONGODB_URI check karo." });
-  }
+  try { await connectDB(); next(); }
+  catch (err) { res.status(500).json({ error: "Mongo connect nahi hua. Vercel me MONGODB_URI check karo." }); }
 });
-
 async function auth(req, res, next) {
   const header = req.headers.authorization || "";
   const token = header.replace(/^Bearer\s+/i, "").trim();
@@ -159,6 +163,8 @@ app.post("/api/register", async (req, res) => {
   try {
     const username = String(req.body.username || req.body.user || "").trim().toLowerCase();
     const pass = String(req.body.password || req.body.pass || "");
+    const displayName = String(req.body.displayName || req.body.name || "").trim().slice(0, 40);
+    const gender = String(req.body.gender || "").toLowerCase();
     if (!/^[a-z0-9_]{2,32}$/.test(username)) {
       return res.status(400).json({ error: "Username 2-32, sirf letters/numbers/_ " });
     }
@@ -166,14 +172,16 @@ app.post("/api/register", async (req, res) => {
     const exists = await User.findOne({ username });
     if (exists) return res.status(409).json({ error: "Ye username pehle se hai. Login karo." });
     const salt = crypto.randomBytes(16).toString("hex");
-    await User.create({ username, salt, passHash: hashPass(pass, salt) });
-    const token = crypto.randomBytes(24).toString("hex");
-    await Token.create({
-      token,
+    await User.create({
       username,
-      exp: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      salt,
+      passHash: hashPass(pass, salt),
+      displayName,
+      gender: gender === "female" ? "female" : gender === "male" ? "male" : ""
     });
-    res.json({ ok: true, username, token });
+    const token = crypto.randomBytes(24).toString("hex");
+    await Token.create({ token, username, exp: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) });
+    res.json({ ok: true, username, token, displayName, gender: gender === "female" ? "female" : gender === "male" ? "male" : "" });
   } catch (err) {
     if (err && err.code === 11000) return res.status(409).json({ error: "Ye username pehle se hai." });
     res.status(500).json({ error: "Register fail" });
@@ -190,12 +198,8 @@ app.post("/api/login", async (req, res) => {
       return res.status(401).json({ error: "Galat username / password" });
     }
     const token = crypto.randomBytes(24).toString("hex");
-    await Token.create({
-      token,
-      username,
-      exp: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-    });
-    res.json({ ok: true, username, token });
+    await Token.create({ token, username, exp: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) });
+    res.json({ ok: true, username, token, displayName: row.displayName || "", gender: row.gender || "" });
   } catch (err) {
     res.status(500).json({ error: "Login fail" });
   }
@@ -203,17 +207,20 @@ app.post("/api/login", async (req, res) => {
 
 app.get("/api/me", auth, async (req, res) => {
   const u = await User.findOne({ username: req.gymUser }).lean();
-  res.json({ ok: true, username: req.gymUser, goalWeight: u && u.goalWeight != null ? u.goalWeight : null });
+  res.json(Object.assign({ ok: true }, publicUser(u)));
 });
 
 app.patch("/api/me", auth, async (req, res) => {
-  const goalWeight = num(req.body.goalWeight);
-  const u = await User.findOneAndUpdate(
-    { username: req.gymUser },
-    { $set: { goalWeight } },
-    { new: true }
-  ).lean();
-  res.json({ ok: true, username: req.gymUser, goalWeight: u && u.goalWeight != null ? u.goalWeight : null });
+  const set = {};
+  if (Object.prototype.hasOwnProperty.call(req.body, "goalWeight")) set.goalWeight = num(req.body.goalWeight);
+  if (Object.prototype.hasOwnProperty.call(req.body, "displayName")) set.displayName = String(req.body.displayName || "").trim().slice(0, 40);
+  if (Object.prototype.hasOwnProperty.call(req.body, "gender")) {
+    const g = String(req.body.gender || "").toLowerCase();
+    set.gender = g === "female" ? "female" : g === "male" ? "male" : "";
+  }
+  if (req.body.schedule && typeof req.body.schedule === "object") set.schedule = req.body.schedule;
+  const u = await User.findOneAndUpdate({ username: req.gymUser }, { $set: set }, { new: true }).lean();
+  res.json(Object.assign({ ok: true }, publicUser(u)));
 });
 
 app.get("/api/sessions", auth, async (req, res) => {
@@ -225,11 +232,13 @@ app.put("/api/session", auth, async (req, res) => {
   const date = String(req.body.date || "").slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: "Date galat" });
   const day = dayFromDate(date);
+  const u = await User.findOne({ username: req.gymUser }).lean();
+  const custom = u && u.schedule && u.schedule[day];
   const doc = {
     owner: req.gymUser,
     date,
     day,
-    workoutName: SPLIT[day],
+    workoutName: custom || SPLIT[day],
     entryTime: req.body.entryTime || "",
     entryWeight: num(req.body.entryWeight),
     after1HourTime: req.body.after1HourTime || "",
@@ -254,7 +263,7 @@ app.put("/api/session", auth, async (req, res) => {
     runs: Array.isArray(req.body.runs) ? req.body.runs : [],
     finished: !!req.body.finished
   };
-  const saved = await GymSession.findOneAndUpdate(
+  await GymSession.findOneAndUpdate(
     { owner: req.gymUser, date },
     { $set: doc },
     { upsert: true, new: true, setDefaultsOnInsert: true }
@@ -280,11 +289,6 @@ module.exports = app;
 
 if (!process.env.VERCEL) {
   connectDB()
-    .then(() => {
-      app.listen(PORT, () => console.log("Sidhi Gym http://localhost:" + PORT));
-    })
-    .catch((err) => {
-      console.error("Mongo fail:", err.message);
-      process.exit(1);
-    });
+    .then(() => { app.listen(PORT, () => console.log("Sidhi Gym http://localhost:" + PORT)); })
+    .catch((err) => { console.error("Mongo fail:", err.message); process.exit(1); });
 }
