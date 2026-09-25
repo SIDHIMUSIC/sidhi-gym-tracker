@@ -7,115 +7,139 @@
   const IMG = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/";
   function X(n, s, y, g) { return { n: n, s: s, y: y, g: g }; }
 
-  const DAY1 = [
-    X("Bench press", "3 x 10-12", "rT7DgCr-3pg", "Barbell_Bench_Press_-_Medium_Grip"),
-    X("Incline press", "3 x 10-12", "j9wMfLwGeKs", "Barbell_Incline_Bench_Press_-_Medium_Grip"),
-    X("Flyes machine or cable", "3 x 10-12", "Iwe6AmxVf7o", "Butterfly"),
-    X("Triceps rope pushdown", "3 x 10-12", "2-LAMcrL1Ko", "Triceps_Pushdown"),
-    X("Overhead triceps extension", "3 x 10-12", "Yb3jIHsLoMA", "Standing_Dumbbell_Triceps_Extension"),
-    X("Skull crushers", "3 x 10-12", "d_K6VPHiAOE", "EZ-Bar_Skullcrusher")
-  ];
-  const DAY2 = [
-    X("Pull ups", "3 x 10-12", "eGo4IYlbE5g", "Pullups"),
-    X("Barbell bent over row", "3 x 10-12", "kBWAon7ItEc", "Bent_Over_Barbell_Row"),
-    X("Seated cable row", "3 x 10-12", "GZbfZ033f74", "Seated_Cable_Rows"),
-    X("Barbell curl", "3 x 10-12", "kwG2ipFRgfo", "Barbell_Curl"),
-    X("Dumbbell hammer curl", "3 x 10-12", "zC3nLlEvin4", "Hammer_Curls"),
-    X("Preacher curl", "3 x 10-12", "fPDF-a58XsA", "Preacher_Curl"),
-    X("Hanging leg raises", "3 x 15", "Pr1ieGZ5atk", "Hanging_Leg_Raise"),
-    X("Russian twists", "3 x 20", "wkD8rjkodUI", "Russian_Twist")
-  ];
-  const DAY3 = [
-    X("Dumbbell shoulder press", "3 x 10-12", "qEwKCR5JCog", "Dumbbell_Shoulder_Press"),
-    X("Lateral raises", "3 x 10-12", "3VcKaXpzqRo", "Side_Lateral_Raise"),
-    X("Rear delt fly", "3 x 10-12", "nlkFXl2LPGY", "Seated_Bent-Over_Rear_Delt_Raise"),
-    X("Barbell squats", "3 x 10-12", "ultWZbUMPL8", "Barbell_Full_Squat"),
-    X("Leg press", "3 x 10-12", "IZqWIMhr9yM", "Leg_Press"),
-    X("Leg extension", "3 x 10-12", "YyvSfVjQeL0", "Leg_Extensions"),
-    X("Crunches", "3 x 20", "Xyd_fa5zoEU", "Crunches"),
-    X("Leg raises", "3 x 15", "JB2oyawG9KI", "Flat_Bench_Lying_Leg_Raise"),
-    X("Plank", "3 x 30 sec", "ASdvN_XEl_c", "Plank")
-  ];
-  const DAY4 = [
-    X("Barbell bench press", "3 x 10-12", "rT7DgCr-3pg", "Barbell_Bench_Press_-_Medium_Grip"),
-    X("Incline dumbbell press", "3 x 10-12", "8iPEnn-ltC8", "Incline_Dumbbell_Press"),
-    X("Chest dips", "3 x 10-12", "2z8JmcrW-As", "Dips_-_Chest_Version"),
-    X("Triceps pushdown", "3 x 10-12", "2-LAMcrL1Ko", "Triceps_Pushdown"),
-    X("Overhead triceps extension", "3 x 10-12", "Yb3jIHsLoMA", "Standing_Dumbbell_Triceps_Extension"),
-    X("Triceps kickbacks", "3 x 10-12", "6SS6K3lAwJA", "Tricep_Dumbbell_Kickback"),
-    X("Reverse crunches", "3 x 15", "uwjvDIdCqic", "Reverse_Crunch"),
-    X("Bicycle crunches", "3 x 20", "9FGilxCbdz8", "Air_Bike"),
-    X("Plank", "3 x 30 sec", "ASdvN_XEl_c", "Plank")
-  ];
-  const DAY5 = [
-    X("Pull ups", "3 x 10-12", "eGo4IYlbE5g", "Pullups"),
-    X("Barbell bent over row", "3 x 10-12", "kBWAon7ItEc", "Bent_Over_Barbell_Row"),
-    X("Seated cable row", "3 x 10-12", "GZbfZ033f74", "Seated_Cable_Rows"),
-    X("Barbell curl", "3 x 10-12", "kwG2ipFRgfo", "Barbell_Curl"),
-    X("Dumbbell hammer curl", "3 x 10-12", "zC3nLlEvin4", "Hammer_Curls"),
-    X("Preacher curl", "3 x 10-12", "fPDF-a58XsA", "Preacher_Curl"),
-    X("Crunches", "3 x 20", "Xyd_fa5zoEU", "Crunches"),
-    X("Leg raises", "3 x 15", "JB2oyawG9KI", "Flat_Bench_Lying_Leg_Raise"),
-    X("Plank", "3 x 30 sec", "ASdvN_XEl_c", "Plank")
-  ];
-  const DAY6 = [
-    X("Dumbbell shoulder press", "3 x 10-12", "qEwKCR5JCog", "Dumbbell_Shoulder_Press"),
-    X("Dumbbell lateral raise", "3 x 12-15", "3VcKaXpzqRo", "Side_Lateral_Raise"),
-    X("Rear delt fly", "3 x 12-15", "nlkFXl2LPGY", "Seated_Bent-Over_Rear_Delt_Raise"),
-    X("Barbell back squat", "3 x 8-12", "ultWZbUMPL8", "Barbell_Full_Squat"),
-    X("Dumbbell walking lunge", "3 x 10-12 each", "D7Ka5PKM7b8", "Dumbbell_Lunges"),
-    X("Romanian deadlift", "3 x 8-12", "2SHsk9AzdjA", "Romanian_Deadlift")
-  ];
+  const KEYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  const WEEKDAY = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
   const PLAN = {
-    Monday: { title: "Day 1 — Chest & Triceps", list: DAY1 },
-    Tuesday: { title: "Day 2 — Back & Biceps + Abs 2", list: DAY2 },
-    Wednesday: { title: "Day 3 — Shoulders & Legs + Abs 1", list: DAY3 },
-    Thursday: { title: "Day 4 — Chest & Triceps + Abs 2", list: DAY4 },
-    Friday: { title: "Day 5 — Back & Biceps + Abs 1", list: DAY5 },
-    Saturday: { title: "Day 6 — Shoulders & Legs", list: DAY6 },
-    Sunday: { title: "Rest day", list: [] }
+    Monday: {
+      title: "Day 1 — Chest + Triceps",
+      list: [
+        X("Barbell Bench Press", "3 × 6–10", "rT7DgCr-3pg", "Barbell_Bench_Press_-_Medium_Grip"),
+        X("Incline Dumbbell Press", "3 × 8–12", "8iPEnn-ltC8", "Incline_Dumbbell_Press"),
+        X("Cable / Machine Chest Fly", "3 × 10–15", "Iwe6AmxVf7o", "Butterfly"),
+        X("Rope Triceps Pushdown", "3 × 10–15", "2-LAMcrL1Ko", "Triceps_Pushdown"),
+        X("Overhead Triceps Extension", "3 × 10–15", "Yb3jIHsLoMA", "Standing_Dumbbell_Triceps_Extension"),
+        X("Skull Crushers", "2 × 10–12", "d_K6VPHiAOE", "EZ-Bar_Skullcrusher")
+      ]
+    },
+    Tuesday: {
+      title: "Day 2 — Back + Biceps",
+      list: [
+        X("Pull-Ups / Lat Pulldown", "3 × 6–12", "CAwf7n6Luuc", "Wide-Grip_Lat_Pulldown"),
+        X("Barbell Bent-Over Row", "3 × 6–10", "kBWAon7ItEc", "Bent_Over_Barbell_Row"),
+        X("Seated Cable Row", "3 × 8–12", "GZbfZ033f74", "Seated_Cable_Rows"),
+        X("Face Pull", "2 × 12–15", "rep-xVEkqas", "Face_Pull"),
+        X("Barbell Curl", "3 × 8–12", "kwG2ipFRgfo", "Barbell_Curl"),
+        X("Dumbbell Hammer Curl", "3 × 10–12", "zC3nLlEvin4", "Hammer_Curls")
+      ]
+    },
+    Wednesday: {
+      title: "Day 3 — Shoulders + Legs",
+      list: [
+        X("Dumbbell Shoulder Press", "3 × 8–12", "qEwKCR5JCog", "Dumbbell_Shoulder_Press"),
+        X("Dumbbell Lateral Raise", "3 × 12–15", "3VcKaXpzqRo", "Side_Lateral_Raise"),
+        X("Rear Delt Fly", "3 × 12–15", "nlkFXl2LPGY", "Seated_Bent-Over_Rear_Delt_Raise"),
+        X("Barbell Back Squat", "3 × 6–10", "ultWZbUMPL8", "Barbell_Full_Squat"),
+        X("Leg Press", "3 × 10–12", "IZqWIMhr9yM", "Leg_Press"),
+        X("Romanian Deadlift", "3 × 8–12", "2SHsk9AzdjA", "Romanian_Deadlift"),
+        X("Leg Extension", "2 × 12–15", "YyvSfVjQeL0", "Leg_Extensions"),
+        X("Lying / Seated Leg Curl", "2 × 10–15", "1Tq3QMfoSdU", "Lying_Leg_Curls"),
+        X("Standing / Seated Calf Raise", "3 × 12–20", "gwLzBJYoNlA", "Standing_Calf_Raises")
+      ]
+    },
+    Thursday: {
+      title: "Day 4 — Chest + Triceps",
+      list: [
+        X("Incline Barbell / DB Press", "3 × 8–12", "8iPEnn-ltC8", "Incline_Dumbbell_Press"),
+        X("Flat Dumbbell Press", "3 × 8–12", "VmB1G1K7vJU", "Dumbbell_Bench_Press"),
+        X("Chest Dips", "3 × 8–12", "2z8JmcrW-As", "Dips_-_Chest_Version"),
+        X("Cable Fly", "2 × 12–15", "Iwe6AmxVf7o", "Cable_Crossover"),
+        X("Triceps Rope Pushdown", "3 × 10–15", "2-LAMcrL1Ko", "Triceps_Pushdown"),
+        X("Overhead Triceps Extension", "3 × 10–15", "Yb3jIHsLoMA", "Standing_Dumbbell_Triceps_Extension")
+      ]
+    },
+    Friday: {
+      title: "Day 5 — Back + Biceps",
+      list: [
+        X("Lat Pulldown / Pull-Ups", "3 × 8–12", "CAwf7n6Luuc", "Wide-Grip_Lat_Pulldown"),
+        X("Chest-Supported Row", "3 × 8–12", "0GHzTIekh3k", "Bent_Over_Two-Dumbbell_Row"),
+        X("Seated Cable Row", "3 × 10–12", "GZbfZ033f74", "Seated_Cable_Rows"),
+        X("Straight-Arm Pulldown", "2 × 12–15", "wcDX9kU77V0", "Straight-Arm_Pulldown"),
+        X("Preacher Curl", "3 × 10–12", "fPDF-a58XsA", "Preacher_Curl"),
+        X("Hammer Curl", "3 × 10–12", "zC3nLlEvin4", "Hammer_Curls")
+      ]
+    },
+    Saturday: {
+      title: "Day 6 — Shoulders + Legs",
+      list: [
+        X("Dumbbell Shoulder Press", "3 × 8–12", "qEwKCR5JCog", "Dumbbell_Shoulder_Press"),
+        X("Cable / DB Lateral Raise", "3 × 12–15", "3VcKaXpzqRo", "Side_Lateral_Raise"),
+        X("Reverse Pec Deck / Rear Delt", "3 × 12–15", "nlkFXl2LPGY", "Seated_Bent-Over_Rear_Delt_Raise"),
+        X("Hack Squat / Back Squat", "3 × 8–12", "rYyoWFXtNak", "Hack_Squat"),
+        X("Leg Press", "3 × 10–15", "IZqWIMhr9yM", "Leg_Press"),
+        X("Romanian Deadlift", "3 × 8–12", "2SHsk9AzdjA", "Romanian_Deadlift"),
+        X("Leg Curl", "3 × 10–15", "1Tq3QMfoSdU", "Lying_Leg_Curls"),
+        X("Leg Extension", "2 × 12–15", "YyvSfVjQeL0", "Leg_Extensions"),
+        X("Calf Raise", "3 × 12–20", "gwLzBJYoNlA", "Standing_Calf_Raises")
+      ]
+    },
+    Sunday: { title: "Day 7 — Rest / Recovery", list: [] }
   };
 
   if (typeof SPLIT === "object") {
-    SPLIT.Monday = "Day 1 Chest & Triceps";
-    SPLIT.Tuesday = "Day 2 Back & Biceps";
-    SPLIT.Wednesday = "Day 3 Shoulders & Legs";
-    SPLIT.Thursday = "Day 4 Chest & Triceps";
-    SPLIT.Friday = "Day 5 Back & Biceps";
-    SPLIT.Saturday = "Day 6 Shoulders & Legs";
-    SPLIT.Sunday = "Off";
+    KEYS.forEach(function (k) { SPLIT[k] = PLAN[k].title; });
   }
 
-  function dayName(dateStr) {
-    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    const iso = dateStr || (typeof todayISO === "function" ? todayISO() : new Date().toISOString().slice(0, 10));
-    return days[new Date(iso + "T12:00:00").getDay()];
+  let pick = null;
+  function todayKey() {
+    const iso = typeof todayISO === "function" ? todayISO() : new Date().toISOString().slice(0, 10);
+    return WEEKDAY[new Date(iso + "T12:00:00").getDay()];
+  }
+  function dateKey(dateStr) {
+    if (!dateStr) return todayKey();
+    return WEEKDAY[new Date(dateStr + "T12:00:00").getDay()];
+  }
+  function activeKey(forDate) {
+    return pick || dateKey(forDate) || todayKey();
   }
   function watch(id) { return "https://www.youtube.com/watch?v=" + id; }
   function pic(g, i) { return IMG + g + "/" + i + ".jpg"; }
-  function cardHtml(ex) {
+
+  function pills(active) {
+    return '<div class="ex-days">' + KEYS.map(function (k, i) {
+      const on = k === active ? " on" : "";
+      return '<button type="button" class="ex-day' + on + '" data-day="' + k + '">D' + (i + 1) + '</button>';
+    }).join("") + "</div>";
+  }
+  function cardHtml(ex, i) {
     return '<a class="ex-card" href="' + watch(ex.y) + '" target="_blank" rel="noopener">' +
+      '<span class="ex-no">' + (i + 1) + "</span>" +
       '<span class="ex-anim"><img class="a0" src="' + pic(ex.g, 0) + '" alt="' + ex.n + '"><img class="a1" src="' + pic(ex.g, 1) + '" alt=""></span>' +
       '<div><b>' + fancy(ex.n) + '</b><span>' + fancy(ex.s) + ' • ' + fancy("tap video") + '</span></div></a>';
   }
+
   function renderBox(box, dateStr) {
     if (!box) return;
-    const day = dayName(dateStr);
-    const plan = PLAN[day] || PLAN.Sunday;
-    if (day === "Sunday") {
-      box.innerHTML = '<p class="badge">' + fancy("today plan") + '</p><h3>' + fancy("sunday rest") + '</h3><p class="sub">' + fancy("walk optional. gym off.") + '</p>';
+    const key = activeKey(dateStr);
+    const plan = PLAN[key] || PLAN.Sunday;
+    const today = todayKey();
+    const head =
+      '<p class="badge">' + fancy(key === today ? "today plan" : "plan preview") + ' • ' + fancy(key) + '</p>' +
+      pills(key) +
+      '<h3>' + fancy(plan.title) + '</h3>';
+    if (!plan.list.length) {
+      box.innerHTML = head + '<p class="sub">' + fancy("rest and recovery. walk optional.") + '</p>';
+      bindDays(box);
       return;
     }
-    box.innerHTML =
-      '<p class="badge">' + fancy("your gym plan") + ' • ' + fancy(day) + '</p>' +
-      '<h3>' + fancy(plan.title) + '</h3>' +
-      '<p class="sub">' + fancy("same exercises. animated photo. tap for video.") + '</p>' +
-      '<div class="ex-list">' + plan.list.map(cardHtml).join('') + '</div>' +
+    box.innerHTML = head +
+      '<p class="sub">' + fancy(plan.list.length + " exercises. animated form. tap video.") + '</p>' +
+      '<div class="ex-list">' + plan.list.map(cardHtml).join("") + "</div>" +
       '<button class="btn ok full" type="button" data-exfill style="margin-top:12px">' + fancy("put list in notes") + '</button>';
+    bindDays(box);
     const fill = box.querySelector("[data-exfill]");
     if (fill) fill.onclick = function () {
-      const text = plan.list.map(function (e) { return e.n + " " + e.s; }).join("\n");
+      const text = plan.title + "\n" + plan.list.map(function (e, i) { return (i + 1) + ". " + e.n + "  " + e.s; }).join("\n");
       const ta = el("after1HourNote");
       if (!ta) {
         if (typeof showTab === "function") showTab("workout");
@@ -126,20 +150,31 @@
       if (typeof toast === "function") toast(fancy("exercises added"));
     };
   }
-  function paintGuide() {
-    const date = el("date") && el("date").value ? el("date").value : (typeof todayISO === "function" ? todayISO() : "");
-    renderBox(el("exGuideHome"), typeof todayISO === "function" ? todayISO() : date);
-    renderBox(el("exGuideWork"), date);
-    const day = dayName(typeof todayISO === "function" ? todayISO() : date);
-    if (el("homeSplit") && PLAN[day]) el("homeSplit").textContent = PLAN[day].title;
-    if (el("splitLine") && el("date") && PLAN[dayName(el("date").value)]) el("splitLine").textContent = PLAN[dayName(el("date").value)].title;
+  function bindDays(box) {
+    box.querySelectorAll("[data-day]").forEach(function (b) {
+      b.onclick = function () {
+        pick = b.getAttribute("data-day");
+        paintGuide();
+      };
+    });
   }
+
+  function paintGuide() {
+    const date = el("date") && el("date").value ? el("date").value : "";
+    renderBox(el("exGuideHome"), pick ? null : (typeof todayISO === "function" ? todayISO() : date));
+    renderBox(el("exGuideWork"), pick ? null : date);
+    const key = activeKey(date);
+    if (el("homeSplit") && PLAN[todayKey()]) el("homeSplit").textContent = PLAN[todayKey()].title;
+    if (el("splitLine") && PLAN[dateKey(date)]) el("splitLine").textContent = PLAN[dateKey(date)].title;
+  }
+
   if (!document.getElementById("ex-guide-css")) {
     const st = document.createElement("style");
     st.id = "ex-guide-css";
-    st.textContent = ".ex-box h3{margin:4px 0 8px;font:800 17px Syne,sans-serif;color:#ffe4b5}.ex-list{display:flex;flex-direction:column;gap:10px;margin-top:10px}.ex-card{display:flex;gap:12px;align-items:center;padding:8px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:inherit;text-decoration:none}.ex-anim{position:relative;width:110px;height:86px;flex:0 0 110px;border-radius:14px;overflow:hidden;background:#111}.ex-anim img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.ex-anim .a0{animation:exSwap 1.4s steps(1) infinite}.ex-anim .a1{opacity:0;animation:exSwap2 1.4s steps(1) infinite}@keyframes exSwap{0%,49%{opacity:1}50%,100%{opacity:0}}@keyframes exSwap2{0%,49%{opacity:0}50%,100%{opacity:1}}.ex-card b{display:block;font-size:14px}.ex-card span{display:block;margin-top:3px;font-size:11px;color:#9aa7b8}";
+    st.textContent = ".ex-box h3{margin:8px 0;font:800 16px Syne,sans-serif;color:#ffe4b5}.ex-days{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 4px}.ex-day{min-height:36px;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;font:800 11px Comfortaa,sans-serif}.ex-day.on{background:linear-gradient(135deg,#ff9a9e,#f0c27a);color:#120d06;border:0}.ex-list{display:flex;flex-direction:column;gap:10px;margin-top:10px}.ex-card{display:flex;gap:10px;align-items:center;padding:8px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:inherit;text-decoration:none}.ex-no{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font:800 11px Syne,sans-serif;background:#f0c27a;color:#120d06;flex:0 0 22px}.ex-anim{position:relative;width:104px;height:80px;flex:0 0 104px;border-radius:14px;overflow:hidden;background:#111}.ex-anim img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.ex-anim .a0{animation:exSwap 1.4s steps(1) infinite}.ex-anim .a1{opacity:0;animation:exSwap2 1.4s steps(1) infinite}@keyframes exSwap{0%,49%{opacity:1}50%,100%{opacity:0}}@keyframes exSwap2{0%,49%{opacity:0}50%,100%{opacity:1}}.ex-card b{display:block;font-size:13px}.ex-card span{display:block;margin-top:3px;font-size:11px;color:#9aa7b8}";
     document.head.appendChild(st);
   }
+
   function ensureBox(afterId, boxId) {
     if (el(boxId)) return;
     const after = el(afterId);
