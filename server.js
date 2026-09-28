@@ -151,6 +151,8 @@ async function auth(req, res, next) {
   if (!token) return res.status(401).json({ error: "Login chahiye" });
   const row = await Token.findOne({ token, exp: { $gt: new Date() } });
   if (!row) return res.status(401).json({ error: "Login expire. Phir se login karo." });
+  row.exp = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  await row.save();
   req.gymUser = row.username;
   next();
 }
@@ -198,7 +200,7 @@ app.post("/api/login", async (req, res) => {
       return res.status(401).json({ error: "Galat username / password" });
     }
     const token = crypto.randomBytes(24).toString("hex");
-    await Token.create({ token, username, exp: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) });
+    await Token.create({ token, username, exp: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) });
     res.json({ ok: true, username, token, displayName: row.displayName || "", gender: row.gender || "" });
   } catch (err) {
     res.status(500).json({ error: "Login fail" });
