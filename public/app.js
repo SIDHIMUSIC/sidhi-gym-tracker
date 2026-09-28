@@ -72,17 +72,7 @@ function currentRow() {
 function todayRow() {
   return sessions.find(function (s) { return s.date === todayISO(); });
 }
-
-function setSeg(id, v) {
-  document.querySelectorAll("#" + id + " button").forEach(function (b) {
-    b.classList.toggle("on", b.dataset.v === (v || "walk"));
-  });
-}
-function getSeg(id) {
-  const on = document.querySelector("#" + id + " button.on");
-  return on ? on.dataset.v : "walk";
-}
-
+function fillVal(id, v) { $(id).value = v != null && v !== "" ? v : ""; }
 function paintDay() {
   const date = $("date").value || todayISO();
   const day = dayFromDate(date);
@@ -91,7 +81,6 @@ function paintDay() {
   $("splitLine").classList.toggle("off", day === "Sunday");
   $("offNote").classList.toggle("hidden", day !== "Sunday");
 }
-
 function paintResult(row) {
   const box = $("resultText");
   const sub = $("resultSub");
@@ -101,7 +90,7 @@ function paintResult(row) {
   if (start == null) {
     box.className = "today-box";
     box.textContent = "Add gym start weight";
-    sub.textContent = "Start vs last treadmill weight.";
+    sub.textContent = "Start vs end weight.";
   } else if (end == null) {
     box.className = "today-box";
     box.textContent = "Start " + start + " kg";
@@ -130,22 +119,12 @@ function paintResult(row) {
       (row.beforeTreadmillMins != null ? " • " + row.beforeTreadmillMins + " min" : "") +
       (row.beforeTreadmillSpeed != null ? " • " + row.beforeTreadmillSpeed + " km/h" : ""));
   }
-  if (row && (row.afterTreadmillKm || row.afterTreadmillMins || row.afterTreadmillSpeed)) {
-    bits.push("Incline: " +
-      (row.afterTreadmillKm != null ? row.afterTreadmillKm + " km" : "") +
-      (row.afterTreadmillMins != null ? " • " + row.afterTreadmillMins + " min" : "") +
-      (row.afterTreadmillSpeed != null ? " • " + row.afterTreadmillSpeed + " km/h" : "") +
-      (row.afterTreadmillIncline != null ? " • " + row.afterTreadmillIncline + "%" : ""));
-  }
   tm.textContent = bits.join("  |  ");
 }
-
-function fillVal(id, v) { $(id).value = v != null && v !== "" ? v : ""; }
-
 function fillForm() {
   const row = currentRow() || {};
   paintDay();
-  $("entryTime").value = row.entryTime || nowTime();
+  $("entryTime").value = row.entryTime || "";
   fillVal("entryWeight", row.entryWeight);
   fillVal("after1HourTime", row.after1HourTime);
   fillVal("after1HourNote", row.after1HourNote);
@@ -163,32 +142,19 @@ function fillForm() {
   fillVal("afterTreadmillNote", row.afterTreadmillNote);
   paintResult(row);
 }
-
 function paintHist() {
   $("hist").innerHTML = sessions.map(function (s) {
     const start = kg(s.entryWeight);
     const end = kg(s.afterTreadmillWeight);
     let line = start != null ? start + " kg" : "-";
-    let delta = "-";
-    if (start != null && end != null) {
-      const d = Math.round((end - start) * 1000) / 1000;
-      line = start + " → " + end;
-      delta = d < 0 ? Math.abs(d) + " kg down" : d > 0 ? d + " kg up" : "same";
-    }
-    const km = (Number(s.beforeTreadmillKm) || 0) + (Number(s.afterTreadmillKm) || 0);
-    return "<tr><td>" + s.date + "<div class=\"sub\" style=\"margin:0\">" + (s.day || "") + "</div></td><td>" +
-      (s.workoutName || "") + (s.finished ? "<div class=\"sub\" style=\"margin:0\">done</div>" : "") +
-      "</td><td>" + line + "<div class=\"sub\" style=\"margin:0\">" + delta + (km ? " • " + km + " km" : "") + "</div></td><td>" +
-      "<button class=\"btn ghost\" data-open=\"" + s.date + "\">σᴘєɴ</button> " +
-      "<button class=\"btn danger\" data-del=\"" + s.date + "\">X</button></td></tr>";
-  }).join("") || "<tr><td colspan=\"4\" class=\"sub\">No sessions yet</td></tr>";
+    if (start != null && end != null) line = start + " → " + end;
+    return "<tr><td>" + s.date + "</td><td>" + (s.workoutName || "") + "</td><td>" + line + "</td><td></td></tr>";
+  }).join("") || "";
 }
-
 function durationText(row) {
   if (!row || !row.entryTime || !row.afterTreadmillTime) {
     const m = (Number(row && row.beforeTreadmillMins) || 0) + (Number(row && row.afterTreadmillMins) || 0);
-    if (!m) return "—";
-    return m + " min";
+    return m ? m + " min" : "—";
   }
   const a = row.entryTime.split(":").map(Number);
   const b = row.afterTreadmillTime.split(":").map(Number);
@@ -196,7 +162,6 @@ function durationText(row) {
   if (mins < 0) mins += 24 * 60;
   return Math.floor(mins / 60) + "h " + (mins % 60) + "m";
 }
-
 function streakCount() {
   const map = {};
   sessions.forEach(function (s) { map[s.date] = s; });
@@ -206,26 +171,23 @@ function streakCount() {
     const iso = d.toISOString().slice(0, 10);
     const day = d.getDay();
     const row = map[iso];
-    if (day === 0) { n++; }
+    if (day === 0) n++;
     else if (row && row.finished) n++;
     else break;
     d.setDate(d.getDate() - 1);
   }
   return n;
 }
-
 function weekDelta() {
   const withW = sessions.filter(function (s) { return kg(s.entryWeight) != null; }).slice().sort(function (a, b) { return a.date.localeCompare(b.date); });
   if (!withW.length) return null;
   const last = kg(withW[withW.length - 1].entryWeight);
   const from = new Date(todayISO() + "T12:00:00");
   from.setDate(from.getDate() - 7);
-  const iso = from.toISOString().slice(0, 10);
-  const old = withW.filter(function (s) { return s.date <= iso; }).pop();
+  const old = withW.filter(function (s) { return s.date <= from.toISOString().slice(0, 10); }).pop();
   if (!old) return { last: last, diff: null };
   return { last: last, diff: Math.round((last - kg(old.entryWeight)) * 1000) / 1000 };
 }
-
 function drawChart(canvas, rows) {
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
@@ -239,12 +201,6 @@ function drawChart(canvas, rows) {
   const ys = pts.map(function (p) { return kg(p.entryWeight); });
   const min = Math.min.apply(null, ys) - 0.4;
   const max = Math.max.apply(null, ys) + 0.4;
-  ctx.strokeStyle = "rgba(255,255,255,.08)";
-  ctx.lineWidth = 1;
-  for (let i = 0; i < 4; i++) {
-    const y = 20 + i * (h - 40) / 3;
-    ctx.beginPath(); ctx.moveTo(20, y); ctx.lineTo(w - 10, y); ctx.stroke();
-  }
   ctx.beginPath();
   pts.forEach(function (p, i) {
     const x = 24 + i * ((w - 50) / Math.max(pts.length - 1, 1));
@@ -252,30 +208,17 @@ function drawChart(canvas, rows) {
     if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
   });
   ctx.strokeStyle = "#f0c27a"; ctx.lineWidth = 3; ctx.stroke();
-  pts.forEach(function (p, i) {
-    const x = 24 + i * ((w - 50) / Math.max(pts.length - 1, 1));
-    const y = h - 20 - ((kg(p.entryWeight) - min) / (max - min || 1)) * (h - 40);
-    ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2);
-    ctx.fillStyle = "#63e2b3"; ctx.fill();
-  });
 }
-
 function paintHome() {
   const row = todayRow();
   const wd = weekDelta();
   const latest = kg(row && (row.afterTreadmillWeight || row.entryWeight)) || (wd && wd.last);
   $("hello").textContent = greet() + ", " + username + "!";
   $("homeKg").textContent = latest != null ? latest + " kg" : "— kg";
-  if (wd && wd.diff != null) {
-    $("homeWeek").textContent = (wd.diff < 0 ? "↓ " + Math.abs(wd.diff) : wd.diff > 0 ? "↑ " + wd.diff : "same") + " kg this week";
-    $("homeWeek").className = "sub " + (wd.diff < 0 ? "delta down" : wd.diff > 0 ? "delta up" : "");
-  } else $("homeWeek").textContent = "this week";
+  $("homeWeek").textContent = "this week";
   $("stStreak").textContent = streakCount();
   $("stWorkouts").textContent = sessions.filter(function (s) { return s.finished; }).length;
-  if (goalWeight && latest != null) {
-    const left = Math.round((latest - goalWeight) * 10) / 10;
-    $("stGoal").textContent = (left > 0 ? left + " kg" : "Done");
-  } else $("stGoal").textContent = "—";
+  $("stGoal").textContent = "—";
   $("homeSplit").textContent = SPLIT[dayFromDate(todayISO())];
   $("homeW").textContent = latest != null ? latest + " kg" : "—";
   $("homeDur").textContent = durationText(row);
@@ -283,41 +226,22 @@ function paintHome() {
   $("homeTm").textContent = km ? km + " km" : "—";
   drawChart($("homeChart"), sessions);
 }
-
 function paintCal() {
   const y = calCursor.getFullYear(), m = calCursor.getMonth();
   $("calTitle").textContent = calCursor.toLocaleString("en-IN", { month: "long", year: "numeric" });
-  const first = new Date(y, m, 1).getDay();
-  const days = new Date(y, m + 1, 0).getDate();
-  const map = {};
-  sessions.forEach(function (s) { map[s.date] = s; });
-  const today = todayISO();
-  let html = "SMTWTFS".split("").map(function (d) { return "<div class=\"d\">" + d + "</div>"; }).join("");
-  for (let i = 0; i < first; i++) html += "<div></div>";
-  for (let d = 1; d <= days; d++) {
-    const iso = y + "-" + String(m + 1).padStart(2, "0") + "-" + String(d).padStart(2, "0");
-    const day = new Date(iso + "T12:00:00").getDay();
-    const row = map[iso];
-    let cls = "c";
-    if (row && row.finished) cls += " done";
-    else if (day === 0 || (row && row.workoutName === "Off")) cls += " rest";
-    if (iso === today) cls += " today";
-    html += "<div class=\"" + cls + "\" data-day=\"" + iso + "\">" + d + "</div>";
-  }
-  $("cal").innerHTML = html;
+  $("cal").innerHTML = "";
 }
-
 function showTab(name) {
   ["home", "workout", "progress", "history"].forEach(function (t) {
-    $("view-" + t).classList.toggle("hidden", t !== name);
-    document.querySelector('.tab[data-tab="' + t + '"]').classList.toggle("on", t === name);
+    const v = $("view-" + t); if (v) v.classList.toggle("hidden", t !== name);
+    const tab = document.querySelector('.tab[data-tab="' + t + '"]');
+    if (tab) tab.classList.toggle("on", t === name);
   });
   if (name === "home") paintHome();
   if (name === "workout") fillForm();
   if (name === "progress") { paintCal(); drawChart($("progChart"), sessions); if (goalWeight) $("goalWeight").value = goalWeight; }
   if (name === "history") paintHist();
 }
-
 function formBody(finished) {
   const old = currentRow() || {};
   return {
@@ -343,7 +267,6 @@ function formBody(finished) {
     finished: finished || !!old.finished
   };
 }
-
 async function save(finished) {
   try {
     const data = await api("/api/session", { method: "PUT", body: formBody(finished) });
@@ -354,7 +277,6 @@ async function save(finished) {
     toast(finished ? "Workout done" : "Saved");
   } catch (err) { toast(err.message); }
 }
-
 function openApp() {
   $("gate").classList.add("hidden");
   $("app").classList.remove("hidden");
@@ -362,14 +284,12 @@ function openApp() {
   if (!$("date").value) $("date").value = todayISO();
   showTab("home");
 }
-
 function setAuth(data) {
   token = data.token;
   username = data.username;
   localStorage.setItem(TOKEN_KEY, token);
   localStorage.setItem(USER_KEY, username);
 }
-
 async function afterAuth() {
   const me = await api("/api/me");
   goalWeight = me.goalWeight;
@@ -377,48 +297,26 @@ async function afterAuth() {
   sessions = data.sessions || [];
   openApp();
 }
-
-async function register() {
-  const user = $("loginUser").value.trim().toLowerCase();
-  const pass = $("loginPass").value;
-  if (!user || !pass) return toast("Enter username and password");
-  if (user.length < 2) return toast("Username too short");
-  if (pass.length < 4) return toast("Password min 4");
-  try {
-    await api("/api/register", { method: "POST", body: { username: user, password: pass } });
-    token = "";
-    username = "";
-    $("loginPass").value = "";
-    toast("Account created. Now login.");
-  } catch (err) { toast(err.message); }
-}
 async function login() {
   const user = $("loginUser").value.trim().toLowerCase();
   const pass = $("loginPass").value;
   if (!user || !pass) return toast("Enter username and password");
-  if (user.length < 2) return toast("Username too short");
-  if (pass.length < 4) return toast("Password min 4");
   try {
     setAuth(await api("/api/login", { method: "POST", body: { username: user, password: pass } }));
     toast("Login ok");
     await afterAuth();
   } catch (err) { toast(err.message); }
 }
-
 $("loginBtn").onclick = login;
-$("setupBtn").onclick = register;
+$("setupBtn").onclick = function () {};
 $("loginPass").addEventListener("keydown", function (e) { if (e.key === "Enter") login(); });
 $("logoutBtn").onclick = function () {
-  token = "";
-  username = "";
-  sessions = [];
+  token = ""; username = ""; sessions = [];
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
   $("app").classList.add("hidden");
   $("tabbar").classList.add("hidden");
   $("gate").classList.remove("hidden");
-  $("loginUser").value = "";
-  $("loginPass").value = "";
   toast("Logged out");
 };
 $("date").addEventListener("change", fillForm);
@@ -428,27 +326,8 @@ $("homeFinish").onclick = function () { showTab("workout"); };
 document.querySelectorAll(".tab").forEach(function (b) {
   b.onclick = function () { showTab(b.dataset.tab); };
 });
-$("hist").addEventListener("click", async function (e) {
-  const open = e.target.dataset.open;
-  const del = e.target.dataset.del;
-  if (open) { $("date").value = open; showTab("workout"); }
-  if (del) {
-    if (!confirm("Delete " + del + "?")) return;
-    try {
-      const data = await api("/api/session/" + del, { method: "DELETE" });
-      sessions = data.sessions || [];
-      paintHist(); paintHome();
-    } catch (err) { toast(err.message); }
-  }
-});
 $("calPrev").onclick = function () { calCursor.setMonth(calCursor.getMonth() - 1); paintCal(); };
 $("calNext").onclick = function () { calCursor.setMonth(calCursor.getMonth() + 1); paintCal(); };
-$("cal").addEventListener("click", function (e) {
-  const d = e.target.dataset.day;
-  if (!d) return;
-  $("date").value = d;
-  showTab("workout");
-});
 $("goalBtn").onclick = async function () {
   try {
     const data = await api("/api/me", { method: "PATCH", body: { goalWeight: nOrNull("goalWeight") } });
@@ -457,14 +336,8 @@ $("goalBtn").onclick = async function () {
     paintHome();
   } catch (err) { toast(err.message); }
 };
-
 (async function boot() {
   if (!token) return;
   try { await afterAuth(); }
-  catch (e) {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
-    token = "";
-    username = "";
-  }
+  catch (e) { toast("Reconnect ho raha hai"); }
 })();
