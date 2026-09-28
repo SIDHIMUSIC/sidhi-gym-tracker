@@ -4,6 +4,15 @@
     const m = {a:"ᴀ",b:"ʙ",c:"ᴄ",d:"ᴅ",e:"ᴇ",f:"ꜰ",g:"ɢ",h:"ʜ",i:"ɪ",j:"ᴊ",k:"ᴋ",l:"ʟ",m:"ᴍ",n:"ɴ",o:"ᴏ",p:"ᴘ",q:"ǫ",r:"ʀ",s:"s",t:"ᴛ",u:"ᴜ",v:"ᴠ",w:"ᴡ",x:"x",y:"ʏ",z:"ᴢ"};
     return String(s).replace(/[A-Za-z]/g, function (ch) { return m[ch.toLowerCase()] || ch; });
   }
+  function amp(t) {
+    if (!t) return "";
+    var p = String(t).split(":");
+    var h = Number(p[0]); var m = (p[1] || "00").slice(0, 2);
+    if (!Number.isFinite(h)) return t;
+    var ap = h >= 12 ? "PM" : "AM";
+    var h12 = h % 12; if (!h12) h12 = 12;
+    return h12 + ":" + m + " " + ap;
+  }
   if (!document.getElementById("hist-ui-css")) {
     var st = document.createElement("style");
     st.id = "hist-ui-css";
@@ -17,13 +26,12 @@
       '<div class="glass card hist-card"><h2>' + fancy("running history") + '</h2><div class="hist-list" id="histRun"></div></div>';
   }
   function kgSafe(v) {
-    if (typeof kg === "function") return kg(v);
     var n = Number(v);
-    return Number.isFinite(n) && n > 0 ? n : null;
+    return Number.isFinite(n) && n > 0 ? Math.round(n * 1000) / 1000 : null;
   }
   function gymClock(s) {
-    var a = s.entryTime || "";
-    var b = s.exitTime || s.afterTreadmillTime || "";
+    var a = amp(s.entryTime);
+    var b = amp(s.exitTime || s.afterTreadmillTime);
     if (a && b) return a + " → " + b;
     if (a) return "in " + a;
     if (b) return "out " + b;
@@ -33,7 +41,7 @@
     var gymBox = el("histGym");
     var runBox = el("histRun");
     if (!gymBox || !runBox) return;
-    var list = (typeof sessions !== "undefined" && sessions) || [];
+    var list = ((typeof sessions !== "undefined" && sessions) || []).slice().sort(function (a, b) { return String(b.date).localeCompare(String(a.date)); });
     if (!list.length) {
       gymBox.innerHTML = '<p class="sub">' + fancy("no gym sessions yet") + "</p>";
       runBox.innerHTML = '<p class="sub">' + fancy("no runs yet") + "</p>";
@@ -42,25 +50,24 @@
     gymBox.innerHTML = list.map(function (s) {
       var start = kgSafe(s.entryWeight);
       var end = kgSafe(s.afterTreadmillWeight);
-      var line = start != null ? start + " kg" : "—";
+      var line = "—";
       var delta = "";
       if (start != null && end != null) {
         var d = Math.round((end - start) * 1000) / 1000;
         line = start + " → " + end + " kg";
         delta = d < 0 ? Math.abs(d) + " kg down" : d > 0 ? d + " kg up" : "same";
-      }
+      } else if (start != null) line = "start " + start + " kg";
+      else if (end != null) line = "end " + end + " kg";
       var clock = gymClock(s);
       return '<div class="hist-item"><div><b>' + fancy(s.workoutName || "gym") + '</b><div class="sub">' + s.date + (s.day ? " • " + s.day : "") + (clock ? " • " + clock : "") + (s.finished ? " • done" : "") + '</div><div class="sub">' + line + (delta ? " • " + delta : "") + '</div></div><div class="hist-acts"><button class="btn ghost" data-open="' + s.date + '">' + fancy("open") + '</button><button class="btn danger" data-del="' + s.date + '">X</button></div></div>';
     }).join("");
     var runCards = [];
     list.forEach(function (s) {
-      var runs = Array.isArray(s.runs) ? s.runs : [];
-      runs.forEach(function (r) {
+      (Array.isArray(s.runs) ? s.runs : []).forEach(function (r) {
         var km = Number(r.distanceKm) || 0;
         var min = Math.round((Number(r.durationSec) || 0) / 60);
         var cal = Math.round(Number(r.calories) || 0);
-        var spd = r.avgSpeed != null ? r.avgSpeed : r.maxSpeed;
-        runCards.push('<div class="hist-item"><div><b>' + fancy(r.mode || "run") + '</b><div class="sub">' + s.date + '</div><div class="sub">' + km.toFixed(2) + " km • " + min + " min • " + cal + " kcal" + (spd != null ? " • " + spd + " km/h" : "") + '</div></div><div class="hist-acts"><button class="btn ghost" data-open="' + s.date + '">' + fancy("open") + "</button></div></div>");
+        runCards.push('<div class="hist-item"><div><b>' + fancy(r.mode || "run") + '</b><div class="sub">' + s.date + '</div><div class="sub">' + km.toFixed(2) + " km • " + min + " min • " + cal + " kcal</div></div><div class="hist-acts"><button class="btn ghost" data-open="' + s.date + '">' + fancy("open") + "</button></div></div>");
       });
     });
     runBox.innerHTML = runCards.join("") || '<p class="sub">' + fancy("no runs yet") + "</p>";
@@ -68,29 +75,23 @@
   if (typeof paintHist === "function") {
     var _paintHist = paintHist;
     paintHist = function () { try { _paintHist(); } catch (e) {} paintSplitHist(); };
-  } else {
-    window.paintHist = paintSplitHist;
-  }
+  } else window.paintHist = paintSplitHist;
   if (view) {
     view.addEventListener("click", async function (e) {
       var btn = e.target.closest("button");
       if (!btn) return;
-      var open = btn.dataset.open;
-      var del = btn.dataset.del;
-      if (open && typeof showTab === "function") {
-        if (el("date")) el("date").value = open;
+      if (btn.dataset.open && typeof showTab === "function") {
+        if (el("date")) el("date").value = btn.dataset.open;
         showTab("workout");
       }
-      if (del) {
-        if (!confirm("Delete " + del + "?")) return;
+      if (btn.dataset.del) {
+        if (!confirm("Delete " + btn.dataset.del + "?")) return;
         try {
-          var data = await api("/api/session/" + del, { method: "DELETE" });
+          var data = await api("/api/session/" + btn.dataset.del, { method: "DELETE" });
           sessions = data.sessions || [];
           if (typeof paintHist === "function") paintHist();
           if (typeof paintHome === "function") paintHome();
-        } catch (err) {
-          if (typeof toast === "function") toast(err.message);
-        }
+        } catch (err) { if (typeof toast === "function") toast(err.message); }
       }
     });
   }
