@@ -8,15 +8,13 @@
   if (!document.getElementById("gf-css")) {
     var s = document.createElement("style");
     s.id = "gf-css";
-    s.textContent = ".soc{display:flex;justify-content:center;gap:16px;margin:10px 0;flex-wrap:wrap}.soc a{display:flex;flex-direction:column;align-items:center;gap:4px;color:#cfe8ff;text-decoration:none;font-size:11px;min-width:64px}.head-actions .btn.run,#runOpenBtn,.livebar{display:none!important}#tabbar .tab:focus,#tabbar .tab:focus-visible{outline:none!important;box-shadow:none!important}";
+    s.textContent = ".soc{display:flex;justify-content:center;gap:16px;margin:10px 0;flex-wrap:wrap}.soc a{display:flex;flex-direction:column;align-items:center;gap:4px;color:#cfe8ff;text-decoration:none;font-size:11px;min-width:64px}.head-actions .btn.run,#runOpenBtn,.livebar{display:none!important}";
     document.head.appendChild(s);
   }
   var foot = document.getElementById("sidhiFoot");
   if (foot) foot.innerHTML = "<b>SIDHI GYM TRACKER</b><div>Built with ❤️ by Harry</div>" + logos() + "<div>© 2026 SIDHI GYM TRACKER. All rights reserved.</div>";
-  ["timing-fix.js?v=3", "tabs-fix.js?v=1", "split-zone.js?v=2", "persist-ui.js?v=2", "ex-split.js?v=1"].forEach(function (src) {
+  ["timing-fix.js?v=3","tabs-fix.js?v=1","split-zone.js?v=2","persist-ui.js?v=2","ex-split.js?v=1","month-ui.js?v=1"].forEach(function (src) {
     if (document.querySelector('script[src*="' + src.split("?")[0] + '"]')) return;
-    var t = document.createElement("script");
-    t.src = src;
-    document.body.appendChild(t);
+    var t = document.createElement("script"); t.src = src; document.body.appendChild(t);
   });
 })();
