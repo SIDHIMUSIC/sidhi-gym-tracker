@@ -4,14 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Sidhi Gym • by Harry</title>
-  <meta name="theme-color" content="#070b12" />
+  <meta name="theme-color" content="#02040c" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;700&family=Pacifico&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
   <style>
-    :root { --gold:#f0c27a; --gold2:#c9923d; --mint:#63e2b3; --text:#f6f1e8; --muted:#9aa7b8; --line:rgba(255,255,255,.14); --bg:#070b12; }
-    * { box-sizing: border-box; }
+    :root { --gold:#f0c27a; --gold2:#c9923d; --mint:#63e2b3; --text:#f6f1e8; --muted:#9aa7b8; --line:rgba(255,255,255,.14); --bg:#02040c; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body { margin:0; min-height:100%; min-height:100dvh; color:var(--text); font-family:Comfortaa,system-ui,sans-serif; background:var(--bg); }
     #fx { position:fixed; inset:0; z-index:0; pointer-events:none; }
     .layer { position:relative; z-index:1; }
@@ -41,14 +41,20 @@
     table { width:100%; border-collapse:collapse; font-size:14px; }
     th,td { text-align:left; padding:10px 6px; border-bottom:1px solid var(--line); }
     .hidden { display:none !important; }
-    .gate { min-height:100vh; min-height:100dvh; display:grid; place-items:center; padding:22px 14px; }
-    .gate .card { width:min(440px,100%); }
+    .gate { min-height:100vh; min-height:100dvh; display:grid; place-items:center; padding:22px 14px; background:#02040c; }
+    .gate .card { width:min(400px,100%); padding:24px 20px 18px; background:rgba(6,10,22,.78); border:1px solid rgba(56,189,248,.22); }
+    #gate .row.auth-actions { flex-direction:column; gap:12px; margin-top:16px; }
+    #gate #loginBtn, #gate #setupBtn { width:100%; flex:none; }
+    #gate #loginBtn { min-height:58px; background:linear-gradient(180deg,#bae6fd,#38bdf8 55%,#0ea5e9); color:#041018; letter-spacing:.16em; text-transform:uppercase; font:800 15px Syne,Comfortaa,sans-serif; }
+    #gate #setupBtn { min-height:52px; background:rgba(8,16,32,.35); color:#e0f2fe; }
+    #gate #gateHint { text-align:center; margin:0 0 14px; color:#93c5fd; }
+    #gate .forgot { display:inline-flex; align-items:center; gap:6px; margin:8px 0 0; padding:0; border:0; background:none; color:#93c5fd; font:700 12px Comfortaa,sans-serif; }
     .step { width:28px; height:28px; border-radius:50%; display:inline-grid; place-items:center; font:800 13px Syne,sans-serif; color:#120d06; background:linear-gradient(180deg,var(--gold),var(--gold2)); margin-right:8px; }
     h2 { margin:0 0 10px; font-size:17px; display:flex; align-items:center; color:#ffe4b5; }
     .tabbar { position:fixed; left:10px; right:10px; bottom:8px; z-index:15; display:flex; justify-content:space-around; padding:8px 6px calc(8px + env(safe-area-inset-bottom)); background:rgba(10,16,24,.72); backdrop-filter:blur(18px); border:1px solid var(--line); border-radius:28px; }
     .tab { flex:1; background:none; border:0; color:var(--muted); font:700 10px Comfortaa,sans-serif; padding:6px 0; border-radius:18px; min-height:44px; }
     .tab.on { color:#120d06; background:linear-gradient(135deg,#ff9a9e,#f0c27a,#63e2b3); }
-    .toast { position:fixed; bottom:92px; left:50%; transform:translateX(-50%); background:rgba(20,32,44,.9); border:1px solid var(--gold); color:var(--gold); padding:10px 14px; border-radius:999px; display:none; z-index:20; }
+    .toast { position:fixed; bottom:92px; left:50%; transform:translateX(-50%); background:rgba(20,32,44,.9); border:1px solid var(--gold); color:var(--gold); padding:10px 14px; border-radius:999px; display:none; z-index:20; pointer-events:none; }
     .wrap { max-width:860px; margin:0 auto; padding:14px 14px 118px; }
     .actions { position:sticky; bottom:86px; z-index:8; display:flex; gap:8px; padding:10px 0; }
     .stats { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
@@ -71,12 +77,13 @@
   <div class="glass card">
     <p class="badge">SIDHI • GYM LOG</p>
     <h1 class="brand">Sidhi <span>Gym</span></h1>
-    <p class="sub" id="gateHint">Login stays until you tap Logout.</p>
+    <p class="sub" id="gateHint">Premium gym access.</p>
     <label>username</label><input id="loginUser" autocomplete="username" placeholder="harry" />
     <label>password (min 4)</label><input id="loginPass" type="password" autocomplete="current-password" />
-    <div class="row" style="margin-top:16px">
-      <button class="btn full" id="loginBtn">enter</button>
-      <button class="btn ghost full" id="setupBtn">create account</button>
+    <button type="button" class="forgot" id="forgotBtn">🔒 forgot password</button>
+    <div class="row auth-actions">
+      <button class="btn full" id="loginBtn">ENTER</button>
+      <button class="btn ghost full" id="setupBtn">CREATE ACCOUNT →</button>
     </div>
     <div class="creator" data-creator></div>
   </div>
@@ -144,11 +151,12 @@
   <button class="tab" data-tab="history">history</button>
 </nav>
 <div class="toast" id="toast"></div>
-<script src="login-scene.js?v=2"></script>
+<script src="login-scene.js?v=3"></script>
+<script src="login-forgot.js?v=2"></script>
 <script src="app.js?v=12"></script>
 <script src="run.js?v=32"></script>
 <script src="hist-ui.js?v=2"></script>
 <script src="ex-guide.js?v=3"></script>
 <script src="extra-ui.js?v=1"></script>
-<script src="graph-foot.js?v=1"></script>
+<script src="graph-foot.js?v=6"></script>
 </body></html>
