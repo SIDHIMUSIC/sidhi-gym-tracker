@@ -10,10 +10,10 @@
   function wish() {
     var h = istHour();
     var n = firstName();
-    if (h >= 4 && h < 12) return "Good Morning, " + n + " ☀️";
-    if (h >= 12 && h < 17) return "Good Afternoon, " + n + " 🌤️";
-    if (h >= 17 && h < 21) return "Good Evening, " + n + " 🌆";
-    return "Good Night, " + n + " 🌙";
+    if (h >= 4 && h < 12) return "Good Morning, " + n + " \u2600\uFE0F";
+    if (h >= 12 && h < 17) return "Good Afternoon, " + n + " \u26C5";
+    if (h >= 17 && h < 21) return "Good Evening, " + n + " \uD83C\uDF06";
+    return "Good Night, " + n + " \uD83C\uDF19";
   }
   function applyWish() {
     var h = el("hello");
@@ -25,20 +25,32 @@
   }
   applyWish();
 
+  function nowHHMM() {
+    if (typeof nowTime === "function") return nowTime();
+    var d = new Date();
+    return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  }
   function hourOf(t) {
     if (!t) return null;
-    var p = String(t).split(":");
-    var h = Number(p[0]);
+    var h = Number(String(t).split(":")[0]);
     return Number.isFinite(h) ? h : null;
   }
+  function stampIfEmpty(id) {
+    var n = el(id);
+    if (n && !n.value) n.value = nowHHMM();
+  }
+  function autoGymTimes() {
+    var row = typeof currentRow === "function" ? currentRow() : null;
+    if (!(row && row.entryTime)) stampIfEmpty("entryTime");
+    else if (el("entryTime") && !el("entryTime").value) el("entryTime").value = row.entryTime;
+    if (!(row && row.after1HourTime)) stampIfEmpty("after1HourTime");
+  }
+
   function pickSessionEnd() {
     var row = typeof currentRow === "function" ? currentRow() : null;
     return (el("exitTime") && el("exitTime").value) ||
       (el("afterTreadmillTime") && el("afterTreadmillTime").value) ||
       (row && (row.exitTime || row.afterTreadmillTime)) ||
-      (el("beforeTreadmillTime") && el("beforeTreadmillTime").value) ||
-      (row && row.beforeTreadmillTime) ||
-      (el("after1HourTime") && el("after1HourTime").value) ||
       "";
   }
   function ensureEndTime() {
@@ -51,7 +63,6 @@
     var a = document.createElement("div");
     a.innerHTML = '<label>end time</label><input type="time" id="exitTime" />';
     var b = document.createElement("div");
-    var lab = wrap.querySelector("label");
     w.parentNode.removeChild(w);
     b.innerHTML = "<label>end weight (kg)</label>";
     b.appendChild(w);
@@ -68,11 +79,10 @@
     if (box.value) return;
     var keep = pickSessionEnd();
     if (keep) { box.value = keep; return; }
-    var entry = (el("entryTime") && el("entryTime").value) || "";
-    var eh = hourOf(entry);
-    var nh = istHour();
-    if (eh != null && eh < 12 && nh >= 12) return;
-    box.value = typeof nowTime === "function" ? nowTime() : new Date().toTimeString().slice(0, 5);
+    box.value = nowHHMM();
+    if (el("afterTreadmillTime") && !el("afterTreadmillTime").value) {
+      el("afterTreadmillTime").value = box.value;
+    }
   }
 
   if (typeof fillForm === "function") {
@@ -81,12 +91,25 @@
       var row = typeof currentRow === "function" ? currentRow() : null;
       var keepEntry = row && row.entryTime;
       var keepEnd = row && (row.exitTime || row.afterTreadmillTime);
+      var keepWork = row && row.after1HourTime;
       _ff();
       ensureEndTime();
       if (keepEntry && el("entryTime")) el("entryTime").value = keepEntry;
-      if (el("exitTime")) el("exitTime").value = keepEnd || (row && row.afterTreadmillTime) || el("exitTime").value || "";
+      if (keepWork && el("after1HourTime")) el("after1HourTime").value = keepWork;
+      if (el("exitTime")) el("exitTime").value = keepEnd || el("exitTime").value || "";
+      autoGymTimes();
     };
   }
+
+  if (typeof showTab === "function" && !showTab._autoT) {
+    var _st = showTab;
+    showTab = function (name) {
+      _st(name);
+      if (name === "workout") setTimeout(autoGymTimes, 0);
+    };
+    showTab._autoT = true;
+  }
+  setTimeout(autoGymTimes, 200);
 
   function mergeOld(body) {
     var old = (typeof currentRow === "function" && currentRow()) || {};
@@ -104,6 +127,7 @@
   if (typeof formBody === "function") {
     var _fb = formBody;
     formBody = function (finished) {
+      autoGymTimes();
       if (finished) stampExit();
       return mergeOld(_fb(finished));
     };
@@ -111,6 +135,7 @@
   if (typeof save === "function") {
     var _save = save;
     save = async function (finished) {
+      autoGymTimes();
       if (finished) stampExit();
       return _save(finished);
     };
