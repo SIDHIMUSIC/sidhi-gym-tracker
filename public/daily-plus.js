@@ -1,4 +1,5 @@
 (function () {
+  var TG = "https://t.me/SANATANI_BACCHA";
   function uid(name) {
     var s = String(name || "").toLowerCase();
     var n = 2166136261;
@@ -16,10 +17,7 @@
   function writeLog() {
     var w = document.getElementById("waterL");
     var p = document.getElementById("proteinG");
-    var obj = {
-      water: w ? w.value : "",
-      protein: p ? p.value : ""
-    };
+    var obj = { water: w ? w.value : "", protein: p ? p.value : "" };
     localStorage.setItem(storeKey(), JSON.stringify(obj));
     var note = document.getElementById("after1HourNote");
     if (note) {
@@ -58,34 +56,52 @@
     if (w && !w.value && m[1] !== "-") w.value = m[1];
     if (p && !p.value && m[2] !== "-") p.value = m[2];
   }
-  function mountForgot() {
-    if (document.getElementById("forgotTg")) return;
-    var pass = document.getElementById("loginPass");
-    if (!pass || !pass.parentNode) return;
-    var a = document.createElement("button");
-    a.type = "button";
-    a.id = "forgotTg";
-    a.className = "btn ghost full";
-    a.style.marginTop = "10px";
-    a.textContent = "forgot password — message admin";
-    pass.parentNode.insertBefore(a, pass.nextSibling);
-    a.onclick = function () {
-      var user = ((document.getElementById("loginUser") || {}).value || "").trim().toLowerCase();
-      var id = user ? uid(user) : "(username likho)";
-      var text =
-        "SIDHI GYM password reset%0A" +
-        "username: " + (user || "?") + "%0A" +
-        "user id: " + id + "%0A" +
-        "Please set a new password.";
-      window.open("https://t.me/SANATANI_BACHA?text=" + text, "_blank");
-    };
+  function openAdmin() {
+    var user = ((document.getElementById("loginUser") || {}).value || "").trim().toLowerCase();
+    var id = user ? uid(user) : "(username box me likho)";
+    var text = "SIDHI GYM password reset%0Ausername: " + (user || "?") + "%0Auser id: " + id + "%0APlease set a new password.";
+    window.open(TG + "?text=" + text, "_blank");
+  }
+  function sheet() {
+    if (document.getElementById("forgotSheet")) return;
+    var m = document.createElement("div");
+    m.id = "forgotSheet";
+    m.style.cssText = "position:fixed;inset:0;z-index:90;background:rgba(2,6,14,.72);display:grid;place-items:end center;padding:16px";
+    m.innerHTML =
+      '<div style="width:min(420px,100%);background:#121a2b;border-radius:24px;padding:18px;border:1px solid rgba(56,189,248,.25)">' +
+      "<p class=\"badge\">forgot password</p>" +
+      "<p class=\"sub\">Admin ko Telegram pe username + user id chala jayega.</p>" +
+      '<button type="button" class="btn full" id="fgAdmin" style="margin-top:12px">message admin</button>' +
+      '<button type="button" class="btn ghost full" id="fgNo" style="margin-top:8px">cancel</button></div>';
+    document.body.appendChild(m);
+    document.getElementById("fgAdmin").onclick = function () { m.remove(); openAdmin(); };
+    document.getElementById("fgNo").onclick = function () { m.remove(); };
+    m.addEventListener("click", function (e) { if (e.target === m) m.remove(); });
+  }
+  function bindForgot(el) {
+    if (!el || el._fg) return;
+    el._fg = true;
+    el.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      sheet();
+    }, true);
+  }
+  function hookForgot() {
+    var extra = document.getElementById("forgotTg");
+    if (extra) extra.remove();
+    ["forgotBtn", "forgotPass", "fgBtn", "forgot"].forEach(function (id) {
+      bindForgot(document.getElementById(id));
+    });
+    var nodes = document.querySelectorAll("a,button,span,div,p,label");
+    for (var i = 0; i < nodes.length; i++) {
+      var t = (nodes[i].textContent || "").replace(/\s+/g, " ").trim().toLowerCase();
+      if (t === "forgot password" || t.indexOf("forgot password") === 0) bindForgot(nodes[i]);
+    }
   }
   if (typeof formBody === "function" && !formBody._log) {
     var _fb = formBody;
-    formBody = function (finished) {
-      writeLog();
-      return _fb(finished);
-    };
+    formBody = function (finished) { writeLog(); return _fb(finished); };
     formBody._log = true;
   }
   if (typeof fillForm === "function" && !fillForm._log) {
@@ -102,7 +118,7 @@
     };
     fillForm._log = true;
   }
-  setInterval(function () { mountLog(); mountForgot(); }, 800);
+  setInterval(function () { mountLog(); hookForgot(); }, 800);
   mountLog();
-  mountForgot();
+  hookForgot();
 })();
