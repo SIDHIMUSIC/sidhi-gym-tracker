@@ -15,7 +15,7 @@
     document.head.appendChild(st);
   }
 
-  var FIELDS = ["date","entryTime","entryWeight","after1HourTime","after1HourNote","beforeTreadmillTime","beforeTreadmillKm","beforeTreadmillMins","beforeTreadmillSpeed","beforeTreadmillNote","afterTreadmillTime","afterTreadmillWeight","afterTreadmillKm","afterTreadmillMins","afterTreadmillSpeed","afterTreadmillIncline","afterTreadmillNote"];
+  var FIELDS = ["date","entryTime","after1HourTime","after1HourNote","beforeTreadmillTime","beforeTreadmillKm","beforeTreadmillMins","beforeTreadmillSpeed","beforeTreadmillNote","afterTreadmillTime","afterTreadmillKm","afterTreadmillMins","afterTreadmillSpeed","afterTreadmillIncline","afterTreadmillNote"];
   var DRAFT = "sidhi-gym-draft";
 
   function readDraft() {
@@ -25,20 +25,15 @@
     var o = { savedAt: Date.now() };
     FIELDS.forEach(function (id) { var n = el(id); if (n) o[id] = n.value; });
     localStorage.setItem(DRAFT, JSON.stringify(o));
-    var d = el("draftDot");
-    if (d) d.style.display = "block";
   }
-  function clearDraft() {
-    localStorage.removeItem(DRAFT);
-    var d = el("draftDot");
-    if (d) d.style.display = "none";
-  }
+  function clearDraft() { localStorage.removeItem(DRAFT); }
   function applyDraft() {
     var o = readDraft();
     if (!o) return;
     var today = typeof todayISO === "function" ? todayISO() : "";
     if (o.date && today && o.date !== today) return;
     FIELDS.forEach(function (id) {
+      if (id === "entryTime" || id === "after1HourTime") return;
       var n = el(id);
       if (n && o[id] != null && n.value === "") n.value = o[id];
     });
@@ -50,24 +45,11 @@
     n.addEventListener("change", writeDraft);
   });
   applyDraft();
-  if (!el("draftDot")) {
-    var dot = document.createElement("div");
-    dot.id = "draftDot";
-    dot.className = "draft-dot";
-    dot.textContent = "offline draft saved";
-    document.body.appendChild(dot);
-  }
-  if (readDraft() && !navigator.onLine) el("draftDot").style.display = "block";
 
   async function syncDraft() {
-    if (!navigator.onLine) return;
-    if (!readDraft()) return;
+    if (!navigator.onLine || !readDraft()) return;
     if (typeof save === "function") {
-      try {
-        await save(false);
-        clearDraft();
-        if (typeof toast === "function") toast("Draft sync ho gaya");
-      } catch (e) {}
+      try { await save(false); clearDraft(); } catch (e) {}
     }
   }
   window.addEventListener("online", syncDraft);
@@ -91,18 +73,15 @@
     var d = Math.round((end - start) * 1000) / 1000;
     var abs = Math.abs(d);
     if (d < 0) {
-      big.textContent = "−" + abs + " kg";
-      big.style.color = "#63e2b3";
-      sub.textContent = start + " → " + end + " kg";
+      big.textContent = "\u2212" + abs + " kg"; big.style.color = "#63e2b3";
+      sub.textContent = start + " \u2192 " + end + " kg";
       if (typeof toast === "function") toast(abs + " kg down");
     } else if (d > 0) {
-      big.textContent = "+" + abs + " kg";
-      big.style.color = "#ff8b8b";
-      sub.textContent = start + " → " + end + " kg";
+      big.textContent = "+" + abs + " kg"; big.style.color = "#ff8b8b";
+      sub.textContent = start + " \u2192 " + end + " kg";
       if (typeof toast === "function") toast(abs + " kg up");
     } else {
-      big.textContent = end + " kg";
-      big.style.color = "#f0c27a";
+      big.textContent = end + " kg"; big.style.color = "#f0c27a";
       sub.textContent = "Same as start " + start + " kg";
       if (typeof toast === "function") toast("Weight same");
     }
@@ -119,7 +98,7 @@
         if (finished) showDelta();
       } catch (err) {
         writeDraft();
-        if (typeof toast === "function") toast(navigator.onLine ? err.message : "Offline — draft saved");
+        if (typeof toast === "function") toast(navigator.onLine ? err.message : "Offline \u2014 draft saved");
       }
     };
     save._delta = true;
@@ -135,20 +114,5 @@
       var open = item.querySelector("[data-open]");
       if (open) open.click();
     });
-  }
-
-  var standalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
-  if (!standalone && el("view-home") && !el("pwaHint")) {
-    var bar = document.createElement("div");
-    bar.id = "pwaHint";
-    bar.className = "glass pwa-hint";
-    bar.innerHTML = "<div><b>Add to Home Screen</b><span>Chrome menu → Add to Home screen — app jaisa khulega</span></div><button class=\"btn ghost\" id=\"pwaHintBtn\" type=\"button\" style=\"min-height:40px\">Install</button>";
-    var home = el("view-home");
-    home.insertBefore(bar, home.firstChild);
-    el("pwaHintBtn").onclick = function () {
-      var b = el("pwaBtn");
-      if (b) b.click();
-      else if (typeof toast === "function") toast("Browser menu → Add to Home screen");
-    };
   }
 })();
