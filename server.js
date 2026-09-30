@@ -254,6 +254,12 @@ app.patch("/api/me", auth, async (req, res) => {
 });
 
 app.delete("/api/me", auth, async (req, res) => {
+  const pass = String((req.body && (req.body.password || req.body.pass)) || "");
+  const u = await User.findOne({ username: req.gymUser });
+  if (!u) return res.status(404).json({ error: "User nahi mila" });
+  if (pass.length < 4 || u.passHash !== hashPass(pass, u.salt)) {
+    return res.status(401).json({ error: "Galat password" });
+  }
   await GymSession.deleteMany({ owner: req.gymUser });
   await Token.deleteMany({ username: req.gymUser });
   await User.deleteOne({ username: req.gymUser });
