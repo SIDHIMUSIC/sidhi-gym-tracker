@@ -11,6 +11,11 @@ module.exports = function (app, deps) {
   const Token = deps.Token;
   const hashPass = deps.hashPass;
 
+  app.get("/api/public-config", function (_req, res) {
+    const admin = String(process.env.ADMIN_USER || "harryashu").trim().toLowerCase();
+    res.json({ ok: true, adminUser: admin });
+  });
+
   function check(req, res) {
     const secret = process.env.ADMIN_SECRET || "";
     if (!secret) {
