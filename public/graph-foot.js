@@ -17,7 +17,7 @@
   }
   var foot = document.getElementById("sidhiFoot");
   if (foot) foot.innerHTML = "<b>SIDHI GYM TRACKER</b><div>Built with ❤️ by Harry</div>" + logos() + "<div>© 2026 SIDHI GYM TRACKER. All rights reserved.</div>";
-  ["timing-fix.js?v=3","tabs-fix.js?v=1","split-zone.js?v=2","persist-ui.js?v=3","ex-split.js?v=1","month-ui.js?v=2","extras-pack.js?v=1","icons-ui.js?v=1","polish-flow.js?v=1"].forEach(function (src) {
+  ["timing-fix.js?v=4","tabs-fix.js?v=1","split-zone.js?v=2","persist-ui.js?v=3","ex-split.js?v=1","month-ui.js?v=2","extras-pack.js?v=1","icons-ui.js?v=1","polish-flow.js?v=1"].forEach(function (src) {
     if (document.querySelector('script[src*="' + src.split("?")[0] + '"]')) return;
     var t = document.createElement("script"); t.src = src; document.body.appendChild(t);
   });
