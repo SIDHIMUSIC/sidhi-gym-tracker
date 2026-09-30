@@ -1,0 +1,6 @@
+#gate.gate{position:relative;overflow:hidden;min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:22px 14px;background:#02040c}
+#gate .glass.card{width:min(400px,calc(100% - 24px));margin:0 auto;padding:24px 20px 18px;background:rgba(6,10,22,.78);border:1px solid rgba(56,189,248,.22)}
+#gate .row{flex-direction:column;gap:12px;margin-top:16px}
+#gate #loginBtn,#gate #setupBtn{width:100%;flex:none}
+#gate #gateHint{text-align:center;color:#93c5fd}
+#gate .forgot{display:inline-flex;align-items:center;gap:6px;margin:8px 0 0;padding:0;border:0;background:none;color:#93c5fd;font:700 12px Comfortaa,sans-serif}
