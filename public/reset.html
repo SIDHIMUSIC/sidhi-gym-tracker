@@ -10,22 +10,27 @@
     h1{font-size:20px;margin:0 0 8px}p{color:#9aa7b8;font-size:13px}
     label{display:block;margin:12px 0 6px;font-size:12px;color:#c9d4e3}
     input{width:100%;box-sizing:border-box;min-height:48px;border-radius:14px;border:1px solid #31425c;background:#0b1220;color:#fff;padding:10px 12px}
-    button{width:100%;margin-top:16px;min-height:50px;border:0;border-radius:999px;background:linear-gradient(135deg,#38bdf8,#818cf8);color:#041018;font-weight:800}
+    button{width:100%;margin-top:12px;min-height:50px;border:0;border-radius:999px;background:linear-gradient(135deg,#38bdf8,#818cf8);color:#041018;font-weight:800}
+    button.ghost{background:transparent;border:1px solid #31425c;color:#cfe8ff}
     #msg{margin-top:12px;min-height:20px}
+    .list{margin-top:12px;font-size:13px;line-height:1.6}
+    .list div{padding:8px 0;border-bottom:1px solid #243044}
   </style>
 </head>
 <body>
   <form class="card" id="f">
     <h1>Admin password reset</h1>
-    <p>Termux nahi chahiye. Sirf admin secret + username + naya password.</p>
+    <p>Username ya User ID dono chalega. Dono bhool gaye to neeche list dekho.</p>
     <label>Admin secret</label>
     <input id="secret" type="password" autocomplete="off" />
-    <label>Username</label>
-    <input id="user" autocomplete="username" />
+    <label>Username or User ID</label>
+    <input id="user" />
     <label>New password</label>
     <input id="pass" type="password" autocomplete="new-password" />
     <button type="submit">Reset password</button>
+    <button type="button" class="ghost" id="listBtn">Show all members</button>
     <div id="msg"></div>
+    <div class="list" id="list"></div>
   </form>
   <script>
     document.getElementById("f").onsubmit = async function (e) {
@@ -44,7 +49,27 @@
         });
         var data = await res.json();
         if (!res.ok) throw new Error(data.error || "fail");
-        msg.textContent = "OK — " + data.username + " naya password se login kare";
+        msg.textContent = "OK — login: " + data.username;
+      } catch (err) {
+        msg.textContent = err.message || "fail";
+      }
+    };
+    document.getElementById("listBtn").onclick = async function () {
+      var msg = document.getElementById("msg");
+      var box = document.getElementById("list");
+      msg.textContent = "wait...";
+      try {
+        var res = await fetch("/api/admin/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ secret: document.getElementById("secret").value })
+        });
+        var data = await res.json();
+        if (!res.ok) throw new Error(data.error || "fail");
+        msg.textContent = (data.users || []).length + " members";
+        box.innerHTML = (data.users || []).map(function (u) {
+          return "<div><b>@" + u.username + "</b> — " + (u.displayName || "") + "<br>id: " + (u.memberId || "-") + "</div>";
+        }).join("");
       } catch (err) {
         msg.textContent = err.message || "fail";
       }
