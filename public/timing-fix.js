@@ -33,6 +33,11 @@
   function savedRow() {
     return typeof currentRow === "function" ? currentRow() : null;
   }
+  function hasEndKg() {
+    var v = el("afterTreadmillWeight") && el("afterTreadmillWeight").value;
+    var n = Number(v);
+    return v !== "" && Number.isFinite(n) && n > 0;
+  }
   function autoOnOpen() {
     var row = savedRow() || {};
     if (el("entryTime")) el("entryTime").value = row.entryTime || nowHHMM();
@@ -43,8 +48,13 @@
     if (el("afterTreadmillWeight")) {
       el("afterTreadmillWeight").value = (row.afterTreadmillWeight != null && row.afterTreadmillWeight !== "") ? row.afterTreadmillWeight : "";
     }
-    if (el("exitTime") && row.exitTime) el("exitTime").value = row.exitTime;
-    else if (el("exitTime") && row.afterTreadmillTime) el("exitTime").value = row.afterTreadmillTime;
+    if (el("exitTime")) {
+      if (row.afterTreadmillWeight != null && (row.exitTime || row.afterTreadmillTime)) {
+        el("exitTime").value = row.exitTime || row.afterTreadmillTime;
+      } else if (!row.afterTreadmillWeight) {
+        el("exitTime").value = "";
+      }
+    }
   }
 
   function ensureEndTime() {
@@ -66,12 +76,19 @@
   }
   ensureEndTime();
 
-  function stampExit() {
+  function stampExitIfWeight() {
     ensureEndTime();
-    if (el("exitTime") && !el("exitTime").value) el("exitTime").value = nowHHMM();
-    if (el("afterTreadmillTime") && !el("afterTreadmillTime").value) {
-      el("afterTreadmillTime").value = el("exitTime") ? el("exitTime").value : nowHHMM();
-    }
+    if (!hasEndKg()) return;
+    var t = nowHHMM();
+    if (el("exitTime")) el("exitTime").value = t;
+    if (el("afterTreadmillTime")) el("afterTreadmillTime").value = t;
+  }
+
+  var wgt = el("afterTreadmillWeight");
+  if (wgt && !wgt._exitBind) {
+    wgt._exitBind = true;
+    wgt.addEventListener("change", stampExitIfWeight);
+    wgt.addEventListener("blur", stampExitIfWeight);
   }
 
   if (typeof fillForm === "function") {
@@ -99,24 +116,22 @@
         if (old[k] != null && old[k] !== "") body[k] = old[k];
       }
     });
-    var t = el("exitTime") && el("exitTime").value;
-    if (t) body.afterTreadmillTime = t;
+    if (hasEndKg() && el("exitTime") && el("exitTime").value) {
+      body.afterTreadmillTime = el("exitTime").value;
+    }
     return body;
   }
   if (typeof formBody === "function") {
     var _fb = formBody;
     formBody = function (finished) {
-      if (!savedRow() || !savedRow().entryTime) {
-        if (el("entryTime") && !el("entryTime").value) el("entryTime").value = nowHHMM();
-      }
-      if (finished) stampExit();
+      if (hasEndKg()) stampExitIfWeight();
       return mergeOld(_fb(finished));
     };
   }
   if (typeof save === "function") {
     var _save = save;
     save = async function (finished) {
-      if (finished) stampExit();
+      if (hasEndKg()) stampExitIfWeight();
       return _save(finished);
     };
   }
