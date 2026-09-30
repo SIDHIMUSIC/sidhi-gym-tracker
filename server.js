@@ -336,6 +336,8 @@ app.delete("/api/session/:date", auth, async (req, res) => {
   res.json({ ok: true, sessions: withDiff(rows) });
 });
 
+require("./admin-routes")(app, { User: User, Token: Token, hashPass: hashPass });
+
 app.use(express.static(path.join(__dirname, "public")));
 app.get("*", (req, res) => {
   if (req.path.startsWith("/api")) return res.status(404).json({ error: "not found" });
