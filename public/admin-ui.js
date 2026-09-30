@@ -1,8 +1,11 @@
 (function () {
-  var ADMINS = ["harryashu", "harry"];
+  var adminUser = "harryashu";
+  fetch("/api/public-config").then(function (r) { return r.json(); }).then(function (d) {
+    if (d && d.adminUser) adminUser = String(d.adminUser).toLowerCase();
+  }).catch(function () {});
   function isAdmin() {
     var u = (typeof username === "string" ? username : "").toLowerCase();
-    return ADMINS.indexOf(u) >= 0;
+    return u && u === adminUser;
   }
   function inject() {
     if (!isAdmin()) return;
@@ -14,9 +17,8 @@
     box.id = "pfAdmin";
     box.innerHTML =
       "<h2>admin</h2>" +
-      "<p class=\"sub\">Forgot requests yahan se reset.</p>" +
-      "<button type=\"button\" class=\"btn ok full\" id=\"pfReset\">open password reset</button>" +
-      "<p class=\"sub\" style=\"margin-top:8px;word-break:break-all\">sidhi-gym-tracker.vercel.app/reset.html</p>";
+      "<p class=\"sub\">Forgot requests — reset page.</p>" +
+      "<button type=\"button\" class=\"btn ok full\" id=\"pfReset\">open password reset</button>";
     var danger = document.getElementById("pfDanger");
     if (danger) v.insertBefore(box, danger);
     else v.appendChild(box);
@@ -28,7 +30,7 @@
     var _sp = showProfile;
     showProfile = function () {
       _sp();
-      setTimeout(inject, 30);
+      setTimeout(inject, 40);
     };
     showProfile._adm = true;
   }
