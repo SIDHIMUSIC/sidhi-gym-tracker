@@ -1,4 +1,7 @@
 (function () {
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js?v=4").catch(function () {});
+  }
   function clean() {
     var back = document.getElementById("gateBack");
     if (back) back.remove();
@@ -17,6 +20,6 @@
     }
   }
   clean();
-  setTimeout(clean, 50);
-  setTimeout(clean, 400);
+  setTimeout(clean, 30);
+  setTimeout(clean, 300);
 })();
