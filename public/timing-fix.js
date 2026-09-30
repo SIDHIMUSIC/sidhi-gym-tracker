@@ -30,29 +30,23 @@
     var d = new Date();
     return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
   }
-  function hourOf(t) {
-    if (!t) return null;
-    var h = Number(String(t).split(":")[0]);
-    return Number.isFinite(h) ? h : null;
+  function savedRow() {
+    return typeof currentRow === "function" ? currentRow() : null;
   }
-  function stampIfEmpty(id) {
-    var n = el(id);
-    if (n && !n.value) n.value = nowHHMM();
-  }
-  function autoGymTimes() {
-    var row = typeof currentRow === "function" ? currentRow() : null;
-    if (!(row && row.entryTime)) stampIfEmpty("entryTime");
-    else if (el("entryTime") && !el("entryTime").value) el("entryTime").value = row.entryTime;
-    if (!(row && row.after1HourTime)) stampIfEmpty("after1HourTime");
+  function autoOnOpen() {
+    var row = savedRow() || {};
+    if (el("entryTime")) el("entryTime").value = row.entryTime || nowHHMM();
+    if (el("after1HourTime")) el("after1HourTime").value = row.after1HourTime || nowHHMM();
+    if (el("entryWeight")) {
+      el("entryWeight").value = (row.entryWeight != null && row.entryWeight !== "") ? row.entryWeight : "";
+    }
+    if (el("afterTreadmillWeight")) {
+      el("afterTreadmillWeight").value = (row.afterTreadmillWeight != null && row.afterTreadmillWeight !== "") ? row.afterTreadmillWeight : "";
+    }
+    if (el("exitTime") && row.exitTime) el("exitTime").value = row.exitTime;
+    else if (el("exitTime") && row.afterTreadmillTime) el("exitTime").value = row.afterTreadmillTime;
   }
 
-  function pickSessionEnd() {
-    var row = typeof currentRow === "function" ? currentRow() : null;
-    return (el("exitTime") && el("exitTime").value) ||
-      (el("afterTreadmillTime") && el("afterTreadmillTime").value) ||
-      (row && (row.exitTime || row.afterTreadmillTime)) ||
-      "";
-  }
   function ensureEndTime() {
     if (el("exitTime")) return;
     var w = el("afterTreadmillWeight");
@@ -74,60 +68,47 @@
 
   function stampExit() {
     ensureEndTime();
-    var box = el("exitTime");
-    if (!box) return;
-    if (box.value) return;
-    var keep = pickSessionEnd();
-    if (keep) { box.value = keep; return; }
-    box.value = nowHHMM();
+    if (el("exitTime") && !el("exitTime").value) el("exitTime").value = nowHHMM();
     if (el("afterTreadmillTime") && !el("afterTreadmillTime").value) {
-      el("afterTreadmillTime").value = box.value;
+      el("afterTreadmillTime").value = el("exitTime") ? el("exitTime").value : nowHHMM();
     }
   }
 
   if (typeof fillForm === "function") {
     var _ff = fillForm;
     fillForm = function () {
-      var row = typeof currentRow === "function" ? currentRow() : null;
-      var keepEntry = row && row.entryTime;
-      var keepEnd = row && (row.exitTime || row.afterTreadmillTime);
-      var keepWork = row && row.after1HourTime;
       _ff();
       ensureEndTime();
-      if (keepEntry && el("entryTime")) el("entryTime").value = keepEntry;
-      if (keepWork && el("after1HourTime")) el("after1HourTime").value = keepWork;
-      if (el("exitTime")) el("exitTime").value = keepEnd || el("exitTime").value || "";
-      autoGymTimes();
+      autoOnOpen();
     };
   }
-
   if (typeof showTab === "function" && !showTab._autoT) {
     var _st = showTab;
     showTab = function (name) {
       _st(name);
-      if (name === "workout") setTimeout(autoGymTimes, 0);
+      if (name === "workout") setTimeout(autoOnOpen, 0);
     };
     showTab._autoT = true;
   }
-  setTimeout(autoGymTimes, 200);
+  setTimeout(autoOnOpen, 200);
 
   function mergeOld(body) {
-    var old = (typeof currentRow === "function" && currentRow()) || {};
-    ["entryTime","entryWeight","after1HourTime","after1HourNote","beforeTreadmillTime","beforeTreadmillKm","beforeTreadmillMins","beforeTreadmillSpeed","beforeTreadmillNote","afterTreadmillTime","afterTreadmillWeight","afterTreadmillKm","afterTreadmillMins","afterTreadmillSpeed","afterTreadmillNote","runs"].forEach(function (k) {
+    var old = savedRow() || {};
+    ["after1HourNote","beforeTreadmillTime","beforeTreadmillKm","beforeTreadmillMins","beforeTreadmillSpeed","beforeTreadmillNote","afterTreadmillKm","afterTreadmillMins","afterTreadmillSpeed","afterTreadmillNote","runs"].forEach(function (k) {
       if (body[k] == null || body[k] === "") {
         if (old[k] != null && old[k] !== "") body[k] = old[k];
       }
     });
     var t = el("exitTime") && el("exitTime").value;
     if (t) body.afterTreadmillTime = t;
-    else if (old.afterTreadmillTime) body.afterTreadmillTime = old.afterTreadmillTime;
     return body;
   }
-
   if (typeof formBody === "function") {
     var _fb = formBody;
     formBody = function (finished) {
-      autoGymTimes();
+      if (!savedRow() || !savedRow().entryTime) {
+        if (el("entryTime") && !el("entryTime").value) el("entryTime").value = nowHHMM();
+      }
       if (finished) stampExit();
       return mergeOld(_fb(finished));
     };
@@ -135,7 +116,6 @@
   if (typeof save === "function") {
     var _save = save;
     save = async function (finished) {
-      autoGymTimes();
       if (finished) stampExit();
       return _save(finished);
     };
