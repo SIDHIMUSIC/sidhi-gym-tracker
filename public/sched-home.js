@@ -1,3 +1,10 @@
 (function () {
-  /* default plan: Monday Day 1. saved schedule yahan override nahi karega */
+  var days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  function lock() {
+    if (!window.SIDHI_PLAN || typeof SPLIT !== "object") return;
+    days.forEach(function (d) {
+      if (window.SIDHI_PLAN[d]) SPLIT[d] = window.SIDHI_PLAN[d].title;
+    });
+  }
+  setInterval(lock, 400);
 })();
