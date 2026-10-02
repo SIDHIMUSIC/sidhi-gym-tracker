@@ -17,61 +17,28 @@
   }
   function km() { return (field.laps * lapM()) / 1000; }
   function tick() {
-    var box = document.getElementById("fieldLine");
-    if (!box) return;
     var live = field.on ? Date.now() - field.t0 : 0;
     var run = field.runMs + (field.on && field.mode !== "walk" ? live : 0);
     var walk = field.walkMs + (field.on && field.mode === "walk" ? live : 0);
-    box.textContent = field.laps + " lap • " + km().toFixed(2) + " km • " + fmt(totalMs());
-    var rw = document.getElementById("fieldSplit");
-    if (rw) rw.textContent = "run " + fmt(run) + " • walk " + fmt(walk);
+    var line = field.laps + " lap • " + km().toFixed(2) + " km • " + fmt(totalMs());
+    document.querySelectorAll("[data-field-line]").forEach(function (n) { n.textContent = line; });
+    document.querySelectorAll("[data-field-split]").forEach(function (n) {
+      n.textContent = "run " + fmt(run) + " • walk " + fmt(walk);
+    });
   }
-  function mountProfile() {
-    var v = document.getElementById("view-profile");
-    if (!v || v.classList.contains("hidden") || document.getElementById("pfLap")) return;
-    var box = document.createElement("div");
-    box.className = "glass card";
-    box.id = "pfLap";
-    box.innerHTML = "<h2>field lap</h2><label>1 lap = meters</label><input id=\"lapMeters\" inputmode=\"decimal\" value=\"" + lapM() + "\" /><button type=\"button\" class=\"btn full\" id=\"lapSave\" style=\"margin-top:10px\">save lap length</button>";
-    v.appendChild(box);
-    document.getElementById("lapSave").onclick = function () {
-      var n = Number(document.getElementById("lapMeters").value);
-      if (!(n > 0)) return;
-      localStorage.setItem(KEY, String(n));
-      if (typeof toast === "function") toast("1 lap = " + n + " m");
-      tick();
-    };
-  }
-  function mountRun() {
-    var ov = document.getElementById("runOv");
-    if (!ov || document.getElementById("fieldBox")) return;
-    var box = document.createElement("div");
-    box.className = "glass card";
-    box.id = "fieldBox";
-    box.style.marginTop = "12px";
-    box.innerHTML =
-      "<p class=\"badge\">FIELD MODE</p>" +
-      "<div id=\"fieldLine\" style=\"font:800 22px Comfortaa,sans-serif;text-align:center;margin:8px 0\">0 lap • 0.00 km • 00:00</div>" +
-      "<p class=\"sub\" id=\"fieldSplit\" style=\"text-align:center\">run 00:00 • walk 00:00</p>" +
-      "<button type=\"button\" class=\"btn ok full\" id=\"fieldLap\" style=\"min-height:72px;font-size:20px;margin-top:8px\">+1 lap</button>" +
-      "<div class=\"row\" style=\"margin-top:8px\"><button type=\"button\" class=\"btn ghost\" id=\"fieldWalk\">walk</button><button type=\"button\" class=\"btn ghost\" id=\"fieldRun\">run</button><button type=\"button\" class=\"btn full\" id=\"fieldSave\">save field</button></div>" +
-      "<p class=\"sub\">GPS optional. Lap button is the count.</p>";
-    ov.querySelector(".wrap").appendChild(box);
-    document.getElementById("fieldLap").onclick = function () {
-      if (!field.on) {
-        field.on = true;
-        field.t0 = Date.now();
-      } else {
+  function bump(dir) {
+    if (dir > 0) {
+      if (!field.on) { field.on = true; field.t0 = Date.now(); }
+      else {
         var dt = Date.now() - field.t0;
         if (field.mode === "walk") field.walkMs += dt; else field.runMs += dt;
         field.t0 = Date.now();
       }
       field.laps += 1;
-      tick();
-    };
-    document.getElementById("fieldWalk").onclick = function () { switchMode("walk"); };
-    document.getElementById("fieldRun").onclick = function () { switchMode("run"); };
-    document.getElementById("fieldSave").onclick = saveField;
+    } else if (field.laps > 0) {
+      field.laps -= 1;
+    }
+    tick();
   }
   function switchMode(next) {
     if (field.on) {
@@ -96,5 +63,53 @@
     field.on = false;
     tick();
   }
-  setInterval(function () { mountProfile(); mountRun(); if (field.on) tick(); }, 800);
+  function panel() {
+    return "<p class=\"badge\">FIELD • all users</p>" +
+      "<div data-field-line style=\"font:800 22px Comfortaa,sans-serif;text-align:center;margin:8px 0\">0 lap • 0.00 km • 00:00</div>" +
+      "<p class=\"sub\" data-field-split style=\"text-align:center\">run 00:00 • walk 00:00</p>" +
+      "<div class=\"row\"><button type=\"button\" class=\"btn ok\" data-plus style=\"flex:1;min-height:64px;font-size:18px\">+ lap</button>" +
+      "<button type=\"button\" class=\"btn ghost\" data-minus style=\"flex:1;min-height:64px;font-size:18px\">- lap</button></div>" +
+      "<div class=\"row\" style=\"margin-top:8px\"><button type=\"button\" class=\"btn ghost\" data-walk>walk</button><button type=\"button\" class=\"btn ghost\" data-run>run</button><button type=\"button\" class=\"btn full\" data-save>save field</button></div>";
+  }
+  function wire(root) {
+    root.querySelector("[data-plus]").onclick = function () { bump(1); };
+    root.querySelector("[data-minus]").onclick = function () { bump(-1); };
+    root.querySelector("[data-walk]").onclick = function () { switchMode("walk"); };
+    root.querySelector("[data-run]").onclick = function () { switchMode("run"); };
+    root.querySelector("[data-save]").onclick = saveField;
+  }
+  function mount(parent, id) {
+    if (!parent || document.getElementById(id)) return;
+    var box = document.createElement("div");
+    box.className = "glass card";
+    box.id = id;
+    box.innerHTML = panel();
+    parent.appendChild(box);
+    wire(box);
+  }
+  function mountProfile() {
+    var v = document.getElementById("view-profile");
+    if (!v || v.classList.contains("hidden") || document.getElementById("pfLap")) return;
+    var box = document.createElement("div");
+    box.className = "glass card";
+    box.id = "pfLap";
+    box.innerHTML = "<h2>field lap</h2><label>1 lap = meters</label><input id=\"lapMeters\" inputmode=\"decimal\" value=\"" + lapM() + "\" /><button type=\"button\" class=\"btn full\" id=\"lapSave\" style=\"margin-top:10px\">save lap length</button>";
+    v.appendChild(box);
+    document.getElementById("lapSave").onclick = function () {
+      var n = Number(document.getElementById("lapMeters").value);
+      if (!(n > 0)) return;
+      localStorage.setItem(KEY, String(n));
+      if (typeof toast === "function") toast("1 lap = " + n + " m");
+      tick();
+    };
+  }
+  setInterval(function () {
+    mount(document.getElementById("view-home"), "fieldHome");
+    var runView = document.getElementById("view-run") || document.getElementById("runZone");
+    if (runView) mount(runView, "fieldRunView");
+    var ov = document.getElementById("runOv");
+    if (ov && ov.querySelector(".wrap")) mount(ov.querySelector(".wrap"), "fieldBox");
+    mountProfile();
+    if (field.on) tick();
+  }, 800);
 })();
