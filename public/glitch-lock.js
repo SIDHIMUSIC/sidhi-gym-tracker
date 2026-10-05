@@ -16,11 +16,8 @@
     }
     if (!n) n = clean(window.__displayName);
     if (!n) n = clean(localStorage.getItem("sidhi-gym-name"));
-    if (n) {
-      try { localStorage.setItem("sidhi-gym-name", n); } catch (e) {}
-      return n;
-    }
-    return clean(localStorage.getItem("sidhi-gym-user")) || clean(window.username) || "";
+    if (n) return n;
+    return clean(localStorage.getItem("sidhi-gym-user")) || clean(localStorage.getItem("sidhi-gym-username")) || "";
   }
   function wish() {
     var h = hourIST();
@@ -30,41 +27,10 @@
   }
   function lockHello() {
     var el = document.getElementById("hello");
-    if (!el) return;
+    var app = document.getElementById("app");
+    if (!el || !app || app.classList.contains("hidden")) return;
     var text = wish();
-    if (el.textContent !== text) el.textContent = text;
+    if (text && el.textContent !== text) el.textContent = text;
   }
-  function lockFoot() {
-    var foot = document.getElementById("sidhiFoot");
-    if (foot && foot.parentNode !== document.body) document.body.appendChild(foot);
-  }
-  function stay() {
-    if (!localStorage.getItem("sidhi-gym-token")) return;
-    var g = document.getElementById("gate");
-    var a = document.getElementById("app");
-    var t = document.getElementById("tabbar");
-    if (g) g.classList.add("hidden");
-    if (a) a.classList.remove("hidden");
-    if (t) t.classList.remove("hidden");
-  }
-  function pullName() {
-    var token = localStorage.getItem("sidhi-gym-token");
-    if (!token || window.__greetPulled) return;
-    window.__greetPulled = 1;
-    fetch("/api/me", { headers: { Authorization: "Bearer " + token } })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (me) {
-        if (!me) return;
-        window.__sidhiMe = me;
-        if (me.displayName) localStorage.setItem("sidhi-gym-name", me.displayName);
-        if (me.username) localStorage.setItem("sidhi-gym-user", me.username);
-        lockHello();
-      })
-      .catch(function () { window.__greetPulled = 0; });
-  }
-  stay();
-  pullName();
-  lockHello();
-  lockFoot();
-  setInterval(function () { stay(); lockHello(); lockFoot(); }, 600);
+  setInterval(lockHello, 700);
 })();
