@@ -1,8 +1,14 @@
 (function () {
+  var TG = "https://t.me/SANATANI_BACCHA";
+  function uid(name) {
+    var s = String(name || "").toLowerCase();
+    var n = 2166136261;
+    for (var i = 0; i < s.length; i++) n = Math.imul(n ^ s.charCodeAt(i), 16777619);
+    return "S" + (n >>> 0).toString(16).toUpperCase().padStart(8, "0").slice(0, 8);
+  }
   function note(msg) {
     var n = document.getElementById("fgNote");
     if (n) n.textContent = msg;
-    if (typeof toast === "function") toast(msg);
   }
   function closeSheet() {
     var old = document.getElementById("forgotSheet");
@@ -19,40 +25,51 @@
   function openMenu() {
     sheet(
       '<p class="badge">FORGOT</p>' +
-      '<button type="button" id="fgPass" class="btn full" style="margin-top:12px">password forgot</button>' +
-      '<button type="button" id="fgUser" class="btn ghost full" style="margin-top:8px">username forgot</button>' +
+      '<p class="sub">Admin ko message, ya email se verify.</p>' +
+      '<div style="display:flex;gap:8px;margin-top:12px">' +
+      '<button type="button" id="fgAdmin" class="btn" style="flex:1">message admin</button>' +
+      '<button type="button" id="fgMailBtn" class="btn" style="flex:1">email verify</button>' +
+      '</div>' +
       '<button type="button" id="fgNo" class="btn ghost full" style="margin-top:8px">cancel</button>'
     );
   }
-  function openPass() {
+  function openEmail() {
     sheet(
-      '<p class="badge">RESET PASSWORD</p>' +
-      '<p class="sub">Username, user id, ya profile me saved email.</p>' +
-      '<input id="fgKey" placeholder="harryashu / user id / email" />' +
-      '<button type="button" id="fgSend" class="btn full" style="margin-top:12px">send otp</button>' +
+      '<p class="badge">EMAIL VERIFY</p>' +
+      '<input id="fgKey" placeholder="saved email / username / user id" />' +
+      '<div style="display:flex;gap:8px;margin-top:8px">' +
+      '<button type="button" id="fgPass" class="btn" style="flex:1">password</button>' +
+      '<button type="button" id="fgUser" class="btn ghost" style="flex:1">username</button>' +
+      '</div>' +
+      '<button type="button" id="fgSend" class="btn full" style="margin-top:8px">send otp</button>' +
       '<input id="fgCode" inputmode="numeric" placeholder="6 digit otp" style="margin-top:8px" />' +
       '<div style="display:flex;gap:8px;margin-top:8px"><input id="fgNew" type="password" placeholder="new password" style="flex:1" /><button type="button" id="fgEye" class="btn ghost">show</button></div>' +
-      '<button type="button" id="fgReset" class="btn full" style="margin-top:8px">verify and reset</button>' +
+      '<button type="button" id="fgReset" class="btn full" style="margin-top:8px">verify</button>' +
       '<button type="button" id="fgBack" class="btn ghost full" style="margin-top:8px">cancel</button>'
     );
   }
-  function openUser() {
-    sheet(
-      '<p class="badge">USERNAME FORGOT</p>' +
-      '<input id="fgMail" type="email" placeholder="profile saved email" />' +
-      '<button type="button" id="fgUserSend" class="btn full" style="margin-top:12px">send otp</button>' +
-      '<input id="fgUserCode" inputmode="numeric" placeholder="6 digit" style="margin-top:8px" />' +
-      '<button type="button" id="fgUserCheck" class="btn full" style="margin-top:8px">verify</button>' +
-      '<button type="button" id="fgBack" class="btn ghost full" style="margin-top:8px">cancel</button>'
-    );
+  function sendAdmin() {
+    var user = ((document.getElementById("loginUser") || {}).value || "harry").trim().toLowerCase();
+    closeSheet();
+    window.location.href = TG + "?text=" + encodeURIComponent(["SIDHI GYM \u2014 forgot", "username: " + user, "user id: " + uid(user), "Please reset."].join("\n"));
   }
+  var mode = "pass";
   document.addEventListener("click", function (e) {
     var t = e.target.closest ? e.target.closest("button") : e.target;
     if (!t) return;
     var label = (t.innerText || "").trim().toLowerCase();
-    if (label === "message admin") { e.preventDefault(); e.stopPropagation(); openMenu(); return; }
+    if (label === "message admin" && t.id !== "fgAdmin") {
+      e.preventDefault();
+      e.stopPropagation();
+      openMenu();
+      return;
+    }
     if (!t.id) return;
     if (t.id === "fgNo" || t.id === "fgBack") { e.preventDefault(); closeSheet(); }
+    if (t.id === "fgAdmin") { e.preventDefault(); sendAdmin(); }
+    if (t.id === "fgMailBtn") { e.preventDefault(); openEmail(); }
+    if (t.id === "fgPass") { e.preventDefault(); mode = "pass"; note("password reset"); }
+    if (t.id === "fgUser") { e.preventDefault(); mode = "user"; note("username dhundho"); }
     if (t.id === "fgEye") {
       e.preventDefault();
       var p = document.getElementById("fgNew");
@@ -60,45 +77,38 @@
       p.type = p.type === "password" ? "text" : "password";
       t.textContent = p.type === "password" ? "show" : "hide";
     }
-    if (t.id === "fgPass") { e.preventDefault(); openPass(); }
-    if (t.id === "fgUser") { e.preventDefault(); openUser(); }
-    if (t.id === "fgSend" || t.id === "fgUserSend") {
+    if (t.id === "fgSend") {
       e.preventDefault();
-      var key = ((document.getElementById("fgKey") || document.getElementById("fgMail") || {}).value || "").trim();
       note("bhej rahe...");
-      fetch("/api/otp/reset-start", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ key: key }) })
+      fetch("/api/otp/reset-start", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ key: (document.getElementById("fgKey").value || "").trim() }) })
         .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || "fail"); return d; }); })
-        .then(function (d) { note("OTP " + (d.hint || "email") + " pe gaya. Inbox aur spam dekho."); })
+        .then(function (d) { note("OTP " + (d.hint || "email") + " pe gaya"); })
         .catch(function (err) { note(err.message || "OTP fail"); });
     }
     if (t.id === "fgReset") {
       e.preventDefault();
-      fetch("/api/otp/reset-finish", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          key: (document.getElementById("fgKey").value || "").trim(),
-          code: (document.getElementById("fgCode").value || "").trim(),
-          password: document.getElementById("fgNew").value || ""
-        })
-      }).then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || "fail"); return d; }); })
+      var key = (document.getElementById("fgKey").value || "").trim();
+      var code = (document.getElementById("fgCode").value || "").trim();
+      if (mode === "user") {
+        fetch("/api/otp/who", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ key: key, code: code }) })
+          .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || "fail"); return d; }); })
+          .then(function (d) { note("Username: " + d.username); })
+          .catch(function (err) { note(err.message || "OTP galat"); });
+        return;
+      }
+      fetch("/api/otp/reset-finish", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ key: key, code: code, password: document.getElementById("fgNew").value || "" }) })
+        .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || "fail"); return d; }); })
         .then(function (d) { closeSheet(); if (typeof toast === "function") toast("Password reset. Login: " + d.username); })
         .catch(function (err) { note(err.message || "reset fail"); });
-    }
-    if (t.id === "fgUserCheck") {
-      e.preventDefault();
-      fetch("/api/otp/who", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ key: (document.getElementById("fgMail").value || "").trim(), code: (document.getElementById("fgUserCode").value || "").trim() })
-      }).then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || "fail"); return d; }); })
-        .then(function (d) { note("Username: " + d.username); })
-        .catch(function (err) { note(err.message || "OTP galat"); });
     }
   }, true);
   setInterval(function () {
     document.querySelectorAll("#gate .forgot, #forgotBtn, .forgot").forEach(function (n) {
-      n.onclick = function (e) { if (e) { e.preventDefault(); e.stopPropagation(); } openMenu(); };
+      n.onclick = function (ev) { if (ev) { ev.preventDefault(); ev.stopPropagation(); } openMenu(); };
     });
-  }, 700);
+    document.querySelectorAll("body *").forEach(function (n) {
+      if (n.id === "forgotSheet") return;
+      if ((n.innerText || "").indexOf("chala jayega") >= 0 && n.querySelector && n.querySelector("button")) openMenu();
+    });
+  }, 600);
 })();
