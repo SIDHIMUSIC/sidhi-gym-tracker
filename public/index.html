@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <script>try{if(localStorage.getItem("sidhi-gym-token"))document.documentElement.classList.add("stay");}catch(e){}</script>
+  <style>html.stay #gate{display:none!important}html.stay #app{display:block!important}html.stay #tabbar{display:flex!important}</style>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Sidhi Gym • by Harry</title>
   <meta name="theme-color" content="#02040c" />
@@ -80,7 +82,7 @@
     <p class="sub" id="gateHint">Premium gym access.</p>
     <label>username</label><input id="loginUser" autocomplete="username" placeholder="harry" />
     <label>password (min 4)</label><input id="loginPass" type="password" autocomplete="current-password" />
-    <button type="button" class="forgot" id="forgotBtn">🔒 forgot password</button>
+    <button type="button" class="forgot" id="forgotBtn">forgot password</button>
     <div class="row auth-actions">
       <button class="btn full" id="loginBtn">ENTER</button>
       <button class="btn ghost full" id="setupBtn">CREATE ACCOUNT →</button>
@@ -96,67 +98,13 @@
     </div>
     <button class="btn logout" id="logoutBtn" type="button">logout</button>
   </div>
-  <div id="view-home">
-    <div class="glass card" style="text-align:center">
-      <div class="hero-kg" id="homeKg">— kg</div>
-      <p class="sub" id="homeWeek">this week</p>
-    </div>
-    <div class="stats">
-      <div class="glass stat"><b id="stStreak">0</b><span>day streak</span></div>
-      <div class="glass stat"><b id="stWorkouts">0</b><span>workouts</span></div>
-      <div class="glass stat"><b id="stGoal">—</b><span>to goal</span></div>
-    </div>
-    <div class="glass card" style="margin-top:14px">
-      <h2>today's workout</h2>
-      <p class="pill" id="homeSplit"></p>
-      <div class="kv"><span>weight</span><b id="homeW">—</b></div>
-      <div class="kv"><span>duration</span><b id="homeDur">—</b></div>
-      <div class="kv"><span>treadmill</span><b id="homeTm">—</b></div>
-      <button class="btn ok full" id="homeFinish" style="margin-top:12px">finish workout</button>
-    </div>
-    <div class="glass card">
-      <h2>weight</h2>
-      <canvas id="homeChart" width="640" height="220" style="width:100%;height:180px"></canvas>
-    </div>
-  </div>
-  <div id="view-workout" class="hidden">
-    <div class="glass card">
-      <div class="row" style="justify-content:space-between">
-        <div><div id="dateLine" style="font-size:18px;font-weight:800"></div><div id="splitLine" class="pill" style="margin-top:8px"></div></div>
-        <div><label style="margin:0">date</label><input type="date" id="date" /></div>
-      </div>
-      <div id="offNote" class="hidden sub" style="margin-top:10px">Sunday rest. You can still save weight.</div>
-    </div>
-    <div class="glass card"><h2><span class="step">1</span> gym entry</h2><div class="grid"><div><label>entry time</label><input type="time" id="entryTime" /></div><div><label>start weight (kg)</label><input id="entryWeight" inputmode="decimal" placeholder="72.4" /></div></div></div>
-    <div class="glass card"><h2><span class="step">2</span> workout & exercises</h2><label>time</label><input type="time" id="after1HourTime" /><label>exercises</label><textarea id="after1HourNote" placeholder="Chest press, fly..."></textarea></div>
-    <div class="glass card"><h2><span class="step">3</span> treadmill normal</h2><div class="grid"><div><label>time</label><input type="time" id="beforeTreadmillTime" /></div><div><label>distance (km)</label><input id="beforeTreadmillKm" inputmode="decimal" /></div><div><label>mins</label><input id="beforeTreadmillMins" inputmode="decimal" /></div><div><label>speed (km/h)</label><input id="beforeTreadmillSpeed" inputmode="decimal" /></div></div><label>note</label><textarea id="beforeTreadmillNote"></textarea></div>
-    <div class="glass card"><h2><span class="step">4</span> treadmill incline</h2><div class="grid"><div><label>time</label><input type="time" id="afterTreadmillTime" /></div><div><label>distance (km)</label><input id="afterTreadmillKm" inputmode="decimal" /></div><div><label>mins</label><input id="afterTreadmillMins" inputmode="decimal" /></div><div><label>speed (km/h)</label><input id="afterTreadmillSpeed" inputmode="decimal" /></div><div><label>incline %</label><input id="afterTreadmillIncline" inputmode="decimal" /></div></div><label>note</label><textarea id="afterTreadmillNote"></textarea></div>
-    <div class="glass card"><h2><span class="step">5</span> end weight</h2><label>weight (kg)</label><input id="afterTreadmillWeight" inputmode="decimal" /></div>
-    <div class="actions"><button class="btn full" id="saveBtn">save</button><button class="btn ok full" id="finishBtn">finish workout</button></div>
-    <div class="glass card"><h2>today's result</h2><div id="resultText" class="today-box">Add start weight</div><p class="sub" id="resultSub">Start vs finish weight.</p><p class="sub" id="tmResult"></p></div>
-  </div>
-  <div id="view-progress" class="hidden">
-    <div class="glass card"><h2>calendar</h2><div class="row" style="justify-content:space-between;margin-bottom:10px"><button class="btn ghost" id="calPrev" style="min-height:40px">‹</button><b id="calTitle"></b><button class="btn ghost" id="calNext" style="min-height:40px">›</button></div><div class="cal" id="cal"></div></div>
-    <div class="glass card"><h2>goal weight</h2><div class="grid"><div><label>target kg</label><input id="goalWeight" inputmode="decimal" /></div><div style="display:flex;align-items:flex-end"><button class="btn full" id="goalBtn" style="min-height:48px">save goal</button></div></div></div>
-    <div class="glass card"><h2>weight graph</h2><canvas id="progChart" width="640" height="240" style="width:100%;height:200px"></canvas></div>
-  </div>
-  <div id="view-history" class="hidden">
-    <div class="glass card"><h2>history</h2><div style="overflow:auto"><table><thead><tr><th>date</th><th>workout</th><th>weight</th><th></th></tr></thead><tbody id="hist"></tbody></table></div></div>
-  </div>
+  <div id="view-home"></div>
+  <div id="view-workout" class="hidden"></div>
+  <div id="view-progress" class="hidden"></div>
+  <div id="view-history" class="hidden"></div>
 </div>
-<nav class="tabbar hidden" id="tabbar">
-  <button class="tab on" data-tab="home">home</button>
-  <button class="tab" data-tab="workout">workout</button>
-  <button class="tab" data-tab="progress">progress</button>
-  <button class="tab" data-tab="history">history</button>
-</nav>
+<nav class="tabbar hidden" id="tabbar"></nav>
 <div class="toast" id="toast"></div>
-<script src="login-scene.js?v=3"></script>
-<script src="login-forgot.js?v=2"></script>
 <script src="app.js?v=12"></script>
-<script src="run.js?v=32"></script>
-<script src="hist-ui.js?v=2"></script>
-<script src="ex-guide.js?v=3"></script>
-<script src="extra-ui.js?v=1"></script>
-<script src="graph-foot.js?v=6"></script>
+<script src="graph-foot.js?v=7"></script>
 </body></html>
