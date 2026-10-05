@@ -1,22 +1,38 @@
 (function () {
   function token() { return localStorage.getItem("sidhi-gym-token") || ""; }
-  function show(email) {
-    var head = document.querySelector("#view-profile .card");
-    if (!head || !email) return;
+  function paint(email) {
+    var view = document.getElementById("view-profile");
+    if (!view || !email) return;
     var line = document.getElementById("pfEmailLine");
     if (!line) {
-      line = document.createElement("p");
+      line = document.createElement("div");
       line.id = "pfEmailLine";
-      line.style.cssText = "text-align:center;color:#9ad7ff;margin:4px 0 0";
-      head.appendChild(line);
+      line.style.cssText = "display:flex;justify-content:space-between;gap:8px;padding:10px 0;border-top:1px solid rgba(255,255,255,.08)";
+      var rows = view.querySelectorAll(".card div, .card p, .stat, .row");
+      var weightRow = null;
+      rows.forEach(function (n) {
+        if ((n.innerText || "").toLowerCase().indexOf("weight") >= 0 && (n.innerText || "").indexOf("kg") >= 0) weightRow = n;
+      });
+      if (weightRow && weightRow.parentNode) weightRow.parentNode.insertBefore(line, weightRow.nextSibling);
+      else {
+        var card = view.querySelector(".card");
+        if (card) card.appendChild(line);
+      }
     }
-    line.textContent = email;
+    line.innerHTML = "<span>email</span><b>" + email + "</b>";
+    var input = document.getElementById("pfEmail");
+    if (input && !input.value) input.value = email;
+  }
+  function load() {
+    if (!document.getElementById("view-profile")) return;
+    fetch("/api/profile-email", { headers: { authorization: "Bearer " + token() } })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { if (d && d.email) paint(d.email); })
+      .catch(function () {});
   }
   function mount() {
-    var old = document.getElementById("pfEmailSave");
-    if (old) { var c = old.closest(".card"); if (c) c.remove(); }
     var name = document.querySelector("#view-profile input");
-    if (!name || document.getElementById("pfEmail")) return;
+    if (!name || document.getElementById("pfEmail")) { load(); return; }
     var card = name.closest(".card") || name.parentNode;
     var emailLab = document.createElement("label");
     emailLab.textContent = "email";
@@ -33,24 +49,18 @@
     card.insertBefore(wLab, weight);
     card.insertBefore(email, name.nextSibling);
     card.insertBefore(emailLab, email);
-    fetch("/api/profile-email", { headers: { authorization: "Bearer " + token() } })
-      .then(function (r) { return r.json(); })
-      .then(function (d) { if (d && d.email) { email.value = d.email; show(d.email); } })
-      .catch(function () {});
     var save = card.querySelector("button");
-    if (!save || save.dataset.extra) return;
-    save.dataset.extra = "1";
-    save.addEventListener("click", function () {
-      var auth = { authorization: "Bearer " + token(), "content-type": "application/json" };
-      fetch("/api/profile-email", { method: "POST", headers: auth, body: JSON.stringify({ email: email.value.trim() }) })
-        .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || "email fail"); return d; }); })
-        .then(function (d) {
-          show(d.email);
-          return fetch("/api/me", { method: "PATCH", headers: auth, body: JSON.stringify({ currentWeight: Number(weight.value) }) });
-        })
-        .then(function () { if (typeof toast === "function") toast("Profile save"); })
-        .catch(function (e) { if (typeof toast === "function") toast(e.message || "save fail"); });
-    });
+    if (save && !save.dataset.extra) {
+      save.dataset.extra = "1";
+      save.addEventListener("click", function () {
+        var auth = { authorization: "Bearer " + token(), "content-type": "application/json" };
+        fetch("/api/profile-email", { method: "POST", headers: auth, body: JSON.stringify({ email: email.value.trim() }) })
+          .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || "email fail"); return d; }); })
+          .then(function (d) { paint(d.email); if (typeof toast === "function") toast("Email added"); })
+          .catch(function (e) { if (typeof toast === "function") toast(e.message || "save fail"); });
+      });
+    }
+    load();
   }
-  setInterval(mount, 800);
+  setInterval(mount, 900);
 })();
