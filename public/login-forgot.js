@@ -1,13 +1,16 @@
 (function () {
   function closeSheet() {
-    var m = document.getElementById("forgotSheet");
-    if (m) m.remove();
+    document.querySelectorAll("#forgotSheet, .sheet, [class*='sheet']").forEach(function (n) {
+      if ((n.innerText || "").toLowerCase().indexOf("forgot") >= 0) n.remove();
+    });
+    var old = document.getElementById("forgotSheet");
+    if (old) old.remove();
   }
   function sheet(html) {
     closeSheet();
     var m = document.createElement("div");
     m.id = "forgotSheet";
-    m.style.cssText = "position:fixed;inset:0;z-index:9999;background:rgba(2,6,14,.75);display:flex;align-items:flex-end;justify-content:center;padding:16px";
+    m.style.cssText = "position:fixed;inset:0;z-index:99999;background:rgba(2,6,14,.78);display:flex;align-items:flex-end;justify-content:center;padding:16px";
     m.innerHTML = '<div style="width:min(420px,100%);background:#121a2b;border-radius:24px;padding:18px;border:1px solid rgba(56,189,248,.28)">' + html + "</div>";
     document.body.appendChild(m);
   }
@@ -34,7 +37,6 @@
   function openUser() {
     sheet(
       '<p class="badge">USERNAME FORGOT</p>' +
-      '<p class="sub">Saved email pe OTP. Verify ke baad username dikhega.</p>' +
       '<input id="fgMail" type="email" placeholder="saved email" />' +
       '<button type="button" id="fgUserSend" class="btn full" style="margin-top:12px">send otp</button>' +
       '<input id="fgUserCode" inputmode="numeric" placeholder="6 digit" style="margin-top:8px" />' +
@@ -43,6 +45,20 @@
     );
   }
   document.addEventListener("click", function (e) {
+    var raw = e.target.closest ? e.target.closest("button, a, p, span") : e.target;
+    var label = raw ? (raw.innerText || "").trim().toLowerCase() : "";
+    if (label === "message admin" || label.indexOf("telegram pe") >= 0) {
+      e.preventDefault();
+      e.stopPropagation();
+      openMenu();
+      return;
+    }
+    if (label === "cancel" && raw && raw.closest && raw.closest("#forgotSheet, [class*='sheet']")) {
+      e.preventDefault();
+      e.stopPropagation();
+      closeSheet();
+      return;
+    }
     var t = e.target.closest ? e.target.closest("button") : e.target;
     if (!t || !t.id) return;
     if (t.id === "fgNo" || t.id === "fgBack") { e.preventDefault(); closeSheet(); }
@@ -81,10 +97,15 @@
         .catch(function (err) { if (typeof toast === "function") toast(err.message || "OTP galat"); });
     }
   }, true);
-  function hook() {
-    document.querySelectorAll("#gate .forgot, #forgotBtn, .forgot").forEach(function (n) {
-      n.onclick = function (e) { if (e) e.preventDefault(); openMenu(); };
+  setInterval(function () {
+    document.querySelectorAll("body *").forEach(function (n) {
+      if (n.id === "forgotSheet") return;
+      if (n.children && n.children.length > 8) return;
+      var tx = n.innerText || "";
+      if (tx.indexOf("chala jayega") >= 0) openMenu();
     });
-  }
-  setInterval(hook, 700);
+    document.querySelectorAll("#gate .forgot, #forgotBtn, .forgot").forEach(function (n) {
+      n.onclick = function (e) { if (e) { e.preventDefault(); e.stopPropagation(); } openMenu(); };
+    });
+  }, 500);
 })();
