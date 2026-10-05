@@ -8,6 +8,13 @@ function Otp() {
     exp: Date
   }, { timestamps: true }));
 }
+async function userFrom(req) {
+  const token = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "").trim();
+  const Token = mongoose.models.Token;
+  if (!token || !Token) return "";
+  const row = await Token.findOne({ token: token, exp: { $gt: new Date() } });
+  return row ? row.username : "";
+}
 
 module.exports = function (app) {
   app.post("/api/otp/send", async function (req, res) {
@@ -40,5 +47,21 @@ module.exports = function (app) {
     if (!row) return res.status(401).json({ error: "OTP galat ya expire" });
     await Otp().deleteMany({ email: email });
     res.json({ ok: true, email: email, ticket: crypto.randomBytes(8).toString("hex") });
+  });
+
+  app.post("/api/profile-email", async function (req, res) {
+    const username = await userFrom(req);
+    if (!username) return res.status(401).json({ error: "Login chahiye" });
+    const email = String((req.body && req.body.email) || "").trim().toLowerCase();
+    if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ error: "Email sahi likho" });
+    await mongoose.connection.collection("users").updateOne({ username: username }, { $set: { email: email } });
+    res.json({ ok: true, email: email });
+  });
+
+  app.get("/api/profile-email", async function (req, res) {
+    const username = await userFrom(req);
+    if (!username) return res.status(401).json({ error: "Login chahiye" });
+    const u = await mongoose.connection.collection("users").findOne({ username: username });
+    res.json({ ok: true, email: (u && u.email) || "" });
   });
 };
