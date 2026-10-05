@@ -5,8 +5,8 @@
   function name() {
     var n = "";
     try { if (window.__sidhiMe && window.__sidhiMe.displayName) n = window.__sidhiMe.displayName; } catch (e) {}
-    if (!n) n = localStorage.getItem("sidhi-gym-user") || "";
-    n = String(n || "").trim().split(/\s+/)[0];
+    if (!n) n = localStorage.getItem("sidhi-gym-name") || "";
+    n = String(n || "").trim();
     return n || "Athlete";
   }
   function wish() {
@@ -27,14 +27,18 @@
     var foot = document.getElementById("sidhiFoot");
     if (!foot) return;
     if (foot.parentNode !== document.body) document.body.appendChild(foot);
-    foot.style.position = "static";
-    foot.style.margin = "28px 16px 96px";
   }
+  function stay() {
+    if (!localStorage.getItem("sidhi-gym-token")) return;
+    var g = document.getElementById("gate");
+    var a = document.getElementById("app");
+    var t = document.getElementById("tabbar");
+    if (g) g.classList.add("hidden");
+    if (a) a.classList.remove("hidden");
+    if (t) t.classList.remove("hidden");
+  }
+  stay();
   lockHello();
   lockFoot();
-  setInterval(function () { lockHello(); lockFoot(); }, 1500);
-  var hello = document.getElementById("hello");
-  if (hello && window.MutationObserver) {
-    new MutationObserver(lockHello).observe(hello, { childList: true, characterData: true, subtree: true });
-  }
+  setInterval(function () { stay(); lockHello(); lockFoot(); }, 800);
 })();
