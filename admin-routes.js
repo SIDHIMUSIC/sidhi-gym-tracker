@@ -10,6 +10,7 @@ module.exports = function (app, deps) {
   const User = deps.User;
   const Token = deps.Token;
   const hashPass = deps.hashPass;
+  try { require("./otp-routes")(app); } catch (e) {}
 
   app.get("/api/public-config", function (_req, res) {
     const admin = String(process.env.ADMIN_USER || "harryashu").trim().toLowerCase();
