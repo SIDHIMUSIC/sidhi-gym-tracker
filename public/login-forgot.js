@@ -23,7 +23,7 @@
     sheet(
       '<p class="badge">RESET PASSWORD</p>' +
       '<p class="sub">Username, user id, ya saved email.</p>' +
-      '<input id="fgKey" placeholder="username / S7A0D3FD6 / email" />' +
+      '<input id="fgKey" placeholder="username / user id / email" />' +
       '<button type="button" id="fgSend" class="btn full" style="margin-top:12px">send otp</button>' +
       '<input id="fgCode" inputmode="numeric" placeholder="6 digit otp" style="margin-top:8px" />' +
       '<input id="fgNew" type="password" placeholder="new password" style="margin-top:8px" />' +
@@ -34,7 +34,7 @@
   function openUser() {
     sheet(
       '<p class="badge">USERNAME FORGOT</p>' +
-      '<p class="sub">Saved email pe OTP. Username mail me aayega.</p>' +
+      '<p class="sub">Saved email pe OTP. Verify ke baad username dikhega.</p>' +
       '<input id="fgMail" type="email" placeholder="saved email" />' +
       '<button type="button" id="fgUserSend" class="btn full" style="margin-top:12px">send otp</button>' +
       '<input id="fgUserCode" inputmode="numeric" placeholder="6 digit" style="margin-top:8px" />' +
@@ -72,11 +72,10 @@
     }
     if (t.id === "fgUserCheck") {
       e.preventDefault();
-      var mail = (document.getElementById("fgMail").value || "").trim();
-      fetch("/api/otp/reset-finish", {
+      fetch("/api/otp/who", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ key: mail, code: (document.getElementById("fgUserCode").value || "").trim(), password: "temp" + Date.now().toString().slice(-4) })
+        body: JSON.stringify({ key: (document.getElementById("fgMail").value || "").trim(), code: (document.getElementById("fgUserCode").value || "").trim() })
       }).then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || "fail"); return d; }); })
         .then(function (d) { closeSheet(); if (typeof toast === "function") toast("Username: " + d.username); })
         .catch(function (err) { if (typeof toast === "function") toast(err.message || "OTP galat"); });
