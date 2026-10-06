@@ -16,8 +16,8 @@
     }
     if (!n) n = clean(window.__displayName);
     if (!n) n = clean(localStorage.getItem("sidhi-gym-name"));
-    if (n) return n;
-    return clean(localStorage.getItem("sidhi-gym-user")) || clean(localStorage.getItem("sidhi-gym-username")) || "";
+    if (!n) n = clean(localStorage.getItem("sidhi-gym-user")) || clean(localStorage.getItem("sidhi-gym-username")) || "";
+    return n ? n.split(/\s+/)[0] : "";
   }
   function wish() {
     var h = hourIST();
