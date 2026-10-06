@@ -189,12 +189,21 @@ app.post("/api/register", async (req, res) => {
     const pass = String(req.body.password || req.body.pass || "");
     const displayName = String(req.body.displayName || req.body.name || "").trim().slice(0, 40);
     const gender = String(req.body.gender || "").toLowerCase();
+    const email = String(req.body.email || "").trim().toLowerCase();
+    const otp = String(req.body.otp || req.body.code || "").trim();
     if (!/^[a-z0-9_]{2,32}$/.test(username)) {
       return res.status(400).json({ error: "Username 2-32, sirf letters/numbers/_ " });
     }
     if (pass.length < 4) return res.status(400).json({ error: "Password kam se kam 4 character" });
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ error: "Email sahi likho" });
+    if (!/^\d{6}$/.test(otp)) return res.status(400).json({ error: "6 digit OTP daalo" });
+    const Otp = mongoose.models.Otp;
+    const otpRow = Otp && await Otp.findOne({ email: email, code: otp, exp: { $gt: new Date() } });
+    if (!otpRow) return res.status(401).json({ error: "OTP galat ya expire. Pehle email pe code lo." });
     const exists = await User.findOne({ username });
     if (exists) return res.status(409).json({ error: "Ye username pehle se hai. Login karo." });
+    const mailTaken = await mongoose.connection.collection("users").findOne({ email: email });
+    if (mailTaken) return res.status(409).json({ error: "Ye email pehle se kisi account pe hai." });
     const salt = crypto.randomBytes(16).toString("hex");
     await User.create({
       username,
@@ -203,6 +212,8 @@ app.post("/api/register", async (req, res) => {
       displayName,
       gender: gender === "female" ? "female" : gender === "male" ? "male" : ""
     });
+    await mongoose.connection.collection("users").updateOne({ username }, { $set: { email: email } });
+    if (Otp) await Otp.deleteMany({ email: email });
     const token = crypto.randomBytes(24).toString("hex");
     await Token.create({ token, username, exp: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) });
     res.json({ ok: true, username, token, displayName, gender: gender === "female" ? "female" : gender === "male" ? "male" : "" });
