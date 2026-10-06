@@ -141,21 +141,32 @@
   function signupModal() {
     if (el("regModal")) { el("regModal").classList.remove("hidden"); return; }
     var m = document.createElement("div"); m.id = "regModal"; m.className = "modal";
-    m.innerHTML = '<div class="sheet"><p class="badge">CREATE ACCOUNT</p><label>full name</label><input id="regName" placeholder="Enter your name" /><label>username</label><input id="regUser" autocomplete="username" /><label>password</label><input id="regPass" type="password" autocomplete="new-password" /><label>gender</label><div class="seg" id="regGen"><button type="button" data-g="male" class="on">Male</button><button type="button" data-g="female">Female</button></div><p class="sub" id="regErr"></p><button class="btn ok full" id="regGo" style="margin-top:12px">create</button><button class="btn ghost full" id="regClose" style="margin-top:8px">cancel</button></div>';
+    m.innerHTML = '<div class="sheet"><p class="badge">CREATE ACCOUNT</p><label>full name</label><input id="regName" placeholder="Enter your name" /><label>username</label><input id="regUser" autocomplete="username" /><label>password</label><input id="regPass" type="password" autocomplete="new-password" /><label>email</label><input id="regEmail" type="email" autocomplete="email" placeholder="you@gmail.com" /><button type="button" class="btn ghost full" id="regSend" style="margin-top:8px">send otp</button><label>otp</label><input id="regOtp" inputmode="numeric" maxlength="6" placeholder="6 digit code" /><label>gender</label><div class="seg" id="regGen"><button type="button" data-g="male" class="on">Male</button><button type="button" data-g="female">Female</button></div><p class="sub" id="regErr"></p><button class="btn ok full" id="regGo" style="margin-top:12px">create</button><button class="btn ghost full" id="regClose" style="margin-top:8px">cancel</button></div>';
     document.body.appendChild(m);
     document.querySelectorAll("#regGen button").forEach(function (b) {
       b.onclick = function () { document.querySelectorAll("#regGen button").forEach(function (x) { x.classList.remove("on"); }); b.classList.add("on"); };
     });
     el("regClose").onclick = function () { m.classList.add("hidden"); };
+    el("regSend").onclick = async function () {
+      var email = el("regEmail").value.trim().toLowerCase();
+      el("regErr").textContent = "OTP bhej rahe hain";
+      try {
+        await api("/api/otp/send", { method: "POST", body: { email: email } });
+        el("regErr").textContent = "OTP email pe chala gaya";
+      } catch (e) { el("regErr").textContent = e.message; }
+    };
     el("regGo").onclick = async function () {
       var name = el("regName").value.trim();
       var user = el("regUser").value.trim().toLowerCase();
       var pass = el("regPass").value;
+      var email = el("regEmail").value.trim().toLowerCase();
+      var otp = el("regOtp").value.trim();
       var g = (document.querySelector("#regGen button.on") || {}).dataset.g || "male";
       if (user.length < 2) { el("regErr").textContent = "Username too short"; return; }
       if (pass.length < 4) { el("regErr").textContent = "Password min 4"; return; }
+      if (!email || otp.length !== 6) { el("regErr").textContent = "Email aur 6 digit OTP daalo"; return; }
       try {
-        await api("/api/register", { method: "POST", body: { username: user, password: pass, displayName: name, gender: g } });
+        await api("/api/register", { method: "POST", body: { username: user, password: pass, displayName: name, gender: g, email: email, otp: otp } });
         el("loginUser").value = user; el("loginPass").value = pass;
         m.classList.add("hidden"); if (typeof login === "function") login();
       } catch (e) { el("regErr").textContent = e.message; }
