@@ -6,7 +6,8 @@
     var n = "";
     try { if (window.__sidhiMe && window.__sidhiMe.displayName) n = window.__sidhiMe.displayName; } catch (e) {}
     if (!n) n = localStorage.getItem("sidhi-gym-name") || "";
-    return String(n || "").trim() || "Athlete";
+    n = String(n || "").trim();
+    return (n.split(/\s+/)[0]) || "Athlete";
   }
   function wish() {
     var h = hourIST();
