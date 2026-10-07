@@ -11,6 +11,27 @@
     var n = document.getElementById("fgNote");
     if (n) n.textContent = msg;
   }
+  function spin(title, sub) {
+    if (!document.getElementById("fgSpinCss")) {
+      var st = document.createElement("style");
+      st.id = "fgSpinCss";
+      st.textContent = "@keyframes fgTurn{to{transform:rotate(360deg)}}#fgSpin{position:absolute;inset:0;border-radius:24px;background:rgba(8,12,22,.92);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:2}#fgRing{width:84px;height:84px;border-radius:50%;border:3px solid rgba(255,255,255,.12);border-top-color:#f0c27a;animation:fgTurn .8s linear infinite}#fgSpin b{color:#f6f1e8;font:700 15px Comfortaa,sans-serif}#fgSpin span{color:#9fb0c3;font-size:12px}";
+      document.head.appendChild(st);
+    }
+    var box = document.querySelector("#forgotSheet > div");
+    if (!box) return;
+    box.style.position = "relative";
+    var old = document.getElementById("fgSpin");
+    if (old) old.remove();
+    var el = document.createElement("div");
+    el.id = "fgSpin";
+    el.innerHTML = '<div id="fgRing"></div><b>' + title + '</b><span>' + (sub || "") + '</span>';
+    box.appendChild(el);
+  }
+  function stopSpin() {
+    var el = document.getElementById("fgSpin");
+    if (el) el.remove();
+  }
   function closeSheet() {
     var old = document.getElementById("forgotSheet");
     if (old) old.remove();
@@ -102,11 +123,14 @@
     }
     if (t.id === "fgSend") {
       e.preventDefault();
-      note("1. account dhoondh rahe");
+      spin("account finding", "saved email dhoondh rahe");
       fetch("/api/otp/reset-start", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ key: (document.getElementById("fgKey").value || "").trim() }) })
         .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || "fail"); return d; }); })
-        .then(function (d) { note("2. OTP " + (d.hint || "email") + " pe gaya. 3. code daalo"); })
-        .catch(function (err) { note(err.message || "OTP fail"); });
+        .then(function (d) {
+          spin("otp sent", d.hint || "email");
+          setTimeout(function () { stopSpin(); note("code daalo"); }, 1100);
+        })
+        .catch(function (err) { stopSpin(); note(err.message || "OTP fail"); });
     }
     if (t.id === "fgReset") {
       e.preventDefault();
