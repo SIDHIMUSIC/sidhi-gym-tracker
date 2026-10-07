@@ -40,31 +40,30 @@ async function mail(email, code) {
     err.status = 503;
     throw err;
   }
-  const html = [
-    "<!doctype html><html><body style=\\"margin:0;padding:0;background:#e8edf3;\\">",
-    "<table role=\\"presentation\\" width=\\"100%\\" cellpadding=\\"0\\" cellspacing=\\"0\\" style=\\"background:#e8edf3;padding:28px 12px;\\"><tr><td align=\\"center\\">",
-    "<table role=\\"presentation\\" width=\\"100%\\" cellpadding=\\"0\\" cellspacing=\\"0\\" style=\\"max-width:480px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;\\">",
-    "<tr><td style=\\"background:#0b1220;padding:22px 28px;\\">",
-    "<p style=\\"margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;letter-spacing:3px;color:#e8c98a;\\">SIDHI GYM</p>",
-    "<p style=\\"margin:6px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#9fb0c3;\\">Training log</p>",
-    "</td></tr>",
-    "<tr><td style=\\"padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif;\\">",
-    "<h1 style=\\"margin:0;font-size:24px;line-height:1.3;color:#0f172a;font-weight:700;\\">Verify your email</h1>",
-    "<p style=\\"margin:12px 0 0;font-size:15px;line-height:1.55;color:#475569;\\">Enter this code in Sidhi Gym to finish creating your account. It expires in 10 minutes.</p>",
-    "</td></tr>",
-    "<tr><td align=\\"center\\" style=\\"padding:20px 28px 8px;\\">",
-    "<div style=\\"font-family:Arial,Helvetica,sans-serif;font-size:32px;letter-spacing:10px;font-weight:700;color:#0f172a;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 12px;\\">" + code + "</div>",
-    "</td></tr>",
-    "<tr><td align=\\"center\\" style=\\"padding:18px 28px 8px;\\">",
-    "<a href=\\"https://sidhi-gym-tracker.vercel.app/\\" style=\\"display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;padding:14px 28px;border-radius:999px;\\">Open Sidhi Gym</a>",
-    "</td></tr>",
-    "<tr><td align=\\"center\\" style=\\"padding:8px 28px 22px;font-family:Arial,Helvetica,sans-serif;font-size:12px;\\">",
-    "<a href=\\"https://sidhi-gym-tracker.vercel.app/\\" style=\\"color:#64748b;text-decoration:underline;\\">sidhi-gym-tracker.vercel.app</a>",
-    "</td></tr>",
-    "<tr><td style=\\"padding:0 28px 24px;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#64748b;\\">Do not share this code. Sidhi Gym will never ask for it on a call or chat. If you did not request this, you can ignore this email.</td></tr>",
-    "<tr><td style=\\"padding:16px 28px;background:#f8fafc;border-top:1px solid #e2e8f0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#94a3b8;\\">Sidhi Gym · daily training log</td></tr>",
-    "</table></td></tr></table></body></html>"
-  ].join("");
+  const appUrl = "https://sidhi-gym-tracker.vercel.app/";
+  const html = "<!doctype html><html><body style='margin:0;padding:0;background:#e8edf3'>"
+    + "<table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='background:#e8edf3;padding:28px 12px'><tr><td align='center'>"
+    + "<table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='max-width:480px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0'>"
+    + "<tr><td style='background:#0b1220;padding:22px 28px'>"
+    + "<p style='margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;letter-spacing:3px;color:#e8c98a'>SIDHI GYM</p>"
+    + "<p style='margin:6px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#9fb0c3'>Training log</p>"
+    + "</td></tr>"
+    + "<tr><td style='padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif'>"
+    + "<h1 style='margin:0;font-size:24px;line-height:1.3;color:#0f172a;font-weight:700'>Verify your email</h1>"
+    + "<p style='margin:12px 0 0;font-size:15px;line-height:1.55;color:#475569'>Enter this code in Sidhi Gym to finish. It expires in 10 minutes.</p>"
+    + "</td></tr>"
+    + "<tr><td align='center' style='padding:20px 28px 8px'>"
+    + "<div style='font-family:Arial,Helvetica,sans-serif;font-size:32px;letter-spacing:10px;font-weight:700;color:#0f172a;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 12px'>" + code + "</div>"
+    + "</td></tr>"
+    + "<tr><td align='center' style='padding:18px 28px 8px'>"
+    + "<a href='" + appUrl + "' style='display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;padding:14px 28px;border-radius:999px'>Open Sidhi Gym</a>"
+    + "</td></tr>"
+    + "<tr><td align='center' style='padding:8px 28px 22px;font-family:Arial,Helvetica,sans-serif;font-size:12px'>"
+    + "<a href='" + appUrl + "' style='color:#64748b;text-decoration:underline'>sidhi-gym-tracker.vercel.app</a>"
+    + "</td></tr>"
+    + "<tr><td style='padding:0 28px 24px;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#64748b'>Do not share this code. Sidhi Gym will never ask for it on a call or chat.</td></tr>"
+    + "<tr><td style='padding:16px 28px;background:#f8fafc;border-top:1px solid #e2e8f0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#94a3b8'>Sidhi Gym · daily training log</td></tr>"
+    + "</table></td></tr></table></body></html>";
   const r = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
     headers: { "api-key": key, "content-type": "application/json", accept: "application/json" },
