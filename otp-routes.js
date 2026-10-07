@@ -40,14 +40,27 @@ async function mail(email, code) {
     err.status = 503;
     throw err;
   }
+  const html = [
+    "<!doctype html><html><body style=\"margin:0;background:#070b14;font-family:Arial,Helvetica,sans-serif;\">",
+    "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#070b14;padding:28px 12px;\"><tr><td align=\"center\">",
+    "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:460px;background:#101826;border:1px solid #243044;border-radius:18px;overflow:hidden;\">",
+    "<tr><td style=\"padding:22px 24px 8px;\"><p style=\"margin:0;letter-spacing:3px;font-size:11px;color:#d4b483;\">SIDHI GYM</p>",
+    "<h1 style=\"margin:8px 0 0;font-size:22px;color:#f6f1e8;font-weight:700;\">Verify your email</h1></td></tr>",
+    "<tr><td style=\"padding:8px 24px 0;color:#b7c3d4;font-size:14px;line-height:1.5;\">Use this code to finish creating your Sidhi Gym account. It expires in 10 minutes.</td></tr>",
+    "<tr><td align=\"center\" style=\"padding:22px 24px;\"><div style=\"display:inline-block;background:#0b1220;border:1px solid #3a4d68;border-radius:14px;padding:16px 28px;letter-spacing:8px;font-size:30px;font-weight:700;color:#f0c27a;\">" + code + "</div></td></tr>",
+    "<tr><td style=\"padding:0 24px 22px;color:#8ea0b5;font-size:12px;line-height:1.5;\">Do not share this code. Sidhi Gym will never ask for it on a call or chat.<br>If you did not request this, ignore this email.</td></tr>",
+    "<tr><td style=\"padding:14px 24px;background:#0b1220;color:#6d7d90;font-size:11px;\">Sidhi Gym · training log</td></tr>",
+    "</table></td></tr></table></body></html>"
+  ].join("");
   const r = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
     headers: { "api-key": key, "content-type": "application/json", accept: "application/json" },
     body: JSON.stringify({
       sender: { email: from, name: "Sidhi Gym" },
       to: [{ email: email }],
-      subject: "Sidhi Gym OTP " + code,
-      textContent: "Sidhi Gym code: " + code + "\n10 minute me expire."
+      subject: "Your Sidhi Gym verification code",
+      textContent: "Sidhi Gym verification code: " + code + "\nThis code expires in 10 minutes. Do not share it.",
+      htmlContent: html
     })
   });
   if (!r.ok) {
