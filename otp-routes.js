@@ -41,15 +41,28 @@ async function mail(email, code) {
     throw err;
   }
   const html = [
-    "<!doctype html><html><body style=\"margin:0;background:#070b14;font-family:Arial,Helvetica,sans-serif;\">",
-    "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#070b14;padding:28px 12px;\"><tr><td align=\"center\">",
-    "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"max-width:460px;background:#101826;border:1px solid #243044;border-radius:18px;overflow:hidden;\">",
-    "<tr><td style=\"padding:22px 24px 8px;\"><p style=\"margin:0;letter-spacing:3px;font-size:11px;color:#d4b483;\">SIDHI GYM</p>",
-    "<h1 style=\"margin:8px 0 0;font-size:22px;color:#f6f1e8;font-weight:700;\">Verify your email</h1></td></tr>",
-    "<tr><td style=\"padding:8px 24px 0;color:#b7c3d4;font-size:14px;line-height:1.5;\">Use this code to finish creating your Sidhi Gym account. It expires in 10 minutes.</td></tr>",
-    "<tr><td align=\"center\" style=\"padding:22px 24px;\"><div style=\"display:inline-block;background:#0b1220;border:1px solid #3a4d68;border-radius:14px;padding:16px 28px;letter-spacing:8px;font-size:30px;font-weight:700;color:#f0c27a;\">" + code + "</div></td></tr>",
-    "<tr><td style=\"padding:0 24px 22px;color:#8ea0b5;font-size:12px;line-height:1.5;\">Do not share this code. Sidhi Gym will never ask for it on a call or chat.<br>If you did not request this, ignore this email.</td></tr>",
-    "<tr><td style=\"padding:14px 24px;background:#0b1220;color:#6d7d90;font-size:11px;\">Sidhi Gym · training log</td></tr>",
+    "<!doctype html><html><body style=\\"margin:0;padding:0;background:#e8edf3;\\">",
+    "<table role=\\"presentation\\" width=\\"100%\\" cellpadding=\\"0\\" cellspacing=\\"0\\" style=\\"background:#e8edf3;padding:28px 12px;\\"><tr><td align=\\"center\\">",
+    "<table role=\\"presentation\\" width=\\"100%\\" cellpadding=\\"0\\" cellspacing=\\"0\\" style=\\"max-width:480px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;\\">",
+    "<tr><td style=\\"background:#0b1220;padding:22px 28px;\\">",
+    "<p style=\\"margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;letter-spacing:3px;color:#e8c98a;\\">SIDHI GYM</p>",
+    "<p style=\\"margin:6px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#9fb0c3;\\">Training log</p>",
+    "</td></tr>",
+    "<tr><td style=\\"padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif;\\">",
+    "<h1 style=\\"margin:0;font-size:24px;line-height:1.3;color:#0f172a;font-weight:700;\\">Verify your email</h1>",
+    "<p style=\\"margin:12px 0 0;font-size:15px;line-height:1.55;color:#475569;\\">Enter this code in Sidhi Gym to finish creating your account. It expires in 10 minutes.</p>",
+    "</td></tr>",
+    "<tr><td align=\\"center\\" style=\\"padding:20px 28px 8px;\\">",
+    "<div style=\\"font-family:Arial,Helvetica,sans-serif;font-size:32px;letter-spacing:10px;font-weight:700;color:#0f172a;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 12px;\\">" + code + "</div>",
+    "</td></tr>",
+    "<tr><td align=\\"center\\" style=\\"padding:18px 28px 8px;\\">",
+    "<a href=\\"https://sidhi-gym-tracker.vercel.app/\\" style=\\"display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;padding:14px 28px;border-radius:999px;\\">Open Sidhi Gym</a>",
+    "</td></tr>",
+    "<tr><td align=\\"center\\" style=\\"padding:8px 28px 22px;font-family:Arial,Helvetica,sans-serif;font-size:12px;\\">",
+    "<a href=\\"https://sidhi-gym-tracker.vercel.app/\\" style=\\"color:#64748b;text-decoration:underline;\\">sidhi-gym-tracker.vercel.app</a>",
+    "</td></tr>",
+    "<tr><td style=\\"padding:0 28px 24px;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#64748b;\\">Do not share this code. Sidhi Gym will never ask for it on a call or chat. If you did not request this, you can ignore this email.</td></tr>",
+    "<tr><td style=\\"padding:16px 28px;background:#f8fafc;border-top:1px solid #e2e8f0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#94a3b8;\\">Sidhi Gym · daily training log</td></tr>",
     "</table></td></tr></table></body></html>"
   ].join("");
   const r = await fetch("https://api.brevo.com/v3/smtp/email", {
