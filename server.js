@@ -348,6 +348,7 @@ app.delete("/api/session/:date", auth, async (req, res) => {
 });
 
 require("./admin-routes")(app, { User: User, Token: Token, hashPass: hashPass });
+require("./otp-routes")(app);
 
 app.use(express.static(path.join(__dirname, "public")));
 app.get("*", (req, res) => {
