@@ -33,7 +33,7 @@
     X("Rope Triceps Pushdown", "3 × 10–15", "2-LAMcrL1Ko", "Triceps_Pushdown"),
     X("Overhead Triceps Extension", "3 × 10–15", "Yb3jIHsLoMA", "Standing_Dumbbell_Triceps_Extension"),
     X("Skull Crushers", "2 × 10–12", "d_K6VPHiAOE", "EZ-Bar_Skullcrusher")
-  ].concat(ABSA);
+  ];
   const D2 = [
     X("Pull-Ups / Lat Pulldown", "3 × 6–12", "CAwf7n6Luuc", "Wide-Grip_Lat_Pulldown"),
     X("Barbell Bent-Over Row", "3 × 6–10", "kBWAon7ItEc", "Bent_Over_Barbell_Row"),
@@ -41,7 +41,7 @@
     X("Face Pull", "2 × 12–15", "rep-xVEkqas", "Face_Pull"),
     X("Barbell Curl", "3 × 8–12", "kwG2ipFRgfo", "Barbell_Curl"),
     X("Dumbbell Hammer Curl", "3 × 10–12", "zC3nLlEvin4", "Hammer_Curls")
-  ].concat(ABSB);
+  ];
   const D3 = [
     X("Dumbbell Shoulder Press", "3 × 8–12", "qEwKCR5JCog", "Dumbbell_Shoulder_Press"),
     X("Dumbbell Lateral Raise", "3 × 12–15", "3VcKaXpzqRo", "Side_Lateral_Raise"),
@@ -52,7 +52,7 @@
     X("Leg Extension", "2 × 12–15", "YyvSfVjQeL0", "Leg_Extensions"),
     X("Lying / Seated Leg Curl", "2 × 10–15", "1Tq3QMfoSdU", "Lying_Leg_Curls"),
     X("Standing / Seated Calf Raise", "3 × 12–20", "gwLzBJYoNlA", "Standing_Calf_Raises")
-  ].concat(ABSC);
+  ];
   const D4 = [
     X("Incline Barbell / DB Press", "3 × 8–12", "8iPEnn-ltC8", "Incline_Dumbbell_Press"),
     X("Flat Dumbbell Press", "3 × 8–12", "VmB1G1K7vJU", "Dumbbell_Bench_Press"),
@@ -60,7 +60,7 @@
     X("Cable Fly", "2 × 12–15", "Iwe6AmxVf7o", "Cable_Crossover"),
     X("Triceps Rope Pushdown", "3 × 10–15", "2-LAMcrL1Ko", "Triceps_Pushdown"),
     X("Overhead Triceps Extension", "3 × 10–15", "Yb3jIHsLoMA", "Standing_Dumbbell_Triceps_Extension")
-  ].concat(ABSA);
+  ];
   const D5 = [
     X("Lat Pulldown / Pull-Ups", "3 × 8–12", "CAwf7n6Luuc", "Wide-Grip_Lat_Pulldown"),
     X("Chest-Supported Row", "3 × 8–12", "0GHzTIekh3k", "Bent_Over_Two-Dumbbell_Row"),
@@ -68,7 +68,7 @@
     X("Straight-Arm Pulldown", "2 × 12–15", "wcDX9kU77V0", "Straight-Arm_Pulldown"),
     X("Preacher Curl", "3 × 10–12", "fPDF-a58XsA", "Preacher_Curl"),
     X("Hammer Curl", "3 × 10–12", "zC3nLlEvin4", "Hammer_Curls")
-  ].concat(ABSB);
+  ];
   const D6 = [
     X("Dumbbell Shoulder Press", "3 × 8–12", "qEwKCR5JCog", "Dumbbell_Shoulder_Press"),
     X("Cable / DB Lateral Raise", "3 × 12–15", "3VcKaXpzqRo", "Side_Lateral_Raise"),
@@ -79,16 +79,16 @@
     X("Leg Curl", "3 × 10–15", "1Tq3QMfoSdU", "Lying_Leg_Curls"),
     X("Leg Extension", "2 × 12–15", "YyvSfVjQeL0", "Leg_Extensions"),
     X("Calf Raise", "3 × 12–20", "gwLzBJYoNlA", "Standing_Calf_Raises")
-  ].concat(ABSC);
+  ];
 
   const PLAN = {
-    Monday: { title: "Day 1 — Chest + Triceps + Abs A", list: D1 },
-    Tuesday: { title: "Day 2 — Back + Biceps + Abs B", list: D2 },
-    Wednesday: { title: "Day 3 — Shoulders + Legs + Abs C", list: D3 },
-    Thursday: { title: "Day 4 — Chest + Triceps + Abs A", list: D4 },
-    Friday: { title: "Day 5 — Back + Biceps + Abs B", list: D5 },
-    Saturday: { title: "Day 6 — Shoulders + Legs + Abs C", list: D6 },
-    Sunday: { title: "Day 7 — Rest / Recovery", list: [] }
+    Monday: { title: "Day 1 — Chest + Triceps", list: D1, abs: ABSA },
+    Tuesday: { title: "Day 2 — Back + Biceps", list: D2, abs: ABSB },
+    Wednesday: { title: "Day 3 — Shoulders + Legs", list: D3, abs: ABSC },
+    Thursday: { title: "Day 4 — Chest + Triceps", list: D4, abs: ABSA },
+    Friday: { title: "Day 5 — Back + Biceps", list: D5, abs: ABSB },
+    Saturday: { title: "Day 6 — Shoulders + Legs", list: D6, abs: ABSC },
+    Sunday: { title: "Day 7 — Rest / Recovery", list: [], abs: [] }
   };
   window.SIDHI_PLAN = PLAN;
   window.SIDHI_DAY_OPTIONS = KEYS.map(function (k) { return PLAN[k].title; });
@@ -137,17 +137,36 @@
     const key = pick || weekday;
     const today = todayKey();
     const head = '<p class="badge">' + fancy(key === today && !pick ? "today plan" : "plan preview") + ' • ' + fancy(key) + '</p>' + pills(key) + '<h3>' + fancy(plan.title) + '</h3>';
-    if (!plan.list.length) {
+    if (!plan.list.length && !(plan.abs && plan.abs.length)) {
       box.innerHTML = head + '<p class="sub">' + fancy("rest and recovery. walk optional.") + '</p>';
       bindDays(box); return;
     }
-    box.innerHTML = head + '<p class="sub">' + fancy(plan.list.length + " moves. last 3 are abs. tap video.") + '</p>' +
-      '<div class="ex-list">' + plan.list.map(cardHtml).join("") + "</div>" +
-      '<button class="btn ok full" type="button" data-exfill style="margin-top:12px">' + fancy("put list in notes") + '</button>';
+    var html = head;
+    if (plan.list.length) {
+      html += '<p class="ex-sec">' + fancy("exercises") + '</p>';
+      html += '<div class="ex-list">' + plan.list.map(cardHtml).join("") + "</div>";
+    }
+    if (plan.abs && plan.abs.length) {
+      html += '<p class="ex-sec" style="margin-top:16px">' + fancy("abs") + '</p>';
+      html += '<div class="ex-list">' + plan.abs.map(cardHtml).join("") + "</div>";
+    }
+    html += '<button class="btn ok full" type="button" data-exfill style="margin-top:12px">' + fancy("put list in notes") + '</button>';
+    box.innerHTML = html;
     bindDays(box);
     const fill = box.querySelector("[data-exfill]");
     if (fill) fill.onclick = function () {
-      const text = plan.title + "\n" + plan.list.map(function (e, i) { return (i + 1) + ". " + e.n + "  " + e.s; }).join("\n");
+      var lines = [plan.title];
+      if (plan.list.length) {
+        lines.push("");
+        lines.push("Exercises:");
+        plan.list.forEach(function (e, i) { lines.push((i + 1) + ". " + e.n + "  " + e.s); });
+      }
+      if (plan.abs && plan.abs.length) {
+        lines.push("");
+        lines.push("Abs:");
+        plan.abs.forEach(function (e, i) { lines.push((i + 1) + ". " + e.n + "  " + e.s); });
+      }
+      const text = lines.join("\n");
       const ta = el("after1HourNote");
       if (!ta) {
         if (typeof showTab === "function") showTab("workout");
@@ -173,7 +192,7 @@
   if (!document.getElementById("ex-guide-css")) {
     const st = document.createElement("style");
     st.id = "ex-guide-css";
-    st.textContent = ".ex-box h3{margin:8px 0;font:800 16px Syne,sans-serif;color:#ffe4b5}.ex-days{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 4px}.ex-day{min-height:36px;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;font:800 11px Comfortaa,sans-serif}.ex-day.on{background:linear-gradient(135deg,#ff9a9e,#f0c27a);color:#120d06;border:0}.ex-list{display:flex;flex-direction:column;gap:10px;margin-top:10px}.ex-card{display:flex;gap:10px;align-items:center;padding:8px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:inherit;text-decoration:none}.ex-no{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font:800 11px Syne,sans-serif;background:#f0c27a;color:#120d06;flex:0 0 22px}.ex-anim{position:relative;width:104px;height:80px;flex:0 0 104px;border-radius:14px;overflow:hidden;background:#111}.ex-anim img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.ex-anim .a0{animation:exSwap 1.4s steps(1) infinite}.ex-anim .a1{opacity:0;animation:exSwap2 1.4s steps(1) infinite}@keyframes exSwap{0%,49%{opacity:1}50%,100%{opacity:0}}@keyframes exSwap2{0%,49%{opacity:0}50%,100%{opacity:1}}.ex-card b{display:block;font-size:13px}.ex-card span{display:block;margin-top:3px;font-size:11px;color:#9aa7b8}";
+    st.textContent = ".ex-box h3{margin:8px 0;font:800 16px Syne,sans-serif;color:#ffe4b5}.ex-days{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 4px}.ex-day{min-height:36px;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;font:800 11px Comfortaa,sans-serif}.ex-day.on{background:linear-gradient(135deg,#ff9a9e,#f0c27a);color:#120d06;border:0}.ex-list{display:flex;flex-direction:column;gap:10px;margin-top:10px}.ex-card{display:flex;gap:10px;align-items:center;padding:8px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:inherit;text-decoration:none}.ex-no{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font:800 11px Syne,sans-serif;background:#f0c27a;color:#120d06;flex:0 0 22px}.ex-anim{position:relative;width:104px;height:80px;flex:0 0 104px;border-radius:14px;overflow:hidden;background:#111}.ex-anim img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.ex-anim .a0{animation:exSwap 1.4s steps(1) infinite}.ex-anim .a1{opacity:0;animation:exSwap2 1.4s steps(1) infinite}@keyframes exSwap{0%,49%{opacity:1}50%,100%{opacity:0}}@keyframes exSwap2{0%,49%{opacity:0}50%,100%{opacity:1}}.ex-card b{display:block;font-size:13px}.ex-card span{display:block;margin-top:3px;font-size:11px;color:#9aa7b8}.ex-sec{margin:14px 0 6px;font:800 13px Syne,sans-serif;letter-spacing:.14em;color:#f0c27a;text-transform:uppercase}";
     document.head.appendChild(st);
   }
   function ensureBox(afterId, boxId) {
