@@ -101,7 +101,7 @@
   </style>
 </head>
 <body>
-<div id="bootSplash"><div class="sg-loader"><div class="sg-typing"><span class="sg-type">SIDHI</span><span class="sg-cur"></span></div><div class="sg-line"></div></div><div class="sg-bar"></div></div></div><div id="appLoad"><div class="sg-loader"><div class="sg-typing"><span class="sg-type">SIDHI</span><span class="sg-cur"></span></div><div class="sg-line"></div></div><div class="sg-bar"></div></div></div>
+<div id="bootSplash"><div class="sg-loader"><div class="sg-typing"><span class="sg-type">SIDHI</span><span class="sg-cur"></span></div><div class="sg-line"></div></div><div class="sg-bar"></div></div></div><div id="appLoad" hidden><div class="sg-loader"><div class="sg-typing"><span class="sg-type">SIDHI</span><span class="sg-cur"></span></div><div class="sg-line"></div></div><div class="sg-bar"></div></div></div>
 <canvas id="fx"></canvas>
 <div id="gate" class="gate layer">
   <div class="glass card">
@@ -190,25 +190,13 @@
 <script src="graph-foot.js?v=14"></script>
 <script src="nav-seg.js?v=5"></script>
 <script>
-  (function () {
-    var n = 0, box = document.getElementById("appLoad");
-    function show(on) { if (box) box.classList.toggle("on", on); }
-    var orig = window.fetch;
-    window.fetch = function () {
-      n++; show(true);
-      return orig.apply(this, arguments).finally(function () {
-        n = Math.max(0, n - 1);
-        if (!n) show(false);
-      });
-    };
-    window.addEventListener("load", function () {
-      setTimeout(function () {
-        var s = document.getElementById("bootSplash");
-        if (!s) return;
-        s.classList.add("off");
-        setTimeout(function () { s.remove(); }, 450);
-      }, 1100);
-    });
-  })();
+  window.addEventListener("load", function () {
+    setTimeout(function () {
+      var s = document.getElementById("bootSplash");
+      if (!s) return;
+      s.classList.add("off");
+      setTimeout(function () { s.remove(); }, 450);
+    }, 1100);
+  });
 </script>
 </body></html>
