@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://sidhi-gym-tracker.vercel.app/sitemap.xml
