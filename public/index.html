@@ -61,14 +61,12 @@
     #appLoad{z-index:70;background:rgba(2,4,12,.72);display:none}
     #appLoad.on{display:grid}
     #bootSplash.off{opacity:0;pointer-events:none}
-    .sg-loader{display:flex;align-items:center;justify-content:center}
-    .sg-loader svg.mark{width:72px;height:72px}
-    .sg-loader .dash{animation:sgDash 2s ease-in-out infinite,sgOff 2s linear infinite}
-    .sg-loader .spin{animation:sgSpinDash 2s ease-in-out infinite,sgSpin 8s ease-in-out infinite,sgOff 2s linear infinite;transform-origin:center}
-    @keyframes sgDash{0%{stroke-dasharray:0 1 359 0}50%{stroke-dasharray:0 359 1 0}100%{stroke-dasharray:359 1 0 0}}
-    @keyframes sgSpinDash{0%{stroke-dasharray:270 90}50%{stroke-dasharray:0 360}100%{stroke-dasharray:270 90}}
-    @keyframes sgOff{0%{stroke-dashoffset:365}100%{stroke-dashoffset:5}}
-    @keyframes sgSpin{0%{rotate:0deg}12.5%,25%{rotate:270deg}37.5%,50%{rotate:540deg}62.5%,75%{rotate:810deg}87.5%,100%{rotate:1080deg}}
+    .sg-loader{display:grid;place-items:center;gap:10px}
+    .sg-word{font:800 64px Syne,Comfortaa,sans-serif;letter-spacing:.04em;background:linear-gradient(90deg,#ff8bd4,#f0c27a,#63e2b3,#7ab8ff,#ff8bd4);background-size:220% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:sgFlow 2.4s linear infinite,sgPop .6s cubic-bezier(.2,1.2,.2,1) both}
+    .sg-bar{width:120px;height:3px;border-radius:99px;background:linear-gradient(90deg,#ff8bd4,#f0c27a,#63e2b3);transform-origin:left;animation:sgBar 1.1s ease-in-out infinite}
+    @keyframes sgFlow{to{background-position:220% center}}
+    @keyframes sgPop{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:scale(1)}}
+    @keyframes sgBar{0%{transform:scaleX(.2);opacity:.4}50%{transform:scaleX(1);opacity:1}100%{transform:scaleX(.2);opacity:.4}}
     .gate { min-height:100vh; min-height:100dvh; display:grid; place-items:center; padding:22px 14px; background:#02040c; }
     .gate .card { width:min(400px,100%); padding:24px 20px 18px; background:rgba(6,10,22,.78); border:1px solid rgba(56,189,248,.22); }
     #gate .row.auth-actions { flex-direction:column; gap:12px; margin-top:16px; }
@@ -100,25 +98,7 @@
   </style>
 </head>
 <body>
-<div id="bootSplash"><div class="sg-loader">
-  <svg height="0" width="0"><defs>
-    <linearGradient id="sgb" x1="0" y1="62" x2="0" y2="2" gradientUnits="userSpaceOnUse"><stop stop-color="#ff8bd4"/><stop offset="1" stop-color="#f0c27a"/></linearGradient>
-    <linearGradient id="sgc" x1="0" y1="64" x2="0" y2="0" gradientUnits="userSpaceOnUse"><stop stop-color="#f0c27a"/><stop offset="1" stop-color="#ff8bd4"/></linearGradient>
-    <linearGradient id="sgd" x1="0" y1="62" x2="0" y2="2" gradientUnits="userSpaceOnUse"><stop stop-color="#63e2b3"/><stop offset="1" stop-color="#7ab8ff"/></linearGradient>
-  </defs></svg>
-  <svg class="mark" viewBox="0 0 64 64" fill="none"><path class="dash" pathLength="360" stroke="url(#sgb)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" d="M 54.722656,3.9726563 A 2.0002,2.0002 0 0 0 54.941406,4 h 5.007813 C 58.955121,17.046124 49.099667,27.677057 36.121094,29.580078 a 2.0002,2.0002 0 0 0 -1.708985,1.978516 V 60 H 29.587891 V 31.558594 A 2.0002,2.0002 0 0 0 27.878906,29.580078 C 14.900333,27.677057 5.0448787,17.046124 4.0507812,4 H 9.28125 c 1.231666,11.63657 10.984383,20.554048 22.6875,20.734375 a 2.0002,2.0002 0 0 0 0.02344,0 c 11.806958,0.04283 21.70649,-9.003371 22.730469,-20.7617187 z"/></svg>
-  <svg class="mark" viewBox="0 0 64 64" fill="none"><path class="spin" pathLength="360" stroke="url(#sgc)" stroke-width="10" d="M 32 32 m 0 -27 a 27 27 0 1 1 0 54 a 27 27 0 1 1 0 -54"/></svg>
-  <svg class="mark" viewBox="0 0 64 64" fill="none"><path class="dash" pathLength="360" stroke="url(#sgd)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" d="M 4,4 h 4.6230469 v 25.919922 c -0.00276,11.916203 9.8364941,21.550422 21.7500001,21.296875 11.616666,-0.240651 21.014356,-9.63894 21.253906,-21.25586 a 2.0002,2.0002 0 0 0 0,-0.04102 V 4 H 56.25 v 25.919922 c 0,14.33873 -11.581192,25.919922 -25.919922,25.919922 a 2.0002,2.0002 0 0 0 -0.0293,0 C 15.812309 56.052941 3.998433 44.409961 4 29.919922 Z"/></svg>
-</div></div><div id="appLoad"><div class="sg-loader">
-  <svg height="0" width="0"><defs>
-    <linearGradient id="sgb2" x1="0" y1="62" x2="0" y2="2" gradientUnits="userSpaceOnUse"><stop stop-color="#ff8bd4"/><stop offset="1" stop-color="#f0c27a"/></linearGradient>
-    <linearGradient id="sgc2" x1="0" y1="64" x2="0" y2="0" gradientUnits="userSpaceOnUse"><stop stop-color="#f0c27a"/><stop offset="1" stop-color="#ff8bd4"/></linearGradient>
-    <linearGradient id="sgd2" x1="0" y1="62" x2="0" y2="2" gradientUnits="userSpaceOnUse"><stop stop-color="#63e2b3"/><stop offset="1" stop-color="#7ab8ff"/></linearGradient>
-  </defs></svg>
-  <svg class="mark" viewBox="0 0 64 64" fill="none"><path class="dash" pathLength="360" stroke="url(#sgb2)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" d="M 54.722656,3.9726563 A 2.0002,2.0002 0 0 0 54.941406,4 h 5.007813 C 58.955121,17.046124 49.099667,27.677057 36.121094,29.580078 a 2.0002,2.0002 0 0 0 -1.708985,1.978516 V 60 H 29.587891 V 31.558594 A 2.0002,2.0002 0 0 0 27.878906,29.580078 C 14.900333,27.677057 5.0448787,17.046124 4.0507812,4 H 9.28125 c 1.231666,11.63657 10.984383,20.554048 22.6875,20.734375 a 2.0002,2.0002 0 0 0 0.02344,0 c 11.806958,0.04283 21.70649,-9.003371 22.730469,-20.7617187 z"/></svg>
-  <svg class="mark" viewBox="0 0 64 64" fill="none"><path class="spin" pathLength="360" stroke="url(#sgc2)" stroke-width="10" d="M 32 32 m 0 -27 a 27 27 0 1 1 0 54 a 27 27 0 1 1 0 -54"/></svg>
-  <svg class="mark" viewBox="0 0 64 64" fill="none"><path class="dash" pathLength="360" stroke="url(#sgd2)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" d="M 4,4 h 4.6230469 v 25.919922 c -0.00276,11.916203 9.8364941,21.550422 21.7500001,21.296875 11.616666,-0.240651 21.014356,-9.63894 21.253906,-21.25586 a 2.0002,2.0002 0 0 0 0,-0.04102 V 4 H 56.25 v 25.919922 c 0,14.33873 -11.581192,25.919922 -25.919922,25.919922 a 2.0002,2.0002 0 0 0 -0.0293,0 C 15.812309 56.052941 3.998433 44.409961 4 29.919922 Z"/></svg>
-</div></div>
+<div id="bootSplash"><div class="sg-loader"><div class="sg-word">Sidhi</div><div class="sg-bar"></div></div></div><div id="appLoad"><div class="sg-loader"><div class="sg-word">Sidhi</div><div class="sg-bar"></div></div></div>
 <canvas id="fx"></canvas>
 <div id="gate" class="gate layer">
   <div class="glass card">
