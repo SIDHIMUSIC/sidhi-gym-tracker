@@ -1,0 +1,20 @@
+# Sidhi Gym
+
+> Free daily gym and morning run tracker. Log body weight, gym workouts, abs, field laps and progress. Built by Harry (SIDHIMUSIC).
+
+Live: https://sidhi-gym-tracker.vercel.app/
+
+## What it is
+- Login / create account (name, username, password, male or female)
+- Home: greeting, current weight, streak, week report, gym vs run duration
+- Workout days D1–D7: Chest/Back/Shoulders + Abs A/B/C, animated exercise pics
+- Separate Run tab: GPS walk/run and field lap mode
+- Progress calendar and weight graph
+- History of sessions
+- PWA: can be added to home screen
+
+## Not for
+This is a personal training log. It is not medical advice.
+
+## Contact
+GitHub: https://github.com/SIDHIMUSIC/sidhi-gym-tracker
