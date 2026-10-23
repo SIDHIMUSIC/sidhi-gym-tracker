@@ -217,7 +217,8 @@ function paintHome() {
   $("hello").textContent = greet() + ", " + username + "!";
   $("homeKg").textContent = latest != null ? latest + " kg" : "— kg";
   $("homeWeek").textContent = "this week";
-  $("stStreak").textContent = streakCount();
+  var sc = streakCount();
+  $("stStreak").textContent = sc >= 7 ? sc + " 🔥" : sc;
   $("stWorkouts").textContent = sessions.filter(function (s) { return s.finished; }).length;
   if (goalWeight != null && latest != null) {
     var left = Math.round((latest - Number(goalWeight)) * 100) / 100;
@@ -278,7 +279,15 @@ async function save(finished) {
     fillForm();
     paintHist();
     paintHome();
-    toast(finished ? "Workout done" : "Saved");
+    if (finished) {
+      var start = nOrNull("entryWeight");
+      var end = nOrNull("afterTreadmillWeight");
+      if (start != null && end != null) {
+        var d = Math.round((end - start) * 100) / 100;
+        var sign = d > 0 ? "+" : "";
+        toast(sign + d + " kg");
+      } else toast("Workout done");
+    } else toast("Saved");
   } catch (err) { toast(err.message); }
 }
 function openApp() {
