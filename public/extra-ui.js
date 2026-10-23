@@ -108,7 +108,8 @@
       '<p class="badge">PROFILE</p><h2>' + firstName() + '</h2><p class="sub">@' + (username || "") + ' • ' + (profile.gender || "") + '</p>' +
       '<div class="kv"><span>member since</span><b>' + since + '</b></div>' +
       '<div class="kv"><span>workouts</span><b>' + ((typeof sessions !== "undefined" ? sessions.filter(function (s) { return s.finished; }).length : 0)) + '</b></div>' +
-      '<div class="kv"><span>weight</span><b>' + (w != null ? w + " kg" : "—") + '</b></div></div>' +
+      '<div class="kv"><span>weight</span><b>' + (w != null ? w + " kg" : "—") + '</b></div>' +
+      '<div class="kv"><span>goal weight</span><b>' + (typeof goalWeight !== "undefined" && goalWeight != null ? goalWeight + " kg" : "—") + '</b></div></div>' +
       '<div class="glass card"><h2>edit profile</h2><label>full name</label><input id="pfName" value="' + (profile.displayName || "") + '" /><label>gender</label><div class="seg" id="pfGen"><button type="button" data-g="male" class="' + (profile.gender === "male" ? "on" : "") + '">Male</button><button type="button" data-g="female" class="' + (profile.gender === "female" ? "on" : "") + '">Female</button></div><button class="btn ok full" id="pfSave" style="margin-top:12px">save changes</button></div>' +
       '<div class="glass card"><h2>choose official plan day</h2>' + sched + '<button class="btn full" id="pfSched" style="margin-top:12px">save schedule</button></div>';
     document.querySelectorAll("#pfGen button").forEach(function (b) {
