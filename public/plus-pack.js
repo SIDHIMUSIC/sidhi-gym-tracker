@@ -63,7 +63,8 @@
       '<div class="plus-row"><span>BMI</span><b id="bmiVal">' + bmi() + '</b></div>' +
       '<div class="plus-row"><span>height cm</span><input id="htIn" inputmode="decimal" value="' + (meta.heightCm || "") + '" style="width:80px;text-align:right"></div>' +
       '<div class="plus-row"><span>est calories</span><b>' + cal() + '</b></div>' +
-      '<button class="btn ghost full" id="remindBtn" type="button" style="margin-top:8px">remind me 5pm</button>';
+      '<div class="plus-row"><span>remind at</span><input id="remTime" type="time" value="' + (meta.remindAt || "17:00") + '" style="width:110px"></div>' +
+      '<button class="btn ghost full" id="remindBtn" type="button" style="margin-top:8px">save reminder</button>';
     box.querySelectorAll(".plus-btn").forEach(function (b) {
       b.onclick = function () { add(b.dataset.k, Number(b.dataset.n)); };
     });
@@ -72,19 +73,37 @@
       var meta = load(); meta.heightCm = Number(ht.value) || 0; saveP(meta);
       document.getElementById("bmiVal").textContent = bmi();
     };
+    function arm(timeStr) {
+      if (!timeStr || !("Notification" in window)) return;
+      var parts = timeStr.split(":");
+      var h = Number(parts[0]), m = Number(parts[1]);
+      var now = new Date();
+      var next = new Date(); next.setHours(h, m, 0, 0);
+      if (next <= now) next.setDate(next.getDate() + 1);
+      clearTimeout(window._sidhiRem);
+      window._sidhiRem = setTimeout(function () {
+        new Notification("Sidhi Gym", { body: "Aaj gym jana hai!" });
+        arm(timeStr);
+      }, next - now);
+    }
+    var rt = document.getElementById("remTime");
+    if (rt) rt.onchange = function () {
+      var meta = load(); meta.remindAt = rt.value; saveP(meta);
+    };
     var rb = document.getElementById("remindBtn");
     if (rb) rb.onclick = function () {
       if (!("Notification" in window)) return toast("Notifications not supported");
       Notification.requestPermission().then(function (ok) {
         if (ok !== "granted") return toast("Allow notifications");
-        var now = new Date();
-        var next = new Date(); next.setHours(17, 0, 0, 0);
-        if (next <= now) next.setDate(next.getDate() + 1);
-        var ms = next - now;
-        setTimeout(function () { new Notification("Sidhi Gym", { body: "Aaj gym jana hai!" }); }, ms);
-        toast("Reminder set for 5pm");
+        var meta = load();
+        meta.remindAt = (document.getElementById("remTime") || {}).value || "17:00";
+        saveP(meta);
+        arm(meta.remindAt);
+        toast("Reminder saved for " + meta.remindAt);
       });
     };
+    var saved = load().remindAt;
+    if (saved && Notification.permission === "granted") arm(saved);
   }
 
   function csvExport() {
