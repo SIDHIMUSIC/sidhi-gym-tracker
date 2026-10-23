@@ -20,7 +20,7 @@
       st.id = "sg-io-css";
       st.textContent = [
         "#exportBar{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}",
-        ".io-btn{position:relative;width:10.5rem;height:3rem;cursor:pointer;border:0;background:none;color:#f6f1e8}",
+        ".io-btn{position:relative;width:10.5rem;height:3rem;cursor:pointer;border:0;background:rgba(240,194,122,.08);border-radius:1em;color:#f6f1e8}",
         ".io-btn svg{width:100%;height:100%;overflow:visible}",
         ".io-btn .border{width:100%;height:100%;stroke:#f0c27a;stroke-width:2;fill:transparent;rx:1em;ry:1em;stroke-dasharray:25;animation:ioStroke 4s linear infinite}",
         ".io-btn .loading{width:100%;height:100%;stroke:#63e2b3;stroke-width:2;fill:none;rx:1em;ry:1em;stroke-dasharray:0 100}",
@@ -32,14 +32,15 @@
     }
     function ioBtn(id, label) {
       return '<button class="io-btn" id="' + id + '" type="button">' +
-        '<svg xmlns="http://www.w3.org/2000/svg"><rect class="border" pathLength="100"></rect><rect class="loading" pathLength="100"></rect></svg>' +
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 168 48" preserveAspectRatio="none"><rect class="border" x="1" y="1" width="166" height="46" rx="22" pathLength="100"></rect><rect class="loading" x="1" y="1" width="166" height="46" rx="22" pathLength="100"></rect></svg>' +
         '<div class="txt">' + label + '</div></button>';
     }
     bar.innerHTML = ioBtn("exportBtn", "Export JSON") + ioBtn("importBtn", "Import") +
                     '<input type="file" id="importFile" accept=".json" style="display:none">';
+    var homeView = el("view-home") || home;
     var week = el("weekBox");
     if (week && week.parentNode) week.parentNode.insertBefore(bar, week.nextSibling);
-    else home.appendChild(bar);
+    else homeView.appendChild(bar);
 
     el("exportBtn").onclick = async function () { el("exportBtn").classList.add("go"); setTimeout(function(){el("exportBtn").classList.remove("go");},1200);
       try {
