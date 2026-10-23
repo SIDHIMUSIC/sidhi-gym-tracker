@@ -143,6 +143,7 @@ function fillForm() {
   paintResult(row);
 }
 function paintHist() {
+  if (!sessions.length) { $("hist").innerHTML = '<tr><td colspan="4" style="text-align:center;color:#9aa7b8;padding:18px">No sessions yet</td></tr>'; return; }
   $("hist").innerHTML = sessions.map(function (s) {
     const start = kg(s.entryWeight);
     const end = kg(s.afterTreadmillWeight);
@@ -218,7 +219,10 @@ function paintHome() {
   $("homeWeek").textContent = "this week";
   $("stStreak").textContent = streakCount();
   $("stWorkouts").textContent = sessions.filter(function (s) { return s.finished; }).length;
-  $("stGoal").textContent = "—";
+  if (goalWeight != null && latest != null) {
+    var left = Math.round((latest - Number(goalWeight)) * 100) / 100;
+    $("stGoal").textContent = (left > 0 ? left : 0) + " kg";
+  } else $("stGoal").textContent = "—";
   $("homeSplit").textContent = SPLIT[dayFromDate(todayISO())];
   $("homeW").textContent = latest != null ? latest + " kg" : "—";
   $("homeDur").textContent = durationText(row);
