@@ -15,14 +15,33 @@
     var bar = document.createElement("div");
     bar.id = "backupBar";
     bar.className = "backup-bar";
-    bar.innerHTML = '<button class="btn ghost" id="exportBtn" type="button">Export JSON</button>' +
-                    '<button class="btn ghost" id="importBtn" type="button">Import / Restore</button>' +
+    if (!document.getElementById("sg-io-css")) {
+      var st = document.createElement("style");
+      st.id = "sg-io-css";
+      st.textContent = [
+        "#exportBar{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}",
+        ".io-btn{position:relative;width:10.5rem;height:3rem;cursor:pointer;border:0;background:none;color:#f6f1e8}",
+        ".io-btn svg{width:100%;height:100%;overflow:visible}",
+        ".io-btn .border{width:100%;height:100%;stroke:#f0c27a;stroke-width:2;fill:transparent;rx:1em;ry:1em;stroke-dasharray:25;animation:ioStroke 4s linear infinite}",
+        ".io-btn .loading{width:100%;height:100%;stroke:#63e2b3;stroke-width:2;fill:none;rx:1em;ry:1em;stroke-dasharray:0 100}",
+        ".io-btn.go .loading{stroke-dasharray:100 0;transition:stroke-dasharray .8s ease}",
+        ".io-btn .txt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:800 12px Comfortaa,sans-serif;letter-spacing:.04em}",
+        "@keyframes ioStroke{to{stroke-dashoffset:0}}"
+      ].join("");
+      document.head.appendChild(st);
+    }
+    function ioBtn(id, label) {
+      return '<button class="io-btn" id="' + id + '" type="button">' +
+        '<svg xmlns="http://www.w3.org/2000/svg"><rect class="border" pathLength="100"></rect><rect class="loading" pathLength="100"></rect></svg>' +
+        '<div class="txt">' + label + '</div></button>';
+    }
+    bar.innerHTML = ioBtn("exportBtn", "Export JSON") + ioBtn("importBtn", "Import") +
                     '<input type="file" id="importFile" accept=".json" style="display:none">';
     var week = el("weekBox");
     if (week && week.parentNode) week.parentNode.insertBefore(bar, week.nextSibling);
     else home.appendChild(bar);
 
-    el("exportBtn").onclick = async function () {
+    el("exportBtn").onclick = async function () { el("exportBtn").classList.add("go"); setTimeout(function(){el("exportBtn").classList.remove("go");},1200);
       try {
         var data = await api("/api/export");
         var blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -34,7 +53,7 @@
       } catch (e) { toast(e.message || "Export fail"); }
     };
 
-    el("importBtn").onclick = function () { el("importFile").click(); };
+    el("importBtn").onclick = function () { el("importBtn").classList.add("go"); setTimeout(function(){el("importBtn").classList.remove("go");},1200); el("importFile").click(); };
     el("importFile").onchange = async function (ev) {
       var f = ev.target.files && ev.target.files[0];
       if (!f) return;
