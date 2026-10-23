@@ -57,19 +57,13 @@
     th,td { text-align:left; padding:10px 6px; border-bottom:1px solid var(--line); }
     .hidden { display:none !important; }
 
-    #bootSplash,#appLoad{position:fixed;inset:0;z-index:80;display:grid;place-items:center;background:#02040c;transition:opacity .4s ease}
-    #appLoad{z-index:70;background:rgba(2,4,12,.72);display:none}
-    #appLoad.on{display:grid}
+    #bootSplash{position:fixed;inset:0;z-index:80;display:grid;place-items:center;background:#02040c;transition:opacity .4s ease}
     #bootSplash.off{opacity:0;pointer-events:none}
-    .sg-loader{display:flex;flex-direction:column;align-items:center;gap:14px}
-    .sg-typing{display:flex;align-items:center;justify-content:center;font:900 42px Syne,Comfortaa,sans-serif;letter-spacing:6px;white-space:nowrap;background:linear-gradient(90deg,#ff8bd4,#f0c27a,#63e2b3,#7ab8ff,#ff8bd4);background-size:300% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:sgFlow 4s linear infinite;filter:drop-shadow(0 0 10px rgba(240,194,122,.45))}
-    .sg-type{display:inline-block;width:0;overflow:hidden;animation:sgType 4.2s steps(5,end) infinite}
-    .sg-cur{width:3px;height:42px;margin-left:4px;background:#63e2b3;box-shadow:0 0 12px #63e2b3;animation:sgBlink .7s steps(2,start) infinite}
-    .sg-line{width:0;height:3px;border-radius:10px;background:linear-gradient(90deg,#ff8bd4,#f0c27a,#63e2b3,#7ab8ff);box-shadow:0 0 12px rgba(240,194,122,.7);animation:sgLine 4.2s ease-in-out infinite}
-    @keyframes sgType{0%,6%{width:0}42%,72%{width:5.4ch}94%,100%{width:0}}
-    @keyframes sgBlink{50%{opacity:0}}
-    @keyframes sgFlow{to{background-position:300% center}}
-    @keyframes sgLine{0%,6%{width:0;opacity:0}42%,72%{width:100%;opacity:1}94%,100%{width:0;opacity:0}}
+    .sg-loader{display:flex;align-items:center;justify-content:center}
+    .sg-loader svg.ltr{margin:0 2px;width:52px;height:64px}
+    .sg-loader .dash{animation:sgDash 2s ease-in-out infinite,sgOff 2s linear infinite}
+    @keyframes sgDash{0%{stroke-dasharray:0 1 359 0}50%{stroke-dasharray:0 359 1 0}100%{stroke-dasharray:359 1 0 0}}
+    @keyframes sgOff{0%{stroke-dashoffset:365}100%{stroke-dashoffset:5}}
     .gate { min-height:100vh; min-height:100dvh; display:grid; place-items:center; padding:22px 14px; background:#02040c; }
     .gate .card { width:min(400px,100%); padding:24px 20px 18px; background:rgba(6,10,22,.78); border:1px solid rgba(56,189,248,.22); }
     #gate .row.auth-actions { flex-direction:column; gap:12px; margin-top:16px; }
@@ -101,7 +95,18 @@
   </style>
 </head>
 <body>
-<div id="bootSplash"><div class="sg-loader"><div class="sg-typing"><span class="sg-type">SIDHI</span><span class="sg-cur"></span></div><div class="sg-line"></div></div><div class="sg-bar"></div></div></div><div id="appLoad" hidden><div class="sg-loader"><div class="sg-typing"><span class="sg-type">SIDHI</span><span class="sg-cur"></span></div><div class="sg-line"></div></div><div class="sg-bar"></div></div></div>
+<div id="bootSplash"><div class="sg-loader">
+  <svg width="0" height="0"><defs>
+    <linearGradient id="sgb" x1="0" y1="62" x2="0" y2="2" gradientUnits="userSpaceOnUse"><stop stop-color="#ff8bd4"/><stop offset="1" stop-color="#f0c27a"/></linearGradient>
+    <linearGradient id="sgc" x1="0" y1="64" x2="0" y2="0" gradientUnits="userSpaceOnUse"><stop stop-color="#f0c27a"/><stop offset="1" stop-color="#63e2b3"/></linearGradient>
+    <linearGradient id="sgd" x1="0" y1="62" x2="0" y2="2" gradientUnits="userSpaceOnUse"><stop stop-color="#63e2b3"/><stop offset="1" stop-color="#7ab8ff"/></linearGradient>
+  </defs></svg>
+  <svg class="ltr" viewBox="0 0 44 54" fill="none"><path class="dash" pathLength="360" stroke="url(#sgb)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M27 13Q27 4 16 4Q4 4 4 12.5Q4 19 14 21L18 22Q21 22.7 21 25Q21 29 15.5 29Q11 29 11 24L3 24Q3 37 16 37Q29 37 29 27Q29 20 19 18L14.5 17Q11.5 16.3 11.5 14Q11.5 11 15.5 11Q19.5 11 19.5 13Z"/></svg>
+  <svg class="ltr" viewBox="0 0 44 54" fill="none"><path class="dash" pathLength="360" stroke="url(#sgc)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M9 4L21 4L21 37L9 37Z"/></svg>
+  <svg class="ltr" viewBox="0 0 44 54" fill="none"><path class="dash" pathLength="360" stroke="url(#sgd)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M3 4L15 4Q29 4 29 20.5Q29 37 15 37L3 37ZM11 12L11 29L15 29Q21 29 21 20.5Q21 12 15 12Z"/></svg>
+  <svg class="ltr" viewBox="0 0 44 54" fill="none"><path class="dash" pathLength="360" stroke="url(#sgb)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M3 4L11 4L11 16L20 16L20 4L28 4L28 37L20 37L20 25L11 25L11 37L3 37Z"/></svg>
+  <svg class="ltr" viewBox="0 0 44 54" fill="none"><path class="dash" pathLength="360" stroke="url(#sgc)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M9 4L21 4L21 37L9 37Z"/></svg>
+</div></div><div class="sg-line"></div></div><div class="sg-bar"></div></div></div>
 <canvas id="fx"></canvas>
 <div id="gate" class="gate layer">
   <div class="glass card">
