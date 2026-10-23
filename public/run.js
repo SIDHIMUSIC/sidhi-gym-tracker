@@ -130,6 +130,15 @@
       '<div class="glass run-stat"><b>' + (bestGym ? (bestGym.date || "—") : "—") + '</b><span>' + fancy("top gym day") + '</span></div></div>' +
       '<p class="sub" style="text-align:center;margin-top:8px">' + fancy("pace = min per km") + " • " + fancy("go outside + allow location") + '</p>';
   }
+  function paintRunEmpty() {
+    var box = el("runEmpty");
+    if (!box) return;
+    var has = false;
+    ((typeof sessions !== "undefined" && sessions) || []).forEach(function (s) {
+      if ((s.runs && s.runs.length) || Number(s.beforeTreadmillKm) > 0) has = true;
+    });
+    box.textContent = has ? "" : "No runs yet";
+  }
   function paintRun() {
     if (!el("livebar")) return;
     const snap = runSnap();
@@ -353,7 +362,7 @@
     }
     var ovHtml = '<div class="wrap" style="padding-top:8px"><div class="row" style="justify-content:space-between"><p class="badge">' + fancy("live run") + '</p><button class="btn ghost" id="runCloseBtn" type="button">' + fancy("close") + '</button></div>' +
       '<div class="run-fig zone-idle" id="runFig">🏃</div><p class="sub" id="runZoneLab" style="text-align:center">' + fancy("waiting for gps move") + '</p>' +
-      '<div class="run-clock" id="runClock">00:00</div><p class="sub" id="runStatus" style="text-align:center">' + fancy("start then walk outside") + '</p>' +
+      '<div class="run-clock" id="runClock">00:00</div><p class="sub" id="runStatus" style="text-align:center">' + fancy("start then walk outside") + '</p><p class="sub" id="runEmpty" style="text-align:center;margin-top:4px"></p>' +
       '<div class="modes" id="runModes"><button type="button" data-mode="auto" class="on">' + fancy("auto gps") + '</button><button type="button" data-mode="walk">' + fancy("morning walk") + '</button><button type="button" data-mode="jog">' + fancy("jog") + '</button><button type="button" data-mode="run">' + fancy("run") + '</button><button type="button" data-mode="sprint">' + fancy("sprint") + '</button></div>' +
       '<div class="run-stats"><div class="glass run-stat"><b id="ovKm">0.00</b><span>' + fancy("km") + '</span></div><div class="glass run-stat"><b id="ovSpd">0.0</b><span>' + fancy("km/h") + '</span></div><div class="glass run-stat"><b id="ovCal">0</b><span>' + fancy("kcal") + '</span></div><div class="glass run-stat"><b id="ovPace">—</b><span>' + fancy("pace min/km") + '</span></div></div>' +
       '<canvas id="runGraph" width="640" height="160"></canvas><p class="sub" id="graphHint" style="text-align:center">' + fancy("tap graph for speed + time") + '</p>' +
@@ -365,7 +374,7 @@
     if (incCard) { var card = incCard.closest(".glass"); if (card) card.style.display = "none"; }
     ov.innerHTML = ovHtml;
   })();
-  if (el("runOpenBtn")) el("runOpenBtn").onclick = function () { el("runOv").classList.add("on"); paintRun(); paintSummary(); };
+  if (el("runOpenBtn")) el("runOpenBtn").onclick = function () { el("runOv").classList.add("on"); paintRunEmpty(); paintRun(); paintSummary(); };
   if (el("runCloseBtn")) el("runCloseBtn").onclick = function () { el("runOv").classList.remove("on"); };
   if (el("runModes")) el("runModes").addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) applyMode(b); });
   if (el("runStartBtn")) el("runStartBtn").onclick = startRun;
