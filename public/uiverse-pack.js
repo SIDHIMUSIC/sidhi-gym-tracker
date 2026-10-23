@@ -37,17 +37,27 @@
       '<text id="weekPct" x="50" y="55" text-anchor="middle" fill="#f6f1e8" font-size="16" font-family="Comfortaa,sans-serif">0%</text>';
     kg.parentNode.appendChild(svg);
   }
+  function weekGymDays() {
+    if (typeof sessions === "undefined" || typeof todayISO !== "function") return 0;
+    var now = new Date(todayISO() + "T12:00:00");
+    var day = now.getDay();
+    var start = new Date(now);
+    start.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+    var from = start.toISOString().slice(0, 10);
+    var to = todayISO();
+    var seen = {};
+    sessions.forEach(function (s) {
+      if (s && s.date >= from && s.date <= to && s.finished) seen[s.date] = 1;
+    });
+    return Object.keys(seen).length;
+  }
   function paintRing() {
-    var days = 0;
-    var n = document.querySelector("#view-home .glass.card b, #stWorkouts");
-    var w = document.getElementById("stWorkouts");
-    if (w) days = parseInt(w.textContent, 10) || 0;
-    var pct = Math.max(0, Math.min(100, Math.round((days % 7) / 7 * 100)));
-    if (days && days % 7 === 0) pct = 100;
+    var days = weekGymDays();
+    var pct = Math.max(0, Math.min(100, Math.round(days / 6 * 100)));
     var arc = document.getElementById("weekArc");
     var txt = document.getElementById("weekPct");
     if (arc) arc.setAttribute("stroke-dashoffset", String(251 - 251 * pct / 100));
-    if (txt) txt.textContent = pct + "%";
+    if (txt) txt.textContent = days + "/6";
   }
   function hookToast() {
     var t = document.getElementById("toast");
