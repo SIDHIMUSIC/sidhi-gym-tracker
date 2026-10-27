@@ -64,13 +64,13 @@
     if (!me) return;
     var home = document.getElementById("view-home");
     if (!home) return;
-    if (!me.premium && !document.getElementById("premiumBox")) {
+    if ((!me.premium || (!me.isAdmin && me.premiumDaysLeft != null && me.premiumDaysLeft <= 2)) && !document.getElementById("premiumBox")) {
       var box = document.createElement("div");
       box.id = "premiumBox";
       box.style.cssText = "margin:12px 14px;padding:14px;border-radius:16px;background:#111827;border:1px solid #f0c27a66;text-align:center";
       var off = price.offer ? '<div style="color:#fb7185;font-size:12px;font-weight:600">' + price.offer + '</div>' : '';
       box.innerHTML = off +
-        '<div style="color:#f0c27a;font-size:16px;font-weight:700">Go Premium</div>' +
+        '<div style="color:#f0c27a;font-size:16px;font-weight:700">' + (me.premium ? 'Renew Premium' : 'Go Premium') + '</div>' +
         '<div style="color:#fff;font-size:20px;font-weight:800;margin:4px 0">₹' + price.price + '<span style="font-size:12px">/' + price.label + '</span></div>' +
         '<button id="payBtn" style="margin:8px 0;padding:10px 20px;border-radius:10px;border:0;background:#63e2b3;color:#111;font-weight:700">Pay Now</button>' +
         '<div style="font-size:12px;color:#9aa7b8;margin-top:8px">Have a gift code?</div>' +
@@ -155,6 +155,22 @@
       .then(function (r) { return r.json(); }).then(function (d) { if (d.ok) { toast(d.days + " days"); setTimeout(function () { location.reload(); }, 500); } else toast(d.error || "Invalid"); });
   }
 
+  function checkExpiryReminders() {
+    var token = localStorage.getItem(TOKEN);
+    if (!token) return;
+    fetch("/api/premium/reminders", { headers: { Authorization: "Bearer " + token }, cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d || !d.ok || !Array.isArray(d.reminders)) return;
+        d.reminders.forEach(function (item) {
+          toast(item.message);
+          if ("Notification" in window && Notification.permission === "granted") {
+            try { new Notification("SIDHI GYM Premium", { body: item.message, tag: "sidhi-premium-" + item.daysLeft }); } catch (e) {}
+          }
+        });
+      }).catch(function () {});
+  }
+
   function doGen() {
     var days = Number(document.getElementById("giftDays").value) || 30;
     fetch("/api/admin/promo", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + localStorage.getItem(TOKEN) }, body: JSON.stringify({ days: days }) })
@@ -178,5 +194,7 @@
   }
 
   boot();
-  // no interval — stable
+  checkExpiryReminders();
+  window.addEventListener("focus", checkExpiryReminders);
+  setInterval(checkExpiryReminders, 30 * 60 * 1000);
 })();
