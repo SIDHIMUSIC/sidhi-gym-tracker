@@ -84,7 +84,7 @@
     }
   }
   function showProfile() {
-    ["home","workout","progress","history"].forEach(function (t) {
+    ["home","workout","progress","history","premium"].forEach(function (t) {
       var n = el("view-" + t); if (n) n.classList.add("hidden");
       var tb = document.querySelector('.tab[data-tab="' + t + '"]');
       if (tb) tb.classList.remove("on");
