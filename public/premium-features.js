@@ -61,6 +61,35 @@
       if(r.reminder)lines.push("\n"+r.reminder);if(out)out.textContent=lines.join("\n");foodStatus("AI daily review ready.");
     }).catch(function(e){if(out)out.textContent=e.message;}).finally(function(){if(button){button.disabled=false;button.textContent="AI review my whole day";}});
   }
+
+  function reviewFinishedWorkout(row) {
+    var out=document.getElementById("ps-finish-review");
+    if(out)out.textContent="Workout saved. AI coach is checking your logged workout and cardio…";
+    var snapshot=row||{};
+    var q="Review my just-finished workout for "+(snapshot.date||localDateString())+". Use saved workout history as context and this session data: "+JSON.stringify({date:snapshot.date,entryTime:snapshot.entryTime,entryWeight:snapshot.entryWeight,exercises:snapshot.after1HourNote,normalTreadmill:{km:snapshot.beforeTreadmillKm,minutes:snapshot.beforeTreadmillMins,speed:snapshot.beforeTreadmillSpeed,note:snapshot.beforeTreadmillNote},inclineTreadmill:{km:snapshot.afterTreadmillKm,minutes:snapshot.afterTreadmillMins,speed:snapshot.afterTreadmillSpeed,incline:snapshot.afterTreadmillIncline,note:snapshot.afterTreadmillNote},finished:snapshot.finished})+". Give a concise coach review: what went well, missing data, safe improvements for next session. Do not infer unlogged sets/reps or claim body-weight change is fat loss. If data is missing, say what to log next time.";
+    apiPost("/api/premium/ai-coach",{question:q.slice(0,1180)}).then(function(d){if(out)out.textContent=d.answer;}).catch(function(e){if(out)out.textContent="Workout saved. AI review unavailable: "+e.message;});
+  }
+  function goToSleepReview() {
+    var date=localDateString(),bedtime=val("ps-sleep-bedtime")||new Date().toTimeString().slice(0,5),wake=val("ps-sleep-wake")||"",quality=val("ps-sleep-quality")||"not recorded",notes=val("ps-sleep-notes").trim();
+    var sleep={date:date,bedtime:bedtime,targetWakeTime:wake,quality:quality,notes:notes,savedAt:new Date().toISOString()};
+    var history=read("sleep-log",[]);history=history.filter(function(x){return x.date!==date;});history.push(sleep);write("sleep-log",history);
+    var button=document.getElementById("ps-go-sleep"),out=document.getElementById("ps-sleep-review");
+    if(button){button.disabled=true;button.textContent="Reviewing your day…";}
+    if(out)out.textContent="Saving bedtime and checking your food diary and workout record…";
+    var targets={calories:Number(val("ps-food-target-cal"))||2000,proteinG:Number(val("ps-food-target-protein"))||115,carbsG:Number(val("ps-food-target-carbs"))||225,fatG:Number(val("ps-food-target-fat"))||60};
+    foodRequest("/api/premium/food-summary",{date:date,targets:targets}).then(function(food){
+      var today=sessions.find(function(s){return s.date===date;})||{};
+      var km=(Number(today.beforeTreadmillKm)||0)+(Number(today.afterTreadmillKm)||0);
+      var q="Give my end-of-day SIDHI GYM review for "+date+". Review this logged data: "+JSON.stringify({workout:{finished:!!today.finished,exerciseNotes:today.after1HourNote||"",normalTreadmillKm:today.beforeTreadmillKm||0,normalTreadmillMinutes:today.beforeTreadmillMins||0,inclineTreadmillKm:today.afterTreadmillKm||0,inclineTreadmillMinutes:today.afterTreadmillMins||0,totalLoggedCardioKm:Math.round(km*100)/100},nutritionTotals:food.totals||{},nutritionTargets:food.targets||targets,sleep:sleep})+". Tell me what went well, what needs improvement in gym/running/diet/recovery, and 3 realistic actions for tomorrow. Be direct but supportive. Never invent data or diagnose; call missing records unknown. Sleep is self-reported. Do not treat workout start/end weight changes as fat loss.";
+      var nutritionReview=food.review||{};
+      return apiPost("/api/premium/ai-coach",{question:q.slice(0,1180)}).then(function(ai){
+        var lines=["BEDTIME SAVED · "+bedtime+(wake?" · Wake target "+wake:""),"Nutrition review: "+(nutritionReview.summary||"No nutrition summary available."),ai.answer||"Daily coach review unavailable."];
+        if(out)out.textContent=lines.join("\n\n");
+        var st=document.getElementById("ps-sleep-status");if(st)st.textContent="Bedtime saved on this device for "+date+". Sleep log is local to this browser/device.";
+      });
+    }).catch(function(e){if(out)out.textContent="Bedtime was saved locally, but AI review failed: "+e.message;}).finally(function(){if(button){button.disabled=false;button.textContent="Go to Sleep · Review My Day";}});
+  }
+
   function askAiCoach() {
     var question = val("ps-ai-question").trim(), button = document.getElementById("ps-ai-ask"), answer = document.getElementById("ps-ai-answer");
     if (!question) return toast("Apna sawaal likho");
@@ -90,6 +119,7 @@
     if (!premium()) return;
     var root = getRoot(); if (!root) return;
     root.innerHTML = '<div class="glass card" style="border:1px solid #f0c27a88;background:linear-gradient(130deg,#17120a,#0c1820);margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><div><div style="font-size:10px;letter-spacing:.2em;color:#f0c27a;font-weight:900">SIDHI GYM • PREMIUM</div><h2 style="margin:6px 0">Your Performance Hub</h2><div style="font-size:12px;color:#9aa7b8">Coach · analytics · plans · reports</div></div><span style="background:linear-gradient(90deg,#f0c27a,#fff0b5);color:#241707;padding:7px 10px;border-radius:99px;font-size:11px;font-weight:900">✦ GOLD MEMBER</span></div><div class="row" style="margin-top:14px">' + btn("ps-refresh","Refresh data") + btn("ps-coach-jump","Gym Coach") + btn("ps-timer-jump","Rest timer") + btn("ps-report-jump","Reports") + '</div></div>' +
+      section("ps-daily-flow","Daily AI Check-in",'<p style="font-size:13px;color:#cbd5e1">Workout finish karte hi session review hoga. Raat ko Go to Sleep dabao—logged gym, cardio, food aur tumhari sleep entry ka end-of-day review milega.</p><div id="ps-finish-review" style="white-space:pre-wrap;line-height:1.7;margin:10px 0;color:#e2e8f0">Finish Workout karne par AI review yahan aayega.</div><div style="border-top:1px solid #ffffff18;padding-top:12px"><b style="color:#f0c27a">Bedtime check-in</b><div class="grid"><div><label for="ps-sleep-bedtime">Going to bed at</label><input id="ps-sleep-bedtime" type="time"></div><div><label for="ps-sleep-wake">Target wake-up</label><input id="ps-sleep-wake" type="time"></div><div><label for="ps-sleep-quality">How do you feel?</label><select id="ps-sleep-quality"><option value="good">Good / refreshed</option><option value="okay" selected>Okay</option><option value="tired">Tired</option><option value="sore">Very sore</option><option value="stressed">Stressed</option></select></div></div><label for="ps-sleep-notes">Optional notes</label><textarea id="ps-sleep-notes" rows="2" maxlength="400" placeholder="e.g. late dinner, muscle soreness, low energy" style="width:100%;box-sizing:border-box;padding:10px;border-radius:10px;background:#101722;color:#fff;border:1px solid #ffffff24"></textarea><div class="row" style="margin-top:10px">' + btn("ps-go-sleep","Go to Sleep · Review My Day") + '</div><div id="ps-sleep-status" style="font-size:12px;color:#9aa7b8;margin-top:8px"></div><div id="ps-sleep-review" aria-live="polite" style="white-space:pre-wrap;line-height:1.7;margin-top:12px;color:#e2e8f0"></div><p style="font-size:11px;color:#9aa7b8">Sleep is self-reported and saved on this device. The app does not detect when you actually fall asleep.</p></div>') +
       section("ps-coach","1. Gym Coach & Progress Analytics",'<div id="ps-coach-output" style="font-size:13px;line-height:1.8;color:#dbeafe">Analysing your workout log…</div><div id="ps-analytics" class="grid" style="margin-top:12px"></div>') +
       section("ps-ai-chat","Gemini AI Gym Coach",'<label for="ps-ai-question">Ask your AI Gym Coach</label><textarea id="ps-ai-question" rows="3" maxlength="1200" placeholder="e.g. Mere workout log ke hisaab se strength kaise badhaun?" style="width:100%;box-sizing:border-box;margin:7px 0 10px;padding:12px;border-radius:12px;background:#101722;color:#fff;border:1px solid #ffffff24"></textarea><div class="row" style="align-items:center;gap:8px">' + btn("ps-ai-ask","Ask Gemini Coach") + '<small style="color:#9aa7b8">5 questions/day · Premium</small></div><div id="ps-ai-answer" aria-live="polite" style="white-space:pre-wrap;line-height:1.7;margin-top:12px;color:#e2e8f0"></div><p style="font-size:11px;color:#9aa7b8">Fitness guidance only, not medical advice. Don’t enter private medical or identity details.</p>') +
       section("ps-builder","3. Custom Workout Builder",'<div class="grid"><div>' + field("ps-ex-name","Exercise name","e.g. Dumbbell press") + '</div><div>' + field("ps-ex-sets","Sets","3","number") + '</div><div>' + field("ps-ex-reps","Reps","8–12") + '</div><div>' + field("ps-ex-rest","Rest (seconds)","90","number") + '</div></div><div class="row" style="margin-top:10px">' + btn("ps-add-exercise","Add exercise") + btn("ps-save-routine","Save routine") + '</div><div id="ps-routine-list" style="margin-top:10px"></div>') +
@@ -112,6 +142,7 @@
     bindClick("ps-refresh", function(){ loadSessions().then(function(){ renderAnalytics(); renderHistory(); renderAchievements(); renderBodyHistory(); coach(); toast("Premium data refreshed"); }); });
     bindClick("ps-coach-jump", function(){ document.getElementById("ps-coach").scrollIntoView({behavior:"smooth"}); });
     bindClick("ps-ai-ask", askAiCoach);
+    bindClick("ps-go-sleep", goToSleepReview);
     var aiQuestion = document.getElementById("ps-ai-question"); if (aiQuestion) aiQuestion.addEventListener("keydown", function(e){ if ((e.ctrlKey || e.metaKey) && e.key === "Enter") askAiCoach(); });
     bindClick("ps-timer-jump", function(){ document.getElementById("ps-timer").scrollIntoView({behavior:"smooth"}); });
     bindClick("ps-report-jump", function(){ document.getElementById("ps-report").scrollIntoView({behavior:"smooth"}); });
@@ -189,6 +220,7 @@
   function pauseTimer(){if(timerId)clearInterval(timerId);timerId=null;timerRunning=false;}
   function resetTimer(){pauseTimer();var p=val("ps-timer-preset");timerTotal=p==="custom"?Math.max(1,Number(val("ps-timer-custom"))||60):Number(p)||60;timerLeft=timerTotal;paintTimer();}
   function paintTimer(){var el=document.getElementById("ps-timer-display");if(el)el.textContent=String(Math.floor(timerLeft/60)).padStart(2,"0")+":"+String(timerLeft%60).padStart(2,"0");var b=document.getElementById("ps-timer-start");if(b)b.textContent=timerRunning?"Running…":"Start";}
+  window.addEventListener("sidhi-workout-finished",function(e){if(premium())reviewFinishedWorkout(e.detail||{});});
   function boot(){if(!token())return;api("/api/me").then(function(m){me=m;if(!premium())return;return loadSessions().then(function(){render();setInterval(checkReminders,15000);});}).catch(function(){/* Login/session may not be ready yet; retry below. */});}
   setTimeout(boot,1200);
   document.addEventListener("visibilitychange",function(){if(!document.hidden&&token()&&!premium())boot();});
