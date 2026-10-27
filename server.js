@@ -564,6 +564,23 @@ app.post("/api/premium/redeem", auth, async (req, res) => {
 });
 
 
+app.get("/api/premium/insights", auth, async (req, res) => {
+  const user = await User.findOne({ username: req.gymUser }).lean();
+  if (!hasActivePremium(user)) return res.status(402).json({ error: "Premium chahiye workout insights ke liye" });
+  const rows = await GymSession.find({ owner: req.gymUser }).sort({ date: -1 }).lean();
+  const weights = rows.map(r => Number(r.entryWeight)).filter(n => Number.isFinite(n) && n > 0);
+  const cardioKm = rows.reduce((sum, r) => sum + (Number(r.beforeTreadmillKm) || 0) + (Number(r.afterTreadmillKm) || 0), 0);
+  res.setHeader("Cache-Control", "no-store");
+  res.json({
+    ok: true,
+    totalWorkouts: rows.length,
+    completedWorkouts: rows.filter(r => !!r.finished).length,
+    cardioKm: Math.round(cardioKm * 100) / 100,
+    bestRecordedWeight: weights.length ? Math.max.apply(null, weights) : null,
+    latestWeight: rows.length && Number.isFinite(Number(rows[0].entryWeight)) ? Number(rows[0].entryWeight) : null
+  });
+});
+
 app.get("/api/premium/reminders", auth, async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   const user = await User.findOne({ username: req.gymUser }).lean();
