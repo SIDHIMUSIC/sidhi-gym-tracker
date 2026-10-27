@@ -289,6 +289,7 @@ async function save(finished) {
     paintHist();
     paintHome();
     if (finished) {
+      try { window.dispatchEvent(new CustomEvent("sidhi-workout-finished", { detail: formBody(true) })); } catch (_) {}
       var start = nOrNull("entryWeight");
       var end = nOrNull("afterTreadmillWeight");
       if (start != null && end != null) {
