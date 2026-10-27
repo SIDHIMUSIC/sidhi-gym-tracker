@@ -124,6 +124,32 @@
     });
   }
 
+  
+  function adminGift(me) {
+    if (!me || !me.isAdmin) return;
+    var old = document.getElementById("adminGiftBox");
+    if (old) old.remove();
+    var box = document.createElement("div");
+    box.id = "adminGiftBox";
+    box.style.cssText = "margin:8px 14px;padding:12px;border-radius:12px;background:#1a1025;border:1px solid #a78bfa55;text-align:center";
+    box.innerHTML = '<div style="color:#a78bfa;font-size:13px;font-weight:700;margin-bottom:8px">Admin · Gift Code</div>' +
+      '<button id="genGift" style="padding:8px 16px;border-radius:8px;border:0;background:#a78bfa;color:#111;font-weight:600">Generate 30-day code</button>' +
+      '<div id="giftOut" style="margin-top:8px;font-size:14px;color:#f0c27a;font-weight:700"></div>';
+    var home = document.getElementById("view-home");
+    if (home) home.appendChild(box);
+    document.getElementById("genGift").onclick = function () {
+      var token = localStorage.getItem(TOKEN);
+      fetch("/api/admin/promo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+        body: JSON.stringify({ days: 30 })
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        if (d.ok) document.getElementById("giftOut").textContent = d.code;
+        else toast(d.error || "Fail");
+      });
+    };
+  }
+
   function run() {
     var token = localStorage.getItem(TOKEN);
     if (!token) return;
@@ -135,6 +161,7 @@
       if (!me) return;
       badge(!!me.premium, !!me.isAdmin);
       homeCard(me, price);
+      adminGift(me);
     });
   }
 
