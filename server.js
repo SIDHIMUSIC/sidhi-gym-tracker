@@ -512,6 +512,19 @@ app.post("/api/premium/redeem", auth, async (req, res) => {
   res.json({ ok: true, days: p.days });
 });
 
+
+app.get("/api/admin/premium-users", auth, async (req, res) => {
+  if (!PREM.adminUsers.includes(req.gymUser)) return res.status(403).json({ error: "Admin only" });
+  const users = await User.find({ premium: true }, { username: 1, displayName: 1, premiumUntil: 1, createdAt: 1 }).lean();
+  const list = users.map(u => ({
+    username: u.username,
+    name: u.displayName || u.username,
+    until: u.premiumUntil,
+    daysLeft: u.premiumUntil ? Math.max(0, Math.ceil((new Date(u.premiumUntil) - Date.now()) / 86400000)) : null
+  }));
+  res.json({ ok: true, users: list });
+});
+
 require("./admin-routes")(app, { User: User, Token: Token, hashPass: hashPass });
 require("./otp-routes")(app);
 
