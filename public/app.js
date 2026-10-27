@@ -238,7 +238,7 @@ function paintCal() {
 }
 
 function showTab(name) {
-  var all = ["home", "workout", "progress", "history", "profile"];
+  var all = ["home", "workout", "progress", "history", "premium", "profile"];
   all.forEach(function (t) {
     var v = $("view-" + t);
     if (v) v.classList.toggle("hidden", t !== name);

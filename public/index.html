@@ -107,6 +107,10 @@
     .kv { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line); }
     .btn.logout { min-height:42px; border-radius:999px; padding:8px 14px; display:inline-flex; align-items:center; gap:7px; background:linear-gradient(135deg,#ff6b6b,#ff8bd4); border:0; color:#fff; font:700 11px Comfortaa,sans-serif; }
     .public-info { font-size:13px; line-height:1.45; color:#b8c7d9; margin:10px 0 4px; text-align:center; }
+
+    .premium-tab{color:var(--gold)}.tab.premium-tab.on{color:#120d06}
+    .premium-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:14px}.premium-nav-btn{min-height:44px;border:1px solid #ffffff16;border-radius:14px;background:#ffffff06;color:#dbe4f0;font:700 12px Comfortaa,sans-serif;padding:10px 8px}.premium-nav-btn.active{border-color:#f0c27a88;color:#f0c27a;background:#f0c27a12}.premium-welcome{padding:18px;border-radius:22px;background:radial-gradient(circle at 90% 0%,#f0c27a25,transparent 38%),linear-gradient(130deg,#17120a,#0c1820);border:1px solid #f0c27a55;margin-bottom:12px}.premium-welcome h2{font-size:21px;margin:6px 0}.premium-welcome p{color:var(--muted);font-size:12px;line-height:1.6;margin:6px 0 0}
+    @media(min-width:520px){.premium-nav{grid-template-columns:repeat(4,minmax(0,1fr))}}
   </style>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4360329612081379" crossorigin="anonymous"></script>
 </head>
@@ -192,6 +196,7 @@
     <div class="glass card"><h2>goal weight</h2><div class="grid"><div><label>target kg</label><input id="goalWeight" inputmode="decimal" placeholder="70.0" /></div><div style="display:flex;align-items:flex-end"><button class="btn full" id="goalBtn" style="min-height:48px">save goal</button></div></div></div>
     <div class="glass card"><h2>weight graph</h2><canvas id="progChart" width="640" height="240" style="width:100%;height:200px"></canvas></div>
   </div>
+  <div id="view-premium" class="hidden"></div>
   <div id="view-history" class="hidden">
     <div class="glass card"><h2>history</h2><div style="overflow:auto"><table><thead><tr><th>date</th><th>workout</th><th>weight</th><th></th></tr></thead><tbody id="hist"></tbody></table></div></div>
   </div>
@@ -201,6 +206,7 @@
   <button class="tab" data-tab="workout">workout</button>
   <button class="tab" data-tab="progress">progress</button>
   <button class="tab" data-tab="history">history</button>
+  <button class="tab premium-tab" data-tab="premium">✦ studio</button>
 </nav>
 <div class="toast" id="toast"></div>
 <script src="login-scene.js?v=3"></script>
@@ -211,7 +217,7 @@
 <script src="extra-ui.js?v=6"></script>
 <script src="graph-foot.js?v=14"></script>
 <script src="nav-seg.js?v=6"></script>
-<script src="premium-features.js?v=5"></script>
+<script src="premium-features.js?v=6"></script>
 <script src="premium-ui.js?v=1793139001"></script>
 <script src="membership-ui.js?v=3"></script>
 <script>
