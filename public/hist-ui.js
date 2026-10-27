@@ -59,7 +59,18 @@
       } else if (start != null) line = "start " + start + " kg";
       else if (end != null) line = "end " + end + " kg";
       var clock = gymClock(s);
-      return '<div class="hist-item"><div><b>' + fancy(s.workoutName || "gym") + '</b><div class="sub">' + s.date + (s.day ? " • " + s.day : "") + (clock ? " • " + clock : "") + (s.finished ? " • done" : "") + '</div><div class="sub">' + line + (delta ? " • " + delta : "") + '</div></div><div class="hist-acts"><button class="btn ghost" data-open="' + s.date + '">' + fancy("open") + '</button><button class="btn danger" data-del="' + s.date + '">X</button></div></div>';
+      var html = '<div class="hist-item"><div><b>' + fancy(s.workoutName || "gym") + '</b>';
+      html += '<div class="sub">' + s.date;
+      if (s.day) html += " • " + s.day;
+      if (clock) html += " • " + clock;
+      if (s.finished) html += " • done";
+      html += '</div><div class="sub">' + line;
+      if (delta) html += " • " + delta;
+      html += '</div></div><div class="hist-acts">';
+      html += '<button class="btn ghost" data-open="' + s.date + '">' + fancy("open") + '</button>';
+      html += '<button class="btn danger" data-del="' + s.date + '">X</button>';
+      html += '</div></div>';
+      return html;
     }).join("");
     var runCards = [];
     list.forEach(function (s) {
@@ -67,7 +78,11 @@
         var km = Number(r.distanceKm) || 0;
         var min = Math.round((Number(r.durationSec) || 0) / 60);
         var cal = Math.round(Number(r.calories) || 0);
-        runCards.push('<div class="hist-item"><div><b>' + fancy(r.mode || "run") + '</b><div class="sub">' + s.date + '</div><div class="sub">' + km.toFixed(2) + " km • " + min + " min • " + cal + " kcal</div></div><div class="hist-acts"><button class="btn ghost" data-open="' + s.date + '">' + fancy("open") + "</button></div></div>");
+        var html = '<div class="hist-item"><div><b>' + fancy(r.mode || "run") + '</b>';
+        html += '<div class="sub">' + s.date + '</div>';
+        html += '<div class="sub">' + km.toFixed(2) + " km • " + min + " min • " + cal + " kcal</div></div>";
+        html += '<div class="hist-acts"><button class="btn ghost" data-open="' + s.date + '">' + fancy("open") + '</button></div></div>';
+        runCards.push(html);
       });
     });
     runBox.innerHTML = runCards.join("") || '<p class="sub">' + fancy("no runs yet") + "</p>";
