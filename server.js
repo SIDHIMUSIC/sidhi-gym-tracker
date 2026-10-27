@@ -454,10 +454,11 @@ app.post("/api/premium/activate", auth, async (req, res) => {
   const code = String(req.body.code || "").trim();
   // Simple code for now — replace with Razorpay webhook later
   if (code !== "SIDHI2026") return res.status(400).json({ error: "Invalid code" });
-  const until = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+  const durationDays = Math.max(1, Number(PREM.durationDays || 30));
+  const until = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
   await User.updateOne({ username: req.gymUser }, { $set: { premium: true, premiumUntil: until } });
   cacheDel("me:" + req.gymUser);
-  res.json({ ok: true, premium: true, until });
+  res.json({ ok: true, premium: true, until, daysLeft: durationDays });
 });
 
 
