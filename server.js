@@ -1,5 +1,6 @@
 require("dotenv").config();
 const path = require("path");
+const PREM = require("./premium-config");
 const crypto = require("crypto");
 const express = require("express");
 const cors = require("cors");
@@ -289,9 +290,14 @@ app.get("/api/me", auth, async (req, res) => {
   let u = cacheGet(ck);
   if (!u) {
     u = await User.findOne({ username: req.gymUser }).lean();
-    cacheSet(ck, u, 30 * 1000); // 30s
+    cacheSet(ck, u, 30 * 1000);
   }
-  res.json(Object.assign({ ok: true }, publicUser(u)));
+  const pub = publicUser(u);
+  if (PREM.adminUsers && PREM.adminUsers.includes(req.gymUser)) {
+    pub.premium = true;
+    pub.isAdmin = true;
+  }
+  res.json(Object.assign({ ok: true }, pub));
 });
 
 app.patch("/api/me", auth, async (req, res) => {
@@ -445,8 +451,7 @@ const RAZOR_SECRET = process.env.RAZORPAY_KEY_SECRET || "";
 
 app.post("/api/premium/order", auth, async (req, res) => {
   if (!RAZOR_SECRET) return res.status(500).json({ error: "Razorpay secret missing on server" });
-  const priceRupees = Number(process.env.PREMIUM_PRICE || 99);
-  const amount = priceRupees * 100; // paise
+  const amount = 9900; // ₹99 in paise
   const orderId = "order_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
   // Simple order create via Razorpay API
   const authHeader = Buffer.from(RAZOR_KEY + ":" + RAZOR_SECRET).toString("base64");
@@ -478,10 +483,33 @@ app.post("/api/premium/verify", auth, async (req, res) => {
 });
 
 
-app.get("/api/premium/price", (_req, res) => {
-  const price = Number(process.env.PREMIUM_PRICE || 99);
-  const label = process.env.PREMIUM_LABEL || "year";
-  res.json({ ok: true, price, label, offer: process.env.PREMIUM_OFFER || "" });
+// Promo codes (in-memory + simple persist via env or just memory for now)
+const promoCodes = new Map();
+
+app.post("/api/admin/promo", auth, async (req, res) => {
+  if (!PREM.adminUsers.includes(req.gymUser)) return res.status(403).json({ error: "Admin only" });
+  const code = (req.body.code || ("GIFT" + Math.random().toString(36).slice(2, 8).toUpperCase())).trim().toUpperCase();
+  const days = Number(req.body.days || 30);
+  promoCodes.set(code, { days, used: false, created: Date.now() });
+  res.json({ ok: true, code, days });
+});
+
+app.get("/api/admin/promos", auth, async (req, res) => {
+  if (!PREM.adminUsers.includes(req.gymUser)) return res.status(403).json({ error: "Admin only" });
+  const list = [];
+  promoCodes.forEach((v, k) => list.push({ code: k, days: v.days, used: v.used }));
+  res.json({ ok: true, promos: list });
+});
+
+app.post("/api/premium/redeem", auth, async (req, res) => {
+  const code = String(req.body.code || "").trim().toUpperCase();
+  const p = promoCodes.get(code);
+  if (!p || p.used) return res.status(400).json({ error: "Invalid or used code" });
+  p.used = true;
+  const until = new Date(Date.now() + p.days * 24 * 60 * 60 * 1000);
+  await User.updateOne({ username: req.gymUser }, { $set: { premium: true, premiumUntil: until } });
+  cacheDel("me:" + req.gymUser);
+  res.json({ ok: true, days: p.days });
 });
 
 require("./admin-routes")(app, { User: User, Token: Token, hashPass: hashPass });
