@@ -581,6 +581,83 @@ app.get("/api/premium/insights", auth, async (req, res) => {
   });
 });
 
+
+ // Gemini-powered Premium Gym Coach. The API key is read only on the server.
+const aiCoachUsage = new Map();
+app.post("/api/premium/ai-coach", auth, async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return res.status(503).json({ error: "AI Coach abhi setup nahi hai. Admin ko Vercel mein GEMINI_API_KEY set karni hogi." });
+  const user = await User.findOne({ username: req.gymUser }).lean();
+  if (!hasActivePremium(user)) return res.status(402).json({ error: "Gemini AI Coach ke liye Premium chahiye." });
+  const question = String((req.body && req.body.question) || "").trim().slice(0, 1200);
+  if (question.length < 2) return res.status(400).json({ error: "Apna fitness sawaal likho." });
+  const day = new Date().toISOString().slice(0, 10);
+  const usageKey = req.gymUser + ":" + day;
+  const used = aiCoachUsage.get(usageKey) || 0;
+  if (used >= 5) return res.status(429).json({ error: "Aaj ke 5 AI Coach questions use ho gaye. Kal dobara try karna." });
+  aiCoachUsage.set(usageKey, used + 1);
+  if (aiCoachUsage.size > 5000) {
+    for (const key of aiCoachUsage.keys()) if (!key.endsWith(":" + day)) aiCoachUsage.delete(key);
+  }
+  try {
+    const rows = await GymSession.find({ owner: req.gymUser }).sort({ date: -1 }).limit(10).lean();
+    const workoutContext = rows.map(r => ({
+      date: r.date,
+      workout: String(r.workoutName || r.day || "Workout").slice(0, 80),
+      completed: !!r.finished,
+      bodyWeightKg: Number.isFinite(Number(r.entryWeight)) ? Number(r.entryWeight) : null,
+      cardioKm: Math.round(((Number(r.beforeTreadmillKm) || 0) + (Number(r.afterTreadmillKm) || 0)) * 100) / 100,
+      lifts: (Array.isArray(r.lifts) ? r.lifts : []).slice(0, 12).map(l => ({
+        exercise: String(l.name || l.exercise || "").slice(0, 60),
+        weightKg: Number(l.weight || l.kg) || null,
+        reps: Number(l.reps) || null,
+        sets: Number(l.sets) || null
+      }))
+    }));
+    const profile = {
+      age: Number(user.age) || null,
+      heightCm: Number(user.heightCm) || null,
+      currentWeightKg: Number(user.currentWeight) || null,
+      goalWeightKg: Number(user.goalWeight) || null,
+      goal: String(user.fitnessGoal || "").slice(0, 80),
+      trainingLevel: String(user.trainingLevel || "").slice(0, 40)
+    };
+    const prompt = [
+      "You are SIDHI GYM's practical fitness coach. Reply in the user's language; default to clear Hindi/Hinglish.",
+      "Use the supplied profile and workout logs when relevant. Give concise, specific, beginner-safe advice, including sets/reps or a simple next step where useful.",
+      "Never diagnose disease, prescribe medicine, recommend steroids, extreme dieting, dehydration, or dangerous max attempts. Ask the user to stop for chest pain, faintness, or severe pain and seek urgent medical care. For medical conditions/injuries, recommend a qualified clinician.",
+      "If the data is missing, say so instead of inventing progress. State that calorie/protein estimates are approximate. Avoid repeating personal information unless needed.",
+      "Profile JSON: " + JSON.stringify(profile),
+      "Recent workout logs JSON (up to 10): " + JSON.stringify(workoutContext),
+      "User question: " + question
+    ].join("\n\n");
+    const modelName = String(process.env.GEMINI_MODEL || "gemini-3.5-flash-lite").trim();
+    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(modelName) + ":generateContent?key=" + encodeURIComponent(apiKey), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: "You are a responsible fitness coach for the SIDHI GYM app. Do not claim to be a doctor." }] },
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.45, maxOutputTokens: 700 }
+      }),
+      signal: AbortSignal.timeout(25000)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      if (response.status === 429) return res.status(429).json({ error: "Gemini free quota abhi limit par hai. Kuch der baad try karo." });
+      if (response.status === 401 || response.status === 403) return res.status(503).json({ error: "Gemini API key ya API access check karna hoga." });
+      return res.status(502).json({ error: "Gemini response nahi de paya. Thodi der baad retry karo." });
+    }
+    const answer = (data.candidates || []).flatMap(c => (c.content && c.content.parts) || []).map(p => p.text || "").join("\n").trim();
+    if (!answer) return res.status(502).json({ error: "AI ka jawab khaali aaya. Dobara try karo." });
+    res.json({ ok: true, answer, remainingToday: Math.max(0, 4 - used) });
+  } catch (err) {
+    const message = err && err.name === "TimeoutError" ? "Gemini response mein der ho rahi hai. Dobara try karo." : "AI Coach abhi unavailable hai. Thodi der baad try karo.";
+    res.status(502).json({ error: message });
+  }
+});
+
 app.get("/api/premium/reminders", auth, async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   const user = await User.findOne({ username: req.gymUser }).lean();
