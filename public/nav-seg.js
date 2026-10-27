@@ -5,12 +5,13 @@
     progress: '<path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15l3-3 2 2 5-6"/>',
     run: '<circle cx="14" cy="5" r="1.4"/><path d="M8 21l2.2-5.2 2.2 1.4 1.6-2.2"/><path d="M13.8 15.2l2.4 1.2 1.8-3.4"/><path d="M10.2 15.8l-2.4-1.2"/>',
     history: '<path d="M8 6h12"/><path d="M8 12h12"/><path d="M8 18h12"/><path d="M4 6h.01"/><path d="M4 12h.01"/><path d="M4 18h.01"/>',
-    profile: '<circle cx="12" cy="8" r="3"/><path d="M5 19a7 7 0 0 1 14 0"/>'
+    profile: '<circle cx="12" cy="8" r="3"/><path d="M5 19a7 7 0 0 1 14 0"/>',
+    premium: '<path d="m12 3 2.4 5.2L20 9l-4 3.9.9 5.6L12 15.8 7.1 18.5 8 12.9 4 9l5.6-.8z"/>'
   };
   if (!document.getElementById("seg-nav-css")) {
     var s = document.createElement("style");
     s.id = "seg-nav-css";
-    s.textContent = '#tabbar.tabbar{position:fixed;left:50%;right:auto;bottom:calc(12px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(96vw,460px);height:66px;padding:6px;display:flex;align-items:center;gap:2px;background:rgba(15,23,42,.94);border:1px solid rgba(255,255,255,.08);border-radius:34px;z-index:40}#tabbar .tab{flex:1;height:54px;display:flex;align-items:center;justify-content:center;gap:4px;color:#94a3b8;background:transparent;border:0;border-radius:28px;font:800 10px Comfortaa,sans-serif;text-transform:uppercase}#tabbar .tab svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2}#tabbar .tab .nav-label{display:none}#tabbar .tab.on{flex:1.7;color:#0f172a;background:#fff}#tabbar .tab.on .nav-label,#tabbar .tab[data-tab="run"] .nav-label{display:inline;font-size:9px;letter-spacing:.04em}';
+    s.textContent = '#tabbar.tabbar{position:fixed;left:50%;right:auto;bottom:calc(12px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(96vw,460px);height:66px;padding:6px;display:flex;align-items:center;gap:2px;background:rgba(15,23,42,.94);border:1px solid rgba(255,255,255,.08);border-radius:34px;z-index:40}#tabbar .tab{flex:1;height:54px;display:flex;align-items:center;justify-content:center;gap:4px;color:#94a3b8;background:transparent;border:0;border-radius:28px;font:800 10px Comfortaa,sans-serif;text-transform:uppercase}#tabbar .tab svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2}#tabbar .tab .nav-label{display:none}#tabbar .tab.on{flex:1.7;color:#0f172a;background:#fff}#tabbar .tab.on .nav-label,#tabbar .tab[data-tab="run"] .nav-label{display:inline;font:800 9px Comfortaa,sans-serif;letter-spacing:.04em}';
     document.head.appendChild(s);
   }
   function icon(name) {
@@ -20,7 +21,8 @@
     var key = btn.getAttribute("data-tab") || "home";
     if (btn.dataset.segkey === key && btn.querySelector(".nav-label")) return;
     btn.dataset.segkey = key;
-    btn.innerHTML = icon(key) + '<span class="nav-label">' + key + "</span>";
+    var label = key === "premium" ? "AI Coach" : key;
+    btn.innerHTML = icon(key) + '<span class="nav-label">' + label + "</span>";
   }
   function once() {
     var bar = document.getElementById("tabbar");
