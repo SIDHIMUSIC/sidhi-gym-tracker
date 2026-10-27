@@ -18,6 +18,25 @@ const SPLIT = {
 };
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
+// --- Simple in-memory cache (per warm instance). TTL in ms. Good enough for viral spikes on Vercel. ---
+const cache = new Map();
+function cacheGet(key) {
+  const hit = cache.get(key);
+  if (!hit) return null;
+  if (Date.now() > hit.exp) { cache.delete(key); return null; }
+  return hit.val;
+}
+function cacheSet(key, val, ttlMs) {
+  cache.set(key, { val, exp: Date.now() + ttlMs });
+  if (cache.size > 2000) { // soft limit
+    const first = cache.keys().next().value;
+    if (first) cache.delete(first);
+  }
+}
+function cacheDel(prefix) {
+  for (const k of cache.keys()) if (k.startsWith(prefix)) cache.delete(k);
+}
+
 function model(name, schema) {
   return mongoose.models[name] || mongoose.model(name, schema);
 }
@@ -49,9 +68,9 @@ const Token = model(
   "Token",
   new mongoose.Schema(
     {
-      token: { type: String, unique: true, required: true },
+      token: { type: String, unique: true, required: true, index: true },
       username: { type: String, required: true, index: true },
-      exp: { type: Date, required: true }
+      exp: { type: Date, required: true, index: true }
     },
     { timestamps: true }
   )
@@ -93,6 +112,7 @@ const gymSchema = new mongoose.Schema(
 );
 gymSchema.index({ owner: 1, date: 1 }, { unique: true });
 gymSchema.index({ owner: 1, finished: 1, date: -1 });
+gymSchema.index({ owner: 1, date: -1 }); // for history sort
 const GymSession = model("GymSession", gymSchema);
 
 function hashPass(pass, salt) {
@@ -149,6 +169,7 @@ function withDiff(rows) {
     .sort((a, b) => b.date.localeCompare(a.date))
     .map((row) => Object.assign(row, extra[row.date] || {}));
 }
+
 async function connectDB() {
   if (mongoose.connection.readyState === 1) return;
   if (!MONGODB_URI) {
@@ -156,7 +177,12 @@ async function connectDB() {
     err.status = 500;
     throw err;
   }
-  await mongoose.connect(MONGODB_URI, { dbName: "sidhi_gym" });
+  await mongoose.connect(MONGODB_URI, {
+    dbName: "sidhi_gym",
+    maxPoolSize: 10,
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000
+  });
 }
 
 const app = express();
@@ -167,20 +193,34 @@ app.use(async (req, res, next) => {
   try { await connectDB(); next(); }
   catch (err) { res.status(500).json({ error: "Mongo connect nahi hua. Vercel me MONGODB_URI check karo." }); }
 });
+
+// Auth: avoid write on every request. Only extend if < 7 days left.
 async function auth(req, res, next) {
   const header = req.headers.authorization || "";
   const token = header.replace(/^Bearer\s+/i, "").trim();
   if (!token) return res.status(401).json({ error: "Login chahiye" });
-  const row = await Token.findOne({ token, exp: { $gt: new Date() } });
+
+  const cacheKey = "tok:" + token;
+  let row = cacheGet(cacheKey);
+  if (!row) {
+    row = await Token.findOne({ token, exp: { $gt: new Date() } }).lean();
+    if (row) cacheSet(cacheKey, row, 60 * 1000); // 60s cache
+  }
   if (!row) return res.status(401).json({ error: "Login expire. Phir se login karo." });
-  row.exp = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-  await row.save();
+
+  // Extend only if close to expiry (async, non-blocking)
+  const msLeft = new Date(row.exp).getTime() - Date.now();
+  if (msLeft < 7 * 24 * 60 * 60 * 1000) {
+    Token.updateOne({ token }, { $set: { exp: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) } }).catch(() => {});
+    cacheDel(cacheKey);
+  }
+
   req.gymUser = row.username;
   next();
 }
 
 app.get("/api/health", (_req, res) => {
-  res.json({ ok: true, mongo: mongoose.connection.readyState === 1 });
+  res.json({ ok: true, mongo: mongoose.connection.readyState === 1, cacheSize: cache.size });
 });
 
 app.post("/api/register", async (req, res) => {
@@ -241,7 +281,12 @@ app.post("/api/login", async (req, res) => {
 });
 
 app.get("/api/me", auth, async (req, res) => {
-  const u = await User.findOne({ username: req.gymUser }).lean();
+  const ck = "me:" + req.gymUser;
+  let u = cacheGet(ck);
+  if (!u) {
+    u = await User.findOne({ username: req.gymUser }).lean();
+    cacheSet(ck, u, 30 * 1000); // 30s
+  }
   res.json(Object.assign({ ok: true }, publicUser(u)));
 });
 
@@ -261,6 +306,7 @@ app.patch("/api/me", auth, async (req, res) => {
   if (Array.isArray(req.body.preferredDays)) set.preferredDays = req.body.preferredDays.slice(0, 7);
   if (req.body.schedule && typeof req.body.schedule === "object") set.schedule = req.body.schedule;
   const u = await User.findOneAndUpdate({ username: req.gymUser }, { $set: set }, { new: true }).lean();
+  cacheDel("me:" + req.gymUser);
   res.json(Object.assign({ ok: true }, publicUser(u)));
 });
 
@@ -274,18 +320,28 @@ app.delete("/api/me", auth, async (req, res) => {
   await GymSession.deleteMany({ owner: req.gymUser });
   await Token.deleteMany({ username: req.gymUser });
   await User.deleteOne({ username: req.gymUser });
+  cacheDel("me:" + req.gymUser);
+  cacheDel("sess:" + req.gymUser);
   res.json({ ok: true });
 });
 
 app.get("/api/export", auth, async (req, res) => {
-  const rows = await GymSession.find({ owner: req.gymUser }).lean();
+  const rows = await GymSession.find({ owner: req.gymUser }).sort({ date: -1 }).lean();
   const u = await User.findOne({ username: req.gymUser }).lean();
   res.json({ ok: true, user: publicUser(u), sessions: withDiff(rows) });
 });
 
 app.get("/api/sessions", auth, async (req, res) => {
-  const rows = await GymSession.find({ owner: req.gymUser }).lean();
-  res.json({ sessions: withDiff(rows) });
+  const ck = "sess:" + req.gymUser;
+  let withD = cacheGet(ck);
+  if (!withD) {
+    const rows = await GymSession.find({ owner: req.gymUser })
+      .sort({ date: -1 })
+      .lean();
+    withD = withDiff(rows);
+    cacheSet(ck, withD, 15 * 1000); // 15s — short so finish workout feels fresh
+  }
+  res.json({ sessions: withD });
 });
 
 app.put("/api/session", auth, async (req, res) => {
@@ -336,15 +392,20 @@ app.put("/api/session", auth, async (req, res) => {
     { $set: doc },
     { upsert: true, new: true, setDefaultsOnInsert: true }
   ).lean();
-  const rows = await GymSession.find({ owner: req.gymUser }).lean();
+  cacheDel("sess:" + req.gymUser); // invalidate
+  const rows = await GymSession.find({ owner: req.gymUser }).sort({ date: -1 }).lean();
   const withD = withDiff(rows);
+  cacheSet("sess:" + req.gymUser, withD, 15 * 1000);
   res.json({ ok: true, session: withD.find((s) => s.date === date), sessions: withD });
 });
 
 app.delete("/api/session/:date", auth, async (req, res) => {
   await GymSession.deleteOne({ owner: req.gymUser, date: req.params.date });
-  const rows = await GymSession.find({ owner: req.gymUser }).lean();
-  res.json({ ok: true, sessions: withDiff(rows) });
+  cacheDel("sess:" + req.gymUser);
+  const rows = await GymSession.find({ owner: req.gymUser }).sort({ date: -1 }).lean();
+  const withD = withDiff(rows);
+  cacheSet("sess:" + req.gymUser, withD, 15 * 1000);
+  res.json({ ok: true, sessions: withD });
 });
 
 require("./admin-routes")(app, { User: User, Token: Token, hashPass: hashPass });
