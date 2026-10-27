@@ -11,7 +11,7 @@
       card.id = "membershipCard";
       card.className = "glass card";
       card.style.cssText = "margin:12px 0;border:1px solid rgba(240,194,122,.28);overflow:hidden";
-      card.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><div style="font-size:11px;letter-spacing:.16em;color:#9aa7b8;font-weight:800">MEMBERSHIP STATUS</div><div id="membershipTitle" style="font-size:19px;font-weight:900;margin-top:7px">Checking status…</div></div><div id="membershipPill" style="padding:7px 11px;border-radius:999px;font-size:11px;font-weight:900">CHECKING</div></div><div id="membershipDetail" style="font-size:13px;color:#b8c7d9;line-height:1.5;margin-top:10px"></div><div id="membershipDaysWrap" style="margin-top:12px;display:none"><div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#b8c7d9"><span>Premium time remaining</span><b id="membershipDays"></b></div><div style="height:6px;background:#ffffff14;border-radius:99px;overflow:hidden;margin-top:7px"><div id="membershipBar" style="height:100%;width:100%;border-radius:99px;background:linear-gradient(90deg,#f0c27a,#63e2b3)"></div></div></div><div id="membershipActions" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button id="enablePremiumNotifications" type="button" style="padding:9px 12px;border:1px solid #64748b;border-radius:10px;background:#172033;color:#fff;font-weight:700">Enable expiry reminders</button><button id="premiumExportBtn" type="button" style="padding:9px 12px;border:0;border-radius:10px;background:linear-gradient(90deg,#f0c27a,#63e2b3);color:#111;font-weight:800">Download workout CSV</button><button id="membershipRenewBtn" type="button" style="display:none;padding:9px 12px;border:0;border-radius:10px;background:#f0c27a;color:#111;font-weight:800">Renew Premium</button></div>';
+      card.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><div style="font-size:11px;letter-spacing:.16em;color:#9aa7b8;font-weight:800">MEMBERSHIP STATUS</div><div id="membershipTitle" style="font-size:19px;font-weight:900;margin-top:7px">Checking status…</div></div><div id="membershipPill" style="padding:7px 11px;border-radius:999px;font-size:11px;font-weight:900">CHECKING</div></div><div id="membershipDetail" style="font-size:13px;color:#b8c7d9;line-height:1.5;margin-top:10px"></div><div id="membershipDaysWrap" style="margin-top:12px;display:none"><div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#b8c7d9"><span>Premium time remaining</span><b id="membershipDays"></b></div><div style="height:6px;background:#ffffff14;border-radius:99px;overflow:hidden;margin-top:7px"><div id="membershipBar" style="height:100%;width:100%;border-radius:99px;background:linear-gradient(90deg,#f0c27a,#63e2b3)"></div></div></div><div id="membershipActions" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button id="enablePremiumNotifications" type="button" style="padding:9px 12px;border:1px solid #64748b;border-radius:10px;background:#172033;color:#fff;font-weight:700">Enable expiry reminders</button><button id="premiumExportBtn" type="button" style="padding:9px 12px;border:0;border-radius:10px;background:linear-gradient(90deg,#f0c27a,#63e2b3);color:#111;font-weight:800">Download workout CSV</button><button id="membershipRenewBtn" type="button" style="display:none;padding:9px 12px;border:0;border-radius:10px;background:#f0c27a;color:#111;font-weight:800">Renew Premium</button><button id="premiumInsightsBtn" type="button" style="padding:9px 12px;border:1px solid #f0c27a;border-radius:10px;background:#172033;color:#f0c27a;font-weight:800">View Workout Insights</button></div><div id="premiumInsightsBox" style="display:none;margin-top:12px;padding:12px;border-radius:12px;background:#070b12;color:#dbeafe;font-size:13px;line-height:1.8"></div>';
       profile.insertBefore(card, profile.firstChild);
       var notifyBtn = card.querySelector("#enablePremiumNotifications");
       if (notifyBtn) notifyBtn.onclick = function () {
@@ -37,6 +37,20 @@
         } catch (e) { alert(e.message || "Export failed"); exportBtn.textContent = "Download workout CSV"; }
         finally { exportBtn.disabled = false; }
       };
+      var insightsBtn = card.querySelector("#premiumInsightsBtn");
+      if (insightsBtn) insightsBtn.onclick = async function () {
+        var box = card.querySelector("#premiumInsightsBox"), token = localStorage.getItem(TOKEN_KEY) || "";
+        insightsBtn.disabled = true; insightsBtn.textContent = "Loading insights…";
+        try {
+          var response = await fetch("/api/premium/insights", { headers: { Authorization: "Bearer " + token }, cache: "no-store" });
+          var data = await response.json();
+          if (!response.ok || !data.ok) throw new Error(data.error || "Insights load nahi hue");
+          box.style.display = "block";
+          box.textContent = "Total workouts: " + data.totalWorkouts + " · Completed: " + data.completedWorkouts + " · Cardio: " + data.cardioKm + " km · Best recorded start weight: " + (data.bestRecordedWeight == null ? "—" : data.bestRecordedWeight + " kg") + " · Latest start weight: " + (data.latestWeight == null ? "—" : data.latestWeight + " kg");
+          insightsBtn.textContent = "Refresh Workout Insights";
+        } catch (e) { alert(e.message || "Insights load nahi hue"); insightsBtn.textContent = "View Workout Insights"; }
+        finally { insightsBtn.disabled = false; }
+      };
       var renewBtn = card.querySelector("#membershipRenewBtn");
       if (renewBtn) renewBtn.onclick = function () {
         var pay = document.getElementById("payBtn");
@@ -52,10 +66,11 @@
     var profile = document.getElementById("view-profile");
     if (!profile || !me) return;
     var card = cardFor(profile), title = document.getElementById("membershipTitle"), pill = document.getElementById("membershipPill"), detail = document.getElementById("membershipDetail"), wrap = document.getElementById("membershipDaysWrap"), daysEl = document.getElementById("membershipDays"), bar = document.getElementById("membershipBar"), d = daysLeft(me);
-    var actions = document.getElementById("membershipActions"), notifyBtn = document.getElementById("enablePremiumNotifications"), exportBtn = document.getElementById("premiumExportBtn"), renewBtn = document.getElementById("membershipRenewBtn");
+    var actions = document.getElementById("membershipActions"), notifyBtn = document.getElementById("enablePremiumNotifications"), exportBtn = document.getElementById("premiumExportBtn"), renewBtn = document.getElementById("membershipRenewBtn"), insightsBtn = document.getElementById("premiumInsightsBtn");
     if (actions) actions.style.display = (me.premium || me.isAdmin) ? "flex" : "none";
     if (notifyBtn) notifyBtn.style.display = (me.premium && !me.isAdmin) ? "inline-block" : "none";
     if (exportBtn) exportBtn.style.display = (me.premium || me.isAdmin) ? "inline-block" : "none";
+    if (insightsBtn) insightsBtn.style.display = (me.premium || me.isAdmin) ? "inline-block" : "none";
     if (me.isAdmin) {
       card.style.background = "linear-gradient(120deg,rgba(255,107,107,.14),rgba(167,139,250,.16),rgba(72,219,251,.12))";
       card.style.borderColor = "rgba(167,139,250,.7)";
