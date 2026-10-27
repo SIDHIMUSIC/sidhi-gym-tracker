@@ -600,14 +600,14 @@ app.get("/api/premium/insights", auth, async (req, res) => {
 });
 
 
- // Gemini-powered Premium Gym Coach. The API key is read only on the server.
+ // SIDHI AI-powered Premium Gym Coach. The API key is read only on the server.
 const aiCoachUsage = new Map();
 app.post("/api/premium/ai-coach", auth, async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return res.status(503).json({ error: "AI Coach abhi setup nahi hai. Admin ko Vercel mein GEMINI_API_KEY set karni hogi." });
   const user = await User.findOne({ username: req.gymUser }).lean();
-  if (!hasActivePremium(user)) return res.status(402).json({ error: "Gemini AI Coach ke liye Premium chahiye." });
+  if (!hasActivePremium(user)) return res.status(402).json({ error: "SIDHI AI Coach ke liye Premium chahiye." });
   const question = String((req.body && req.body.question) || "").trim().slice(0, 1200);
   if (question.length < 2) return res.status(400).json({ error: "Apna fitness sawaal likho." });
   const day = new Date().toISOString().slice(0, 10);
@@ -663,15 +663,15 @@ app.post("/api/premium/ai-coach", auth, async (req, res) => {
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      if (response.status === 429) return res.status(429).json({ error: "Gemini free quota abhi limit par hai. Kuch der baad try karo." });
-      if (response.status === 401 || response.status === 403) return res.status(503).json({ error: "Gemini API key ya API access check karna hoga." });
-      return res.status(502).json({ error: "Gemini response nahi de paya. Thodi der baad retry karo." });
+      if (response.status === 429) return res.status(429).json({ error: "SIDHI AI free quota abhi limit par hai. Kuch der baad try karo." });
+      if (response.status === 401 || response.status === 403) return res.status(503).json({ error: "SIDHI AI API key ya API access check karna hoga." });
+      return res.status(502).json({ error: "SIDHI AI response nahi de paya. Thodi der baad retry karo." });
     }
     const answer = (data.candidates || []).flatMap(c => (c.content && c.content.parts) || []).map(p => p.text || "").join("\n").trim();
     if (!answer) return res.status(502).json({ error: "AI ka jawab khaali aaya. Dobara try karo." });
     res.json({ ok: true, answer, remainingToday: Math.max(0, 4 - used) });
   } catch (err) {
-    const message = err && err.name === "TimeoutError" ? "Gemini response mein der ho rahi hai. Dobara try karo." : "AI Coach abhi unavailable hai. Thodi der baad try karo.";
+    const message = err && err.name === "TimeoutError" ? "SIDHI AI response mein der ho rahi hai. Dobara try karo." : "AI Coach abhi unavailable hai. Thodi der baad try karo.";
     res.status(502).json({ error: message });
   }
 });
@@ -691,7 +691,7 @@ function geminiApiKey() { return process.env.GEMINI_API_KEY || ""; }
 async function callGeminiJson(prompt, maxTokens) {
   const apiKey = geminiApiKey();
   if (!apiKey) {
-    const err = new Error("Gemini API key missing");
+    const err = new Error("SIDHI AI API key missing");
     err.statusCode = 503;
     throw err;
   }
@@ -707,18 +707,18 @@ async function callGeminiJson(prompt, maxTokens) {
   });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const err = new Error("Gemini request failed");
+    const err = new Error("SIDHI AI request failed");
     err.statusCode = response.status === 429 ? 429 : response.status === 401 || response.status === 403 ? 503 : 502;
     throw err;
   }
   const raw = (data.candidates || []).flatMap(c => (c.content && c.content.parts) || []).map(p => p.text || "").join("").trim();
-  if (!raw) { const err = new Error("Gemini returned an empty response"); err.statusCode = 502; throw err; }
+  if (!raw) { const err = new Error("SIDHI AI returned an empty response"); err.statusCode = 502; throw err; }
   try { return JSON.parse(raw.replace(/^\x60{3}(?:json)?\s*/i, "").replace(/\s*\x60{3}$/i, "")); }
-  catch (_) { const err = new Error("Gemini returned invalid JSON"); err.statusCode = 502; throw err; }
+  catch (_) { const err = new Error("SIDHI AI returned invalid JSON"); err.statusCode = 502; throw err; }
 }
 function foodApiError(res, err) {
   if (err.statusCode === 503 && !geminiApiKey()) return res.status(503).json({ error: "Food AI setup nahi hai. Vercel mein GEMINI_API_KEY set karke redeploy karo." });
-  if (err.statusCode === 429) return res.status(429).json({ error: "Gemini free quota abhi limit par hai. Thodi der baad try karo." });
+  if (err.statusCode === 429) return res.status(429).json({ error: "SIDHI AI free quota abhi limit par hai. Thodi der baad try karo." });
   if (err.name === "TimeoutError") return res.status(502).json({ error: "AI response mein der ho rahi hai. Dobara try karo." });
   return res.status(err.statusCode || 502).json({ error: "AI nutrition estimate abhi nahi mila. Dobara try karo; meal save nahi hua." });
 }

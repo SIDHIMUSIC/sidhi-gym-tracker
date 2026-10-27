@@ -333,7 +333,7 @@ async function login() {
 $("loginBtn").onclick = login;
 $("setupBtn").onclick = function () {};
 $("loginPass").addEventListener("keydown", function (e) { if (e.key === "Enter") login(); });
-$("logoutBtn").onclick = function () {
+function sidhiLogout() {
   token = ""; username = ""; sessions = [];
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
@@ -341,7 +341,15 @@ $("logoutBtn").onclick = function () {
   $("tabbar").classList.add("hidden");
   $("gate").classList.remove("hidden");
   toast("Logged out");
-};
+}
+window.sidhiLogout = sidhiLogout;
+// Logout is rendered inside the Profile view, so delegate the click after render.
+document.addEventListener("click", function (e) {
+  if (e.target && e.target.closest && e.target.closest("#logoutBtn")) {
+    e.preventDefault();
+    sidhiLogout();
+  }
+});
 $("date").addEventListener("change", fillForm);
 $("saveBtn").onclick = function () { save(false); };
 $("finishBtn").onclick = function () { save(true); };
