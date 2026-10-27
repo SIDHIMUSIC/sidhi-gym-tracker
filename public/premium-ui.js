@@ -35,12 +35,12 @@
     b.id = "premBadge";
     b.style.cssText = "display:inline-block;margin-left:8px;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:800";
     if (me.isAdmin) {
-      b.textContent = "ADMIN";
+      b.textContent = "ADMIN • LIFETIME";
       b.style.background = "linear-gradient(90deg,#ff6b6b,#feca57,#48dbfb,#ff9ff3)";
       b.style.color = "#111";
     } else if (me.premium) {
-      var days = me.premiumUntil ? Math.max(0, Math.ceil((new Date(me.premiumUntil) - Date.now()) / 86400000)) : "";
-      b.textContent = "PREMIUM" + (days ? " · " + days + "d" : "");
+      var days = me.premiumDaysLeft != null ? me.premiumDaysLeft : (me.premiumUntil ? Math.max(0, Math.ceil((new Date(me.premiumUntil) - Date.now()) / 86400000)) : "");
+      b.textContent = "PREMIUM" + (days !== "" ? " · " + days + " DAYS LEFT" : "");
       b.style.background = "linear-gradient(90deg,#f0c27a,#63e2b3)";
       b.style.color = "#111";
     } else {
