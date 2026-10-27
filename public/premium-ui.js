@@ -12,9 +12,9 @@
   }
 
   async function getMe() {
-    const token = localStorage.getItem("sidhi_token") || localStorage.getItem("token");
-    if (!token) return null;
-    const r = await fetch("/api/me", { headers: { Authorization: "Bearer " + token } });
+    const sidhi-gym-token = localStorage.getItem("sidhi-gym-token") || localStorage.getItem("sidhi-gym-token");
+    if (!sidhi-gym-token) return null;
+    const r = await fetch("/api/me", { headers: { Authorization: "Bearer " + sidhi-gym-token } });
     return r.ok ? r.json() : null;
   }
 
@@ -59,10 +59,10 @@
   }
 
   async function activate(code) {
-    const token = localStorage.getItem("sidhi_token") || localStorage.getItem("token");
+    const sidhi-gym-token = localStorage.getItem("sidhi-gym-token") || localStorage.getItem("sidhi-gym-token");
     const r = await fetch("/api/premium/activate", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + sidhi-gym-token },
       body: JSON.stringify({ code })
     });
     const data = await r.json();
@@ -75,8 +75,8 @@
   }
 
   async function exportCSV() {
-    const token = localStorage.getItem("sidhi_token") || localStorage.getItem("token");
-    const r = await fetch("/api/export.csv", { headers: { Authorization: "Bearer " + token } });
+    const sidhi-gym-token = localStorage.getItem("sidhi-gym-token") || localStorage.getItem("sidhi-gym-token");
+    const r = await fetch("/api/export.csv", { headers: { Authorization: "Bearer " + sidhi-gym-token } });
     if (!r.ok) {
       const e = await r.json().catch(() => ({}));
       return toast(e.error || "Export failed");
@@ -111,9 +111,8 @@
     setTimeout(() => limitHistory(me), 1200);
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
-    setTimeout(init, 600);
-  }
+  setTimeout(init, 1500);
+  setInterval(() => {
+    if (!document.getElementById("premiumBox") && localStorage.getItem("sidhi-gym-token")) init();
+  }, 3000);
 })();
