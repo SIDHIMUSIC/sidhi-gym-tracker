@@ -67,12 +67,11 @@
     if (el("app")) el("app").appendChild(f);
   }
   function ensureProfileTab() {
-    var bar = el("tabbar");
-    if (bar && !bar.querySelector('[data-tab="profile"]')) {
-      var b = document.createElement("button");
-      b.className = "tab"; b.type = "button"; b.dataset.tab = "profile"; b.textContent = "profile";
-      bar.appendChild(b);
-      b.addEventListener("click", function (e) { e.preventDefault(); showProfile(); });
+    // Profile lives in the top-right header now, not in the crowded bottom navigation.
+    var profileButton = el("profileBtn");
+    if (profileButton && !profileButton.dataset.bound) {
+      profileButton.dataset.bound = "1";
+      profileButton.addEventListener("click", function (e) { e.preventDefault(); showProfile(); });
     }
     if (!el("view-profile")) {
       var v = document.createElement("div"); v.id = "view-profile"; v.className = "hidden";
@@ -111,7 +110,8 @@
       '<div class="kv"><span>weight</span><b>' + (w != null ? w + " kg" : "—") + '</b></div>' +
       '<div class="kv"><span>goal weight</span><b>' + (typeof goalWeight !== "undefined" && goalWeight != null ? goalWeight + " kg" : "—") + '</b></div></div>' +
       '<div class="glass card"><h2>edit profile</h2><label>full name</label><input id="pfName" value="' + (profile.displayName || "") + '" /><label>gender</label><div class="seg" id="pfGen"><button type="button" data-g="male" class="' + (profile.gender === "male" ? "on" : "") + '">Male</button><button type="button" data-g="female" class="' + (profile.gender === "female" ? "on" : "") + '">Female</button></div><button class="btn ok full" id="pfSave" style="margin-top:12px">save changes</button></div>' +
-      '<div class="glass card"><h2>choose official plan day</h2>' + sched + '<button class="btn full" id="pfSched" style="margin-top:12px">save schedule</button></div>';
+      '<div class="glass card"><h2>choose official plan day</h2>' + sched + '<button class="btn full" id="pfSched" style="margin-top:12px">save schedule</button></div>' +
+      '<div class="glass card"><h2>account</h2><p class="sub">Sign out of your SIDHI GYM account on this device.</p><button class="btn danger full" id="logoutBtn" type="button">↪ logout</button></div>';
     document.querySelectorAll("#pfGen button").forEach(function (b) {
       b.onclick = function () {
         document.querySelectorAll("#pfGen button").forEach(function (x) { x.classList.remove("on"); });
