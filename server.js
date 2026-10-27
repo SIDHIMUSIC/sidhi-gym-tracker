@@ -58,7 +58,9 @@ const User = model(
       fitnessGoal: { type: String, default: "" },
       trainingLevel: { type: String, default: "" },
       photoUrl: { type: String, default: "" },
-      preferredDays: { type: Array, default: [] }
+      preferredDays: { type: Array, default: [] },
+      premium: { type: Boolean, default: false },
+      premiumUntil: { type: Date, default: null }
     },
     { timestamps: true }
   )
@@ -146,7 +148,9 @@ function publicUser(u) {
     fitnessGoal: u.fitnessGoal || "",
     trainingLevel: u.trainingLevel || "",
     photoUrl: u.photoUrl || "",
-    preferredDays: Array.isArray(u.preferredDays) ? u.preferredDays : []
+    preferredDays: Array.isArray(u.preferredDays) ? u.preferredDays : [],
+    premium: !!u.premium,
+    premiumUntil: u.premiumUntil || null
   };
 }
 function withDiff(rows) {
@@ -406,6 +410,32 @@ app.delete("/api/session/:date", auth, async (req, res) => {
   const withD = withDiff(rows);
   cacheSet("sess:" + req.gymUser, withD, 15 * 1000);
   res.json({ ok: true, sessions: withD });
+});
+
+
+// Premium: CSV export
+app.get("/api/export.csv", auth, async (req, res) => {
+  const u = await User.findOne({ username: req.gymUser }).lean();
+  if (!u || !u.premium) return res.status(402).json({ error: "Premium chahiye export ke liye" });
+  const rows = await GymSession.find({ owner: req.gymUser }).sort({ date: -1 }).lean();
+  let csv = "date,day,workout,entryWeight,finished,note\n";
+  rows.forEach(r => {
+    csv += [r.date, r.day||"", (r.workoutName||"").replace(/,/g," "), r.entryWeight||"", r.finished?"yes":"no", (r.after1HourNote||"").replace(/,/g," ")].join(",") + "\n";
+  });
+  res.setHeader("Content-Type", "text/csv");
+  res.setHeader("Content-Disposition", "attachment; filename=sidhi-gym-export.csv");
+  res.send(csv);
+});
+
+// Manual premium unlock (admin / UPI confirm later)
+app.post("/api/premium/activate", auth, async (req, res) => {
+  const code = String(req.body.code || "").trim();
+  // Simple code for now — replace with Razorpay webhook later
+  if (code !== "SIDHI2026") return res.status(400).json({ error: "Invalid code" });
+  const until = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+  await User.updateOne({ username: req.gymUser }, { $set: { premium: true, premiumUntil: until } });
+  cacheDel("me:" + req.gymUser);
+  res.json({ ok: true, premium: true, until });
 });
 
 require("./admin-routes")(app, { User: User, Token: Token, hashPass: hashPass });
