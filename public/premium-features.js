@@ -4,6 +4,7 @@
   var TOKEN_KEY = "sidhi-gym-token";
   var me = null, sessions = [], timerId = null, timerLeft = 0, timerTotal = 60, timerRunning = false;
   var rootId = "sidhiPremiumSuite";
+  var activePremiumGroup = "ai";
   function token() { try { return localStorage.getItem(TOKEN_KEY) || ""; } catch (_) { return ""; } }
   function key(suffix) { return "sidhi-premium:" + ((me && me.username) || localStorage.getItem("sidhi-gym-username") || "guest") + ":" + suffix; }
   function read(suffix, fallback) { try { var v = localStorage.getItem(key(suffix)); return v ? JSON.parse(v) : fallback; } catch (_) { return fallback; } }
@@ -105,11 +106,11 @@
   }
   function btn(id, label) { return '<button type="button" id="' + id + '" class="btn ghost" style="min-height:42px;padding:10px 13px;font-size:12px">' + label + '</button>'; }
   function field(id, label, placeholder, type) { return '<label for="' + id + '">' + label + '</label><input id="' + id + '" type="' + (type || "text") + '" placeholder="' + (placeholder || "") + '">'; }
-  function section(id, title, content) { return '<section class="glass card" id="' + id + '" style="margin-top:12px;border-color:#f0c27a44"><h2 style="color:#f0c27a;margin-top:0">' + title + '</h2>' + content + '</section>'; }
+  function section(id, title, content) { var group=(id==="ps-daily-flow"?"sleep":(id==="ps-ai-chat"||id==="ps-coach"?"ai":(id==="ps-food-diary"||id==="ps-nutrition"?"food":"tools"))); return '<section class="glass card" id="' + id + '" data-premium-section="' + group + '" style="margin-top:12px;border-color:#f0c27a44"><h2 style="color:#f0c27a;margin-top:0">' + title + '</h2>' + content + '</section>'; }
   function getRoot() {
     var root = document.getElementById(rootId);
     if (root) return root;
-    var home = document.getElementById("view-home");
+    var home = document.getElementById("view-premium");
     if (!home) return null;
     root = document.createElement("div"); root.id = rootId; root.style.cssText = "margin-top:14px";
     home.appendChild(root);
@@ -118,7 +119,7 @@
   function render() {
     if (!premium()) return;
     var root = getRoot(); if (!root) return;
-    root.innerHTML = '<div class="glass card" style="border:1px solid #f0c27a88;background:linear-gradient(130deg,#17120a,#0c1820);margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><div><div style="font-size:10px;letter-spacing:.2em;color:#f0c27a;font-weight:900">SIDHI GYM • PREMIUM</div><h2 style="margin:6px 0">Your Performance Hub</h2><div style="font-size:12px;color:#9aa7b8">Coach · analytics · plans · reports</div></div><span style="background:linear-gradient(90deg,#f0c27a,#fff0b5);color:#241707;padding:7px 10px;border-radius:99px;font-size:11px;font-weight:900">✦ GOLD MEMBER</span></div><div class="row" style="margin-top:14px">' + btn("ps-refresh","Refresh data") + btn("ps-coach-jump","Gym Coach") + btn("ps-timer-jump","Rest timer") + btn("ps-report-jump","Reports") + '</div></div>' +
+    root.innerHTML = '<div class="premium-welcome"><div style="font-size:10px;letter-spacing:.2em;color:#f0c27a;font-weight:900">SIDHI GYM • PREMIUM</div><h2>Performance Studio</h2><p>AI Coach, food diary, sleep review aur saare extra tools—alag sections mein, clean aur easy to use.</p><div class="row" style="margin-top:12px"><span class="pill">✦ GOLD MEMBER</span>' + btn("ps-refresh","↻ Refresh") + '</div></div><div class="premium-nav"><button type="button" class="premium-nav-btn" data-premium-group="ai">✧ AI Coach</button><button type="button" class="premium-nav-btn" data-premium-group="food">◉ Food Diary</button><button type="button" class="premium-nav-btn" data-premium-group="sleep">☾ Day Review</button><button type="button" class="premium-nav-btn" data-premium-group="tools">⚙ More Tools</button></div>' +
       section("ps-daily-flow","Daily AI Check-in",'<p style="font-size:13px;color:#cbd5e1">Workout finish karte hi session review hoga. Raat ko Go to Sleep dabao—logged gym, cardio, food aur tumhari sleep entry ka end-of-day review milega.</p><div id="ps-finish-review" style="white-space:pre-wrap;line-height:1.7;margin:10px 0;color:#e2e8f0">Finish Workout karne par AI review yahan aayega.</div><div style="border-top:1px solid #ffffff18;padding-top:12px"><b style="color:#f0c27a">Bedtime check-in</b><div class="grid"><div><label for="ps-sleep-bedtime">Going to bed at</label><input id="ps-sleep-bedtime" type="time"></div><div><label for="ps-sleep-wake">Target wake-up</label><input id="ps-sleep-wake" type="time"></div><div><label for="ps-sleep-quality">How do you feel?</label><select id="ps-sleep-quality"><option value="good">Good / refreshed</option><option value="okay" selected>Okay</option><option value="tired">Tired</option><option value="sore">Very sore</option><option value="stressed">Stressed</option></select></div></div><label for="ps-sleep-notes">Optional notes</label><textarea id="ps-sleep-notes" rows="2" maxlength="400" placeholder="e.g. late dinner, muscle soreness, low energy" style="width:100%;box-sizing:border-box;padding:10px;border-radius:10px;background:#101722;color:#fff;border:1px solid #ffffff24"></textarea><div class="row" style="margin-top:10px">' + btn("ps-go-sleep","Go to Sleep · Review My Day") + '</div><div id="ps-sleep-status" style="font-size:12px;color:#9aa7b8;margin-top:8px"></div><div id="ps-sleep-review" aria-live="polite" style="white-space:pre-wrap;line-height:1.7;margin-top:12px;color:#e2e8f0"></div><p style="font-size:11px;color:#9aa7b8">Sleep is self-reported and saved on this device. The app does not detect when you actually fall asleep.</p></div>') +
       section("ps-coach","1. Gym Coach & Progress Analytics",'<div id="ps-coach-output" style="font-size:13px;line-height:1.8;color:#dbeafe">Analysing your workout log…</div><div id="ps-analytics" class="grid" style="margin-top:12px"></div>') +
       section("ps-ai-chat","Gemini AI Gym Coach",'<label for="ps-ai-question">Ask your AI Gym Coach</label><textarea id="ps-ai-question" rows="3" maxlength="1200" placeholder="e.g. Mere workout log ke hisaab se strength kaise badhaun?" style="width:100%;box-sizing:border-box;margin:7px 0 10px;padding:12px;border-radius:12px;background:#101722;color:#fff;border:1px solid #ffffff24"></textarea><div class="row" style="align-items:center;gap:8px">' + btn("ps-ai-ask","Ask Gemini Coach") + '<small style="color:#9aa7b8">5 questions/day · Premium</small></div><div id="ps-ai-answer" aria-live="polite" style="white-space:pre-wrap;line-height:1.7;margin-top:12px;color:#e2e8f0"></div><p style="font-size:11px;color:#9aa7b8">Fitness guidance only, not medical advice. Don’t enter private medical or identity details.</p>') +
@@ -133,13 +134,24 @@
       section("ps-report","10. Export & Monthly Reports",'<div class="row">' + btn("ps-report-csv","Download CSV") + btn("ps-report-print","Monthly PDF / Print") + btn("ps-share-card","Create shareable card") + '</div><div id="ps-share-preview" style="margin-top:12px"></div>') +
       section("ps-programs","11. Four-week Goal Programs",'<label for="ps-program">Choose program</label><select id="ps-program"><option value="strength">4-week Strength</option><option value="beginner">Beginner Gym</option><option value="fatloss">Fat-loss Basics</option><option value="muscle">Muscle-building</option></select><div class="row" style="margin-top:10px">' + btn("ps-program-view","View plan") + btn("ps-program-save","Save my plan") + '</div><div id="ps-program-output" style="margin-top:12px;font-size:13px;line-height:1.8"></div>') +
       section("ps-profile-theme","12. Gold Profile & Dashboard",'<label for="ps-theme">Premium theme</label><select id="ps-theme"><option value="gold">Gold Luxury</option><option value="mint">Mint Focus</option><option value="violet">Violet Night</option></select><div class="row" style="margin-top:10px">' + btn("ps-theme-apply","Apply theme") + btn("ps-theme-reset","Reset theme") + '</div><div id="ps-theme-status" style="font-size:12px;color:#9aa7b8;margin-top:8px"></div>');
-    bind(); initFoodDiary(); renderRoutine(); renderBodyHistory(); renderHistory(); renderAchievements(); renderProgram(); renderAnalytics(); loadSavedInputs(); applyTheme(false); checkReminders();
+    bind(); initFoodDiary(); renderRoutine(); renderBodyHistory(); renderHistory(); renderAchievements(); renderProgram(); renderAnalytics(); loadSavedInputs(); applyTheme(false); checkReminders(); setPremiumGroup(activePremiumGroup);
+  }
+  function setPremiumGroup(group) {
+    activePremiumGroup=group||"ai";
+    var root=document.getElementById(rootId);if(!root)return;
+    root.querySelectorAll("[data-premium-section]").forEach(function(s){s.classList.toggle("hidden",s.getAttribute("data-premium-section")!==activePremiumGroup);});
+    root.querySelectorAll("[data-premium-group]").forEach(function(b){b.classList.toggle("active",b.getAttribute("data-premium-group")===activePremiumGroup);});
+  }
+  function openPremiumGroup(group) {
+    if(typeof window.showTab==="function")window.showTab("premium");
+    setTimeout(function(){setPremiumGroup(group);},100);
   }
   function bindClick(id, fn) { var el = document.getElementById(id); if (el) el.onclick = fn; }
   function val(id) { var el = document.getElementById(id); return el ? el.value : ""; }
   function setVal(id, v) { var el = document.getElementById(id); if (el && v != null) el.value = v; }
   function bind() {
     bindClick("ps-refresh", function(){ loadSessions().then(function(){ renderAnalytics(); renderHistory(); renderAchievements(); renderBodyHistory(); coach(); toast("Premium data refreshed"); }); });
+    document.querySelectorAll("[data-premium-group]").forEach(function(b){b.onclick=function(){setPremiumGroup(b.getAttribute("data-premium-group"));};});
     bindClick("ps-coach-jump", function(){ document.getElementById("ps-coach").scrollIntoView({behavior:"smooth"}); });
     bindClick("ps-ai-ask", askAiCoach);
     bindClick("ps-go-sleep", goToSleepReview);
@@ -221,6 +233,8 @@
   function resetTimer(){pauseTimer();var p=val("ps-timer-preset");timerTotal=p==="custom"?Math.max(1,Number(val("ps-timer-custom"))||60):Number(p)||60;timerLeft=timerTotal;paintTimer();}
   function paintTimer(){var el=document.getElementById("ps-timer-display");if(el)el.textContent=String(Math.floor(timerLeft/60)).padStart(2,"0")+":"+String(timerLeft%60).padStart(2,"0");var b=document.getElementById("ps-timer-start");if(b)b.textContent=timerRunning?"Running…":"Start";}
   window.addEventListener("sidhi-workout-finished",function(e){if(premium())reviewFinishedWorkout(e.detail||{});});
+  window.showPremiumGroup = function(group){setPremiumGroup(group);};
+  window.addEventListener("sidhi-open-premium-group",function(e){if(premium())openPremiumGroup(e.detail||"ai");else toast("Premium membership required to open Studio");});
   function boot(){if(!token())return;api("/api/me").then(function(m){me=m;if(!premium())return;return loadSessions().then(function(){render();setInterval(checkReminders,15000);});}).catch(function(){/* Login/session may not be ready yet; retry below. */});}
   setTimeout(boot,1200);
   document.addEventListener("visibilitychange",function(){if(!document.hidden&&token()&&!premium())boot();});
