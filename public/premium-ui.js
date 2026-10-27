@@ -30,8 +30,7 @@
 
   function badge() {
     if (!me) return;
-    var old = document.getElementById("premBadge");
-    if (old) old.remove();
+    if (document.getElementById("premBadge")) return;
     var b = document.createElement("span");
     b.id = "premBadge";
     b.style.cssText = "display:inline-block;margin-left:8px;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:800";
@@ -177,5 +176,5 @@
   }
 
   boot();
-  setInterval(function () { badge(); homeCards(); profileAdmin(); }, 2500);
+  // no interval — stable
 })();
