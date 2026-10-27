@@ -23,7 +23,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;700&family=Pacifico&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;700&family=Pacifico&family=Syne:wght@700;800&display=swap" />
+  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;700&family=Pacifico&family=Syne:wght@700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;700&family=Pacifico&family=Syne:wght@700;800&display=swap" rel="stylesheet" /></noscript>
   <style>
     :root { --gold:#f0c27a; --gold2:#c9923d; --mint:#63e2b3; --text:#f6f1e8; --muted:#9aa7b8; --line:rgba(255,255,255,.14); --bg:#02040c; }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -61,7 +64,7 @@
     #bootSplash.off{opacity:0;pointer-events:none}
     .sg-loader{display:flex;align-items:center;justify-content:center}
     .sg-loader svg.ltr{margin:0 2px;width:52px;height:64px}
-    .sg-loader .dash{animation:sgDash 2s ease-in-out infinite,sgOff 2s linear infinite}
+    .sg-loader .dash{animation:sgDash 1.2s ease-in-out infinite}
     @keyframes sgDash{0%{stroke-dasharray:0 1 359 0}50%{stroke-dasharray:0 359 1 0}100%{stroke-dasharray:359 1 0 0}}
     @keyframes sgOff{0%{stroke-dashoffset:365}100%{stroke-dashoffset:5}}
     .gate { min-height:100vh; min-height:100dvh; display:grid; place-items:center; padding:22px 14px; background:#02040c; }
