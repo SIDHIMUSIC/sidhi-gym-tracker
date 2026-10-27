@@ -1,1 +1,210 @@
-PLACEHOLDER
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Sidhi Gym Tracker – Free Daily Gym & Run Log App</title>
+  <meta name="description" content="Sidhi Gym is a free personal daily gym and morning run tracker by Harry. Log workouts, weight, abs, treadmill and progress. Not a physical gym — your private gym log app." />
+  <link rel="canonical" href="https://sidhi-gym-tracker.vercel.app/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Sidhi Gym" />
+  <meta property="og:title" content="Sidhi Gym Tracker – Free Daily Gym & Run Log" />
+  <meta property="og:description" content="Free online gym & run tracker. Log weight, workouts, abs and morning runs. Personal log app by Harry." />
+  <meta property="og:image" content="https://sidhi-gym-tracker.vercel.app/og.jpg" />
+  <meta property="og:image:secure_url" content="https://sidhi-gym-tracker.vercel.app/og.jpg" />
+  <meta property="og:image:type" content="image/jpeg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://sidhi-gym-tracker.vercel.app/og.jpg" />
+  <meta name="twitter:title" content="Sidhi Gym Tracker – Free Daily Gym & Run Log" />
+  <meta name="twitter:description" content="Free online gym & run tracker. Log weight, workouts, abs and morning runs. Personal log app by Harry." />
+  <meta name="theme-color" content="#02040c" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;700&family=Pacifico&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root { --gold:#f0c27a; --gold2:#c9923d; --mint:#63e2b3; --text:#f6f1e8; --muted:#9aa7b8; --line:rgba(255,255,255,.14); --bg:#02040c; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin:0; min-height:100%; min-height:100dvh; color:var(--text); font-family:Comfortaa,system-ui,sans-serif; background:var(--bg); }
+    #fx { position:fixed; inset:0; z-index:0; pointer-events:none; }
+    .layer { position:relative; z-index:1; }
+    h1,h2,.brand { font-family:Syne,Comfortaa,sans-serif; letter-spacing:.02em; }
+    .brand { margin:0; font-size:26px; line-height:1; }
+    .brand span { background:linear-gradient(90deg,#ff8bd4,#f0c27a,#63e2b3,#7ab8ff); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .sub { color:var(--muted); margin:6px 0 0; }
+    .hello { font-family:Pacifico,cursive; font-size:22px; line-height:1.3; margin:6px 0 0; background:linear-gradient(90deg,#ff8bd4,#f0c27a,#63e2b3,#7ab8ff,#ff8bd4); background-size:200% auto; -webkit-background-clip:text; background-clip:text; color:transparent; animation: flow 6s linear infinite; }
+    @keyframes flow { to { background-position:200% center; } }
+    .glass { background:rgba(16,24,34,.42); backdrop-filter:blur(18px) saturate(160%); border:1px solid var(--line); border-radius:28px; box-shadow:0 10px 40px #0005, inset 0 1px 0 rgba(255,255,255,.08); }
+    .card { padding:16px; margin:0 0 14px; }
+    .btn { border:0; border-radius:999px; min-height:52px; padding:14px 18px; cursor:pointer; font:700 14px Comfortaa,sans-serif; letter-spacing:.06em; color:#120d06; background:linear-gradient(135deg,#ff9a9e,#fad0c4,#f0c27a); box-shadow:0 8px 20px #ff9a9e44; }
+    .btn.ghost { background:rgba(255,255,255,.08); color:#fff; border:1px solid rgba(255,255,255,.18); box-shadow:none; }
+    .btn.ok { color:#04140d; background:linear-gradient(135deg,#a8edea,#63e2b3,#7ab8ff); box-shadow:0 8px 20px #63e2b344; }
+    .btn.danger { background:linear-gradient(135deg,#ff6b6b,#c0392b); color:#fff; min-height:44px; padding:10px 12px; }
+    .btn.full { flex:1; width:100%; }
+    label { display:block; font-size:12px; letter-spacing:.08em; color:#d7c4ff; margin:10px 0 6px; }
+    input, textarea, select { width:100%; padding:14px 13px; border-radius:16px; border:1px solid var(--line); background:rgba(8,14,22,.55); color:var(--text); font:inherit; }
+    textarea { min-height:70px; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .pill { display:inline-flex; align-items:center; gap:6px; padding:7px 12px; border-radius:999px; background:rgba(240,194,122,.12); color:var(--gold); font-weight:800; font-size:13px; }
+    .off { color:#ffd4d4; background:rgba(90,30,30,.45); }
+    .delta.up { color:#ff8b8b; } .delta.down { color:var(--mint); }
+    .today-box { font-size:24px; font-weight:800; margin:8px 0 0; }
+    .hero-kg { font:800 42px Comfortaa,sans-serif; margin:4px 0; background:linear-gradient(90deg,#ff8bd4,#f0c27a,#63e2b3); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th,td { text-align:left; padding:10px 6px; border-bottom:1px solid var(--line); }
+    .hidden { display:none !important; }
+
+    #bootSplash{position:fixed;inset:0;z-index:80;display:grid;place-items:center;background:#02040c;transition:opacity .4s ease}
+    #bootSplash.off{opacity:0;pointer-events:none}
+    .sg-loader{display:flex;align-items:center;justify-content:center}
+    .sg-loader svg.ltr{margin:0 2px;width:52px;height:64px}
+    .sg-loader .dash{animation:sgDash 2s ease-in-out infinite,sgOff 2s linear infinite}
+    @keyframes sgDash{0%{stroke-dasharray:0 1 359 0}50%{stroke-dasharray:0 359 1 0}100%{stroke-dasharray:359 1 0 0}}
+    @keyframes sgOff{0%{stroke-dashoffset:365}100%{stroke-dashoffset:5}}
+    .gate { min-height:100vh; min-height:100dvh; display:grid; place-items:center; padding:22px 14px; background:#02040c; }
+    .gate .card { width:min(400px,100%); padding:24px 20px 18px; background:rgba(6,10,22,.78); border:1px solid rgba(56,189,248,.22); }
+    #gate .row.auth-actions { flex-direction:column; gap:12px; margin-top:16px; }
+    #gate #loginBtn, #gate #setupBtn { width:100%; flex:none; }
+    #gate #loginBtn { min-height:58px; background:linear-gradient(180deg,#bae6fd,#38bdf8 55%,#0ea5e9); color:#041018; letter-spacing:.16em; text-transform:uppercase; font:800 15px Syne,Comfortaa,sans-serif; }
+    #gate #setupBtn { min-height:52px; background:rgba(8,16,32,.35); color:#e0f2fe; }
+    #gate #gateHint { text-align:center; margin:0 0 14px; color:#93c5fd; }
+    #gate .forgot { display:inline-flex; align-items:center; gap:6px; margin:8px 0 0; padding:0; border:0; background:none; color:#93c5fd; font:700 12px Comfortaa,sans-serif; }
+    .step { width:28px; height:28px; border-radius:50%; display:inline-grid; place-items:center; font:800 13px Syne,sans-serif; color:#120d06; background:linear-gradient(180deg,var(--gold),var(--gold2)); margin-right:8px; }
+    h2 { margin:0 0 10px; font-size:17px; display:flex; align-items:center; color:#ffe4b5; }
+    .tabbar { position:fixed; left:10px; right:10px; bottom:8px; z-index:15; display:flex; justify-content:space-around; padding:8px 6px calc(8px + env(safe-area-inset-bottom)); background:rgba(10,16,24,.72); backdrop-filter:blur(18px); border:1px solid var(--line); border-radius:28px; }
+    .tab { flex:1; background:none; border:0; color:var(--muted); font:700 10px Comfortaa,sans-serif; padding:6px 0; border-radius:18px; min-height:44px; }
+    .tab.on { color:#120d06; background:linear-gradient(135deg,#ff9a9e,#f0c27a,#63e2b3); }
+    .toast { position:fixed; bottom:92px; left:50%; transform:translateX(-50%); background:rgba(20,32,44,.9); border:1px solid var(--gold); color:var(--gold); padding:10px 14px; border-radius:999px; display:none; z-index:20; pointer-events:none; }
+    .wrap { max-width:860px; margin:0 auto; padding:14px 14px 118px; }
+    .actions { position:sticky; bottom:86px; z-index:8; display:flex; gap:8px; padding:10px 0; }
+    .stats { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+    .stat { text-align:center; padding:12px 6px; }
+    .stat b { display:block; font:800 16px Comfortaa,sans-serif; color:var(--gold); }
+    .stat span { font-size:11px; color:#d7c4ff; }
+    .cal { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; text-align:center; }
+    .cal .c { aspect-ratio:1; border-radius:50%; display:grid; place-items:center; font-size:12px; background:rgba(255,255,255,.04); }
+    .cal .c.done { background:#1e8a55; color:#fff; }
+    .cal .c.today { outline:2px solid var(--gold); }
+    .creator { margin-top:18px; padding-top:14px; border-top:1px solid var(--line); text-align:center; }
+    .badge { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--gold); margin:0 0 8px; }
+    .kv { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line); }
+    .btn.logout { min-height:42px; border-radius:999px; padding:8px 14px; display:inline-flex; align-items:center; gap:7px; background:linear-gradient(135deg,#ff6b6b,#ff8bd4); border:0; color:#fff; font:700 11px Comfortaa,sans-serif; }
+    .public-info { font-size:13px; line-height:1.45; color:#b8c7d9; margin:10px 0 4px; text-align:center; }
+  </style>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4360329612081379" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="bootSplash"><div class="sg-loader">
+  <svg width="0" height="0"><defs>
+    <linearGradient id="sgb" x1="0" y1="62" x2="0" y2="2" gradientUnits="userSpaceOnUse"><stop stop-color="#ff8bd4"/><stop offset="1" stop-color="#f0c27a"/></linearGradient>
+    <linearGradient id="sgc" x1="0" y1="64" x2="0" y2="0" gradientUnits="userSpaceOnUse"><stop stop-color="#f0c27a"/><stop offset="1" stop-color="#63e2b3"/></linearGradient>
+    <linearGradient id="sgd" x1="0" y1="62" x2="0" y2="2" gradientUnits="userSpaceOnUse"><stop stop-color="#63e2b3"/><stop offset="1" stop-color="#7ab8ff"/></linearGradient>
+  </defs></svg>
+  <svg class="ltr" viewBox="0 0 44 54" fill="none"><path class="dash" pathLength="360" stroke="url(#sgb)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M27 13Q27 4 16 4Q4 4 4 12.5Q4 19 14 21L18 22Q21 22.7 21 25Q21 29 15.5 29Q11 29 11 24L3 24Q3 37 16 37Q29 37 29 27Q29 20 19 18L14.5 17Q11.5 16.3 11.5 14Q11.5 11 15.5 11Q19.5 11 19.5 13Z"/></svg>
+  <svg class="ltr" viewBox="0 0 44 54" fill="none"><path class="dash" pathLength="360" stroke="url(#sgc)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M9 4L21 4L21 37L9 37Z"/></svg>
+  <svg class="ltr" viewBox="0 0 44 54" fill="none"><path class="dash" pathLength="360" stroke="url(#sgd)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M3 4L15 4Q29 4 29 20.5Q29 37 15 37L3 37ZM11 12L11 29L15 29Q21 29 21 20.5Q21 12 15 12Z"/></svg>
+  <svg class="ltr" viewBox="0 0 44 54" fill="none"><path class="dash" pathLength="360" stroke="url(#sgb)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M3 4L11 4L11 16L20 16L20 4L28 4L28 37L20 37L20 25L11 25L11 37L3 37Z"/></svg>
+  <svg class="ltr" viewBox="0 0 44 54" fill="none"><path class="dash" pathLength="360" stroke="url(#sgc)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M9 4L21 4L21 37L9 37Z"/></svg>
+</div></div><div class="sg-line"></div></div><div class="sg-bar"></div></div></div>
+<canvas id="fx"></canvas>
+<div id="gate" class="gate layer">
+  <div class="glass card">
+    <p class="badge">SIDHI • GYM LOG</p>
+    <h1 class="brand">Sidhi <span>Gym</span></h1>
+    <p class="public-info">Free personal gym & morning run tracker. Log workouts, weight, abs and progress. Built by Harry.</p>
+    <p class="sub" id="gateHint">Premium gym access.</p>
+    <label>username</label><input id="loginUser" autocomplete="username" placeholder="harry" />
+    <label>password (min 4)</label><input id="loginPass" type="password" autocomplete="current-password" />
+    <button type="button" class="forgot" id="forgotBtn">forgot password</button>
+    <div class="row auth-actions">
+      <button class="btn full" id="loginBtn">ENTER</button>
+      <button class="btn ghost full" id="setupBtn">CREATE ACCOUNT →</button>
+    </div>
+    <div class="creator" data-creator></div>
+  </div>
+</div>
+<div id="app" class="wrap layer hidden">
+  <div class="row" style="justify-content:space-between;margin-bottom:12px">
+    <div>
+      <p class="badge">SIDHI GYM</p>
+      <p class="hello" id="hello"></p>
+    </div>
+    <button class="btn logout" id="logoutBtn" type="button">logout</button>
+  </div>
+  <div id="view-home">
+    <div class="glass card" style="text-align:center">
+      <div class="hero-kg" id="homeKg">— kg</div>
+      <p class="sub" id="homeWeek">this week</p>
+    </div>
+    <div class="stats">
+      <div class="glass stat"><b id="stStreak">0</b><span>day streak</span></div>
+      <div class="glass stat"><b id="stWorkouts">0</b><span>workouts</span></div>
+      <div class="glass stat"><b id="stGoal">—</b><span>to goal</span></div>
+    </div>
+    <div class="glass card" style="margin-top:14px;display:none">
+      <h2>today's workout</h2>
+      <p class="pill" id="homeSplit"></p>
+      <div class="kv"><span>weight</span><b id="homeW">—</b></div>
+      <div class="kv"><span>duration</span><b id="homeDur">—</b></div>
+      <div class="kv"><span>treadmill</span><b id="homeTm">—</b></div>
+      <button class="btn ok full" id="homeFinish" style="margin-top:12px">finish workout</button>
+    </div>
+    <div class="glass card">
+      <h2>weight</h2>
+      <canvas id="homeChart" width="640" height="220" style="width:100%;height:180px"></canvas>
+    </div>
+  </div>
+  <div id="view-workout" class="hidden">
+    <div class="glass card">
+      <div class="row" style="justify-content:space-between">
+        <div><div id="dateLine" style="font-size:18px;font-weight:800"></div><div id="splitLine" class="pill" style="margin-top:8px"></div></div>
+        <div><label style="margin:0">date</label><input type="date" id="date" /></div>
+      </div>
+      <div id="offNote" class="hidden sub" style="margin-top:10px">Sunday rest. You can still save weight.</div>
+    </div>
+    <div class="glass card"><h2><span class="step">1</span> gym entry</h2><div class="grid"><div><label>entry time</label><input type="time" id="entryTime" /></div><div><label>start weight (kg)</label><input id="entryWeight" inputmode="decimal" placeholder="72.4" /></div></div></div>
+    <div class="glass card"><h2><span class="step">2</span> workout & exercises</h2><label>time</label><input type="time" id="after1HourTime" /><label>exercises</label><textarea id="after1HourNote" placeholder="Chest press, fly..."></textarea></div>
+    <div class="glass card"><h2><span class="step">3</span> treadmill normal</h2><div class="grid"><div><label>time</label><input type="time" id="beforeTreadmillTime" /></div><div><label>distance (km)</label><input id="beforeTreadmillKm" inputmode="decimal" /></div><div><label>mins</label><input id="beforeTreadmillMins" inputmode="decimal" /></div><div><label>speed (km/h)</label><input id="beforeTreadmillSpeed" inputmode="decimal" /></div></div><label>note</label><textarea id="beforeTreadmillNote"></textarea></div>
+    <div class="glass card"><h2><span class="step">4</span> treadmill incline</h2><div class="grid"><div><label>time</label><input type="time" id="afterTreadmillTime" /></div><div><label>distance (km)</label><input id="afterTreadmillKm" inputmode="decimal" /></div><div><label>mins</label><input id="afterTreadmillMins" inputmode="decimal" /></div><div><label>speed (km/h)</label><input id="afterTreadmillSpeed" inputmode="decimal" /></div><div><label>incline %</label><input id="afterTreadmillIncline" inputmode="decimal" /></div></div><label>note</label><textarea id="afterTreadmillNote"></textarea></div>
+    <div class="glass card"><h2><span class="step">5</span> end weight</h2><label>weight (kg)</label><input id="afterTreadmillWeight" inputmode="decimal" /></div>
+    <div class="actions"><button class="btn full" id="saveBtn">save</button><button class="btn ok full" id="finishBtn">finish workout</button></div>
+    <div class="glass card"><h2>today's result</h2><div id="resultText" class="today-box">Add start weight</div><p class="sub" id="resultSub">Start vs finish weight.</p><p class="sub" id="tmResult"></p></div>
+  </div>
+  <div id="view-progress" class="hidden">
+    <div class="glass card"><h2>calendar</h2><div class="row" style="justify-content:space-between;margin-bottom:10px"><button class="btn ghost" id="calPrev" style="min-height:40px">‹</button><b id="calTitle"></b><button class="btn ghost" id="calNext" style="min-height:40px">›</button></div><div class="cal" id="cal"></div></div>
+    <div class="glass card"><h2>goal weight</h2><div class="grid"><div><label>target kg</label><input id="goalWeight" inputmode="decimal" placeholder="70.0" /></div><div style="display:flex;align-items:flex-end"><button class="btn full" id="goalBtn" style="min-height:48px">save goal</button></div></div></div>
+    <div class="glass card"><h2>weight graph</h2><canvas id="progChart" width="640" height="240" style="width:100%;height:200px"></canvas></div>
+  </div>
+  <div id="view-history" class="hidden">
+    <div class="glass card"><h2>history</h2><div style="overflow:auto"><table><thead><tr><th>date</th><th>workout</th><th>weight</th><th></th></tr></thead><tbody id="hist"></tbody></table></div></div>
+  </div>
+</div>
+<nav class="tabbar hidden" id="tabbar">
+  <button class="tab on" data-tab="home">home</button>
+  <button class="tab" data-tab="workout">workout</button>
+  <button class="tab" data-tab="progress">progress</button>
+  <button class="tab" data-tab="history">history</button>
+</nav>
+<div class="toast" id="toast"></div>
+<script src="login-scene.js?v=3"></script>
+<script src="app.js?v=15"></script>
+<script src="run.js?v=33"></script>
+<script src="hist-ui.js?v=3"></script>
+<script src="ex-guide.js?v=3"></script>
+<script src="extra-ui.js?v=6"></script>
+<script src="graph-foot.js?v=14"></script>
+<script src="nav-seg.js?v=6"></script>
+<script>
+  window.addEventListener("load", function () {
+    setTimeout(function () {
+      var s = document.getElementById("bootSplash");
+      if (!s) return;
+      s.classList.add("off");
+      setTimeout(function () { s.remove(); }, 450);
+    }, 1100);
+  });
+</script>
+</body></html>
