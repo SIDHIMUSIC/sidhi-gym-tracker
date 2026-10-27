@@ -104,7 +104,7 @@
     if (!prof || document.getElementById("adminListBtn")) return;
     var btn = document.createElement("button");
     btn.id = "adminListBtn";
-    btn.textContent = "View Premium Users";
+    btn.textContent = "View All Premium Users";
     btn.style.cssText = "display:block;margin:14px auto;padding:10px 20px;border-radius:10px;border:0;background:#a78bfa;color:#111;font-weight:700";
     btn.onclick = function () {
       fetch("/api/admin/premium-users", { headers: { Authorization: "Bearer " + localStorage.getItem(TOKEN) } })
