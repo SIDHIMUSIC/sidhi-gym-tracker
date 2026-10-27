@@ -1,4 +1,4 @@
-// Sidhi Gym Premium — profile only + badge
+// Sidhi Gym Premium — Home only card + profile badge
 (function () {
   var TOKEN = "sidhi-gym-token";
   var PRICE = 99;
@@ -16,82 +16,52 @@
     if (old) old.remove();
     var b = document.createElement("span");
     b.id = "premBadge";
-    b.style.cssText = "display:inline-block;margin-left:8px;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;vertical-align:middle";
+    b.style.cssText = "display:inline-block;margin-left:6px;padding:2px 7px;border-radius:9px;font-size:10px;font-weight:700;vertical-align:middle";
     if (isPrem) {
       b.textContent = "PREMIUM";
       b.style.background = "linear-gradient(90deg,#f0c27a,#63e2b3)";
       b.style.color = "#111";
     } else {
       b.textContent = "FREE";
-      b.style.background = "#333";
-      b.style.color = "#aaa";
+      b.style.background = "#2a2a2a";
+      b.style.color = "#888";
     }
-    // Attach near profile name
-    var name = document.querySelector("#view-profile h1, #view-profile .name, .profile-name, [data-name]");
-    if (!name) {
-      var views = document.querySelectorAll("[id^=view-]");
-      for (var i = 0; i < views.length; i++) {
-        if (views[i].textContent.indexOf("@") > -1 || views[i].textContent.indexOf("PROFILE") > -1) {
-          name = views[i].querySelector("h1, h2, strong, .name") || views[i];
-          break;
-        }
-      }
+    var nameEl = document.querySelector("#view-profile strong, #view-profile h1, #view-profile h2, .profile-name");
+    if (!nameEl) {
+      var p = document.getElementById("view-profile");
+      if (p) nameEl = p.querySelector("strong, h1, h2, .name") || p;
     }
-    if (name) name.appendChild(b);
+    if (nameEl) nameEl.appendChild(b);
   }
 
-  function card(me) {
+  function homeCard(me) {
     var old = document.getElementById("premiumBox");
     if (old) old.remove();
-    if (!me) return;
+    if (!me || me.premium) return; // only show upgrade if not premium
     var box = document.createElement("div");
     box.id = "premiumBox";
-    box.style.cssText = "margin:14px 0;padding:14px;border-radius:14px;background:#111827;border:1px solid #f0c27a44;text-align:center";
-    if (me.premium) {
-      box.innerHTML = '<div style="color:#f0c27a;font-weight:700">Premium Active</div><div style="font-size:12px;color:#9aa7b8;margin:4px 0 10px">Unlimited · Export · Custom</div><button id="premExp" style="padding:8px 16px;border-radius:10px;border:0;background:#f0c27a;color:#111;font-weight:600">Export CSV</button>';
-    } else {
-      box.innerHTML = '<div style="color:#f0c27a;font-weight:700">Go Premium · ₹' + PRICE + '/yr</div><div style="font-size:12px;color:#9aa7b8;margin:4px 0 10px">Unlimited history & CSV export</div><button id="premUp" style="padding:8px 18px;border-radius:10px;border:0;background:#63e2b3;color:#111;font-weight:600">Upgrade</button>';
+    box.style.cssText = "margin:12px 14px 6px;padding:14px;border-radius:16px;background:linear-gradient(135deg,#111827,#1a1a2e);border:1px solid #f0c27a55;text-align:center";
+    box.innerHTML = '<div style="color:#f0c27a;font-size:17px;font-weight:700">Go Premium</div><div style="color:#fff;font-size:22px;font-weight:800;margin:4px 0">₹' + PRICE + '<span style="font-size:13px;font-weight:500">/year</span></div><div style="font-size:12px;color:#9aa7b8;margin-bottom:10px">Unlimited history · CSV export · Custom splits</div><button id="premUp" style="padding:10px 28px;border-radius:12px;border:0;background:#63e2b3;color:#111;font-weight:700;font-size:15px">Upgrade Now</button>';
+    // Insert in home view
+    var home = document.getElementById("view-home");
+    if (home) {
+      var first = home.querySelector(".card, .glass") || home.firstElementChild;
+      if (first) home.insertBefore(box, first.nextSibling);
+      else home.appendChild(box);
     }
-    // Only inside profile view
-    var prof = document.getElementById("view-profile") || document.querySelector("[data-tab='profile']");
-    if (!prof) {
-      var all = document.querySelectorAll("div");
-      for (var i = 0; i < all.length; i++) {
-        if (all[i].textContent.indexOf("edit profile") > -1 || all[i].textContent.indexOf("member since") > -1) {
-          prof = all[i];
-          break;
-        }
-      }
-    }
-    if (prof) prof.appendChild(box);
-    else return;
 
-    var u = document.getElementById("premUp");
-    if (u) u.onclick = function () {
-      var c = prompt("Activation code (test: SIDHI2026):");
+    var btn = document.getElementById("premUp");
+    if (btn) btn.onclick = function () {
+      var c = prompt("Activation code daalo:\\n(Test: SIDHI2026)");
       if (!c) return;
       fetch("/api/premium/activate", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: "Bearer " + localStorage.getItem(TOKEN) },
         body: JSON.stringify({ code: c.trim() })
       }).then(function (r) { return r.json(); }).then(function (d) {
-        if (d.ok) { toast("Premium on"); setTimeout(function () { location.reload(); }, 500); }
-        else toast(d.error || "Invalid");
+        if (d.ok) { toast("Premium activated!"); setTimeout(function () { location.reload(); }, 600); }
+        else toast(d.error || "Invalid code");
       });
-    };
-    var e = document.getElementById("premExp");
-    if (e) e.onclick = function () {
-      fetch("/api/export.csv", { headers: { Authorization: "Bearer " + localStorage.getItem(TOKEN) } })
-        .then(function (r) {
-          if (!r.ok) return r.json().then(function (x) { toast(x.error || "Fail"); });
-          return r.blob().then(function (b) {
-            var a = document.createElement("a");
-            a.href = URL.createObjectURL(b);
-            a.download = "sidhi.csv";
-            a.click();
-            toast("CSV ok");
-          });
-        });
     };
   }
 
@@ -103,10 +73,10 @@
       .then(function (me) {
         if (!me) return;
         badge(!!me.premium);
-        card(me);
+        homeCard(me);
       });
   }
 
-  setTimeout(run, 1200);
-  setTimeout(run, 3000);
+  setTimeout(run, 1000);
+  setTimeout(run, 2500);
 })();
