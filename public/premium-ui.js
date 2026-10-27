@@ -1,118 +1,72 @@
-// Sidhi Gym — Premium UI
+// Sidhi Gym Premium — force visible
 (function () {
-  const PREMIUM_PRICE = 99; // INR / year
-  const FREE_DAYS = 14;
+  const TOKEN_KEY = "sidhi-gym-token";
+  const PRICE = 99;
 
   function toast(msg) {
-    const t = document.getElementById("toast");
+    var t = document.getElementById("toast");
     if (!t) return;
     t.textContent = msg;
     t.style.display = "block";
-    setTimeout(() => (t.style.display = "none"), 2500);
+    setTimeout(function () { t.style.display = "none"; }, 2200);
   }
 
-  async function getMe() {
-    const sidhi-gym-token = localStorage.getItem("sidhi-gym-token") || localStorage.getItem("sidhi-gym-token");
-    if (!sidhi-gym-token) return null;
-    const r = await fetch("/api/me", { headers: { Authorization: "Bearer " + sidhi-gym-token } });
-    return r.ok ? r.json() : null;
-  }
-
-  function renderPremiumCard(me) {
-    const app = document.getElementById("app");
-    if (!app) return;
-    let box = document.getElementById("premiumBox");
-    if (!box) {
-      box = document.createElement("div");
-      box.id = "premiumBox";
-      box.className = "glass card";
-      box.style.marginTop = "14px";
-      const home = document.getElementById("view-home");
-      if (home) home.appendChild(box);
-      else app.appendChild(box);
-    }
+  function addCard(me) {
+    if (document.getElementById("premiumBox")) return;
+    var box = document.createElement("div");
+    box.id = "premiumBox";
+    box.style.cssText = "margin:16px 14px;padding:16px;border-radius:16px;background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid #f0c27a;color:#fff;text-align:center;position:relative;z-index:10";
     if (me && me.premium) {
-      box.innerHTML = `
-        <h2>Premium Active</h2>
-        <p class="sub">Unlimited history · CSV export · No limits</p>
-        <button class="btn ok full" id="exportBtn" style="margin-top:10px">Export CSV</button>
-      `;
-      document.getElementById("exportBtn").onclick = exportCSV;
+      box.innerHTML = '<div style="font-size:18px;color:#f0c27a;margin-bottom:6px">★ Premium Active</div><div style="font-size:13px;opacity:.8">Unlimited history · CSV export</div><button id="premExport" style="margin-top:12px;padding:10px 20px;border-radius:12px;border:0;background:#f0c27a;color:#111;font-weight:700">Export CSV</button>';
     } else {
-      box.innerHTML = `
-        <h2>Go Premium · ₹${PREMIUM_PRICE}/year</h2>
-        <p class="sub">Unlimited history, CSV export, custom splits</p>
-        <button class="btn full" id="upgradeBtn" style="margin-top:10px">Upgrade with UPI</button>
-        <p class="sub" style="margin-top:8px;font-size:11px">Free plan: last ${FREE_DAYS} days only</p>
-      `;
-      document.getElementById("upgradeBtn").onclick = showUpgrade;
+      box.innerHTML = '<div style="font-size:18px;color:#f0c27a;margin-bottom:6px">Go Premium · ₹' + PRICE + '/year</div><div style="font-size:13px;opacity:.8">Unlimited history · CSV · Custom splits</div><button id="premUpgrade" style="margin-top:12px;padding:10px 24px;border-radius:12px;border:0;background:#63e2b3;color:#111;font-weight:700">Upgrade Now</button><div style="font-size:11px;opacity:.6;margin-top:8px">Free: last 14 days only</div>';
     }
+    // Insert after first card or at top of main
+    var main = document.querySelector(".main") || document.getElementById("app") || document.body;
+    var first = main.querySelector(".card, .glass, #view-home");
+    if (first && first.parentNode) first.parentNode.insertBefore(box, first.nextSibling);
+    else main.insertBefore(box, main.firstChild);
+
+    var up = document.getElementById("premUpgrade");
+    if (up) up.onclick = function () {
+      var code = prompt("UPI payment ke baad activation code daalo:\\n(Test code: SIDHI2026)");
+      if (!code) return;
+      var token = localStorage.getItem(TOKEN_KEY);
+      fetch("/api/premium/activate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+        body: JSON.stringify({ code: code.trim() })
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        if (d.ok) { toast("Premium on!"); setTimeout(function () { location.reload(); }, 600); }
+        else toast(d.error || "Invalid");
+      });
+    };
+    var ex = document.getElementById("premExport");
+    if (ex) ex.onclick = function () {
+      var token = localStorage.getItem(TOKEN_KEY);
+      fetch("/api/export.csv", { headers: { Authorization: "Bearer " + token } })
+        .then(function (r) {
+          if (!r.ok) return r.json().then(function (e) { toast(e.error || "Fail"); });
+          return r.blob().then(function (b) {
+            var a = document.createElement("a");
+            a.href = URL.createObjectURL(b);
+            a.download = "sidhi.csv";
+            a.click();
+            toast("Downloaded");
+          });
+        });
+    };
   }
 
-  function showUpgrade() {
-    const upi = "sidhi@upi"; // replace with real UPI
-    const msg = `Sidhi Gym Premium ₹${PREMIUM_PRICE}\\nUPI: ${upi}\\n\\nPayment ke baad code milega.`;
-    if (confirm(msg + "\\n\\nUPI app kholo?")) {
-      const code = prompt("Payment ke baad activation code daalo:");
-      if (code) activate(code);
-    }
+  function boot() {
+    var token = localStorage.getItem(TOKEN_KEY);
+    if (!token) return;
+    fetch("/api/me", { headers: { Authorization: "Bearer " + token } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (me) { if (me) addCard(me); })
+      .catch(function () {});
   }
 
-  async function activate(code) {
-    const sidhi-gym-token = localStorage.getItem("sidhi-gym-token") || localStorage.getItem("sidhi-gym-token");
-    const r = await fetch("/api/premium/activate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: "Bearer " + sidhi-gym-token },
-      body: JSON.stringify({ code })
-    });
-    const data = await r.json();
-    if (data.ok) {
-      toast("Premium activated!");
-      setTimeout(() => location.reload(), 800);
-    } else {
-      toast(data.error || "Invalid code");
-    }
-  }
-
-  async function exportCSV() {
-    const sidhi-gym-token = localStorage.getItem("sidhi-gym-token") || localStorage.getItem("sidhi-gym-token");
-    const r = await fetch("/api/export.csv", { headers: { Authorization: "Bearer " + sidhi-gym-token } });
-    if (!r.ok) {
-      const e = await r.json().catch(() => ({}));
-      return toast(e.error || "Export failed");
-    }
-    const blob = await r.blob();
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "sidhi-gym.csv";
-    a.click();
-    toast("CSV downloaded");
-  }
-
-  // Limit history for free users
-  function limitHistory(me) {
-    if (me && me.premium) return;
-    const rows = document.querySelectorAll("#hist tr");
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - FREE_DAYS);
-    rows.forEach((tr) => {
-      const dateCell = tr.querySelector("td");
-      if (!dateCell) return;
-      const d = new Date(dateCell.textContent.trim());
-      if (d < cutoff) tr.style.opacity = "0.4";
-    });
-  }
-
-  async function init() {
-    if (!document.getElementById("app")) return;
-    const me = await getMe();
-    if (!me) return;
-    renderPremiumCard(me);
-    setTimeout(() => limitHistory(me), 1200);
-  }
-
-  setTimeout(init, 1500);
-  setInterval(() => {
-    if (!document.getElementById("premiumBox") && localStorage.getItem("sidhi-gym-token")) init();
-  }, 3000);
+  setTimeout(boot, 800);
+  setTimeout(boot, 2500);
 })();
