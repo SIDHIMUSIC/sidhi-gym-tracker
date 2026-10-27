@@ -1,72 +1,112 @@
-// Sidhi Gym Premium — force visible
+// Sidhi Gym Premium — profile only + badge
 (function () {
-  const TOKEN_KEY = "sidhi-gym-token";
-  const PRICE = 99;
+  var TOKEN = "sidhi-gym-token";
+  var PRICE = 99;
 
-  function toast(msg) {
+  function toast(m) {
     var t = document.getElementById("toast");
     if (!t) return;
-    t.textContent = msg;
+    t.textContent = m;
     t.style.display = "block";
-    setTimeout(function () { t.style.display = "none"; }, 2200);
+    setTimeout(function () { t.style.display = "none"; }, 2000);
   }
 
-  function addCard(me) {
-    if (document.getElementById("premiumBox")) return;
+  function badge(isPrem) {
+    var old = document.getElementById("premBadge");
+    if (old) old.remove();
+    var b = document.createElement("span");
+    b.id = "premBadge";
+    b.style.cssText = "display:inline-block;margin-left:8px;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;vertical-align:middle";
+    if (isPrem) {
+      b.textContent = "PREMIUM";
+      b.style.background = "linear-gradient(90deg,#f0c27a,#63e2b3)";
+      b.style.color = "#111";
+    } else {
+      b.textContent = "FREE";
+      b.style.background = "#333";
+      b.style.color = "#aaa";
+    }
+    // Attach near profile name
+    var name = document.querySelector("#view-profile h1, #view-profile .name, .profile-name, [data-name]");
+    if (!name) {
+      var views = document.querySelectorAll("[id^=view-]");
+      for (var i = 0; i < views.length; i++) {
+        if (views[i].textContent.indexOf("@") > -1 || views[i].textContent.indexOf("PROFILE") > -1) {
+          name = views[i].querySelector("h1, h2, strong, .name") || views[i];
+          break;
+        }
+      }
+    }
+    if (name) name.appendChild(b);
+  }
+
+  function card(me) {
+    var old = document.getElementById("premiumBox");
+    if (old) old.remove();
+    if (!me) return;
     var box = document.createElement("div");
     box.id = "premiumBox";
-    box.style.cssText = "margin:16px 14px;padding:16px;border-radius:16px;background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid #f0c27a;color:#fff;text-align:center;position:relative;z-index:10";
-    if (me && me.premium) {
-      box.innerHTML = '<div style="font-size:18px;color:#f0c27a;margin-bottom:6px">★ Premium Active</div><div style="font-size:13px;opacity:.8">Unlimited history · CSV export</div><button id="premExport" style="margin-top:12px;padding:10px 20px;border-radius:12px;border:0;background:#f0c27a;color:#111;font-weight:700">Export CSV</button>';
+    box.style.cssText = "margin:14px 0;padding:14px;border-radius:14px;background:#111827;border:1px solid #f0c27a44;text-align:center";
+    if (me.premium) {
+      box.innerHTML = '<div style="color:#f0c27a;font-weight:700">Premium Active</div><div style="font-size:12px;color:#9aa7b8;margin:4px 0 10px">Unlimited · Export · Custom</div><button id="premExp" style="padding:8px 16px;border-radius:10px;border:0;background:#f0c27a;color:#111;font-weight:600">Export CSV</button>';
     } else {
-      box.innerHTML = '<div style="font-size:18px;color:#f0c27a;margin-bottom:6px">Go Premium · ₹' + PRICE + '/year</div><div style="font-size:13px;opacity:.8">Unlimited history · CSV · Custom splits</div><button id="premUpgrade" style="margin-top:12px;padding:10px 24px;border-radius:12px;border:0;background:#63e2b3;color:#111;font-weight:700">Upgrade Now</button><div style="font-size:11px;opacity:.6;margin-top:8px">Free: last 14 days only</div>';
+      box.innerHTML = '<div style="color:#f0c27a;font-weight:700">Go Premium · ₹' + PRICE + '/yr</div><div style="font-size:12px;color:#9aa7b8;margin:4px 0 10px">Unlimited history & CSV export</div><button id="premUp" style="padding:8px 18px;border-radius:10px;border:0;background:#63e2b3;color:#111;font-weight:600">Upgrade</button>';
     }
-    // Insert after first card or at top of main
-    var main = document.querySelector(".main") || document.getElementById("app") || document.body;
-    var first = main.querySelector(".card, .glass, #view-home");
-    if (first && first.parentNode) first.parentNode.insertBefore(box, first.nextSibling);
-    else main.insertBefore(box, main.firstChild);
+    // Only inside profile view
+    var prof = document.getElementById("view-profile") || document.querySelector("[data-tab='profile']");
+    if (!prof) {
+      var all = document.querySelectorAll("div");
+      for (var i = 0; i < all.length; i++) {
+        if (all[i].textContent.indexOf("edit profile") > -1 || all[i].textContent.indexOf("member since") > -1) {
+          prof = all[i];
+          break;
+        }
+      }
+    }
+    if (prof) prof.appendChild(box);
+    else return;
 
-    var up = document.getElementById("premUpgrade");
-    if (up) up.onclick = function () {
-      var code = prompt("UPI payment ke baad activation code daalo:\\n(Test code: SIDHI2026)");
-      if (!code) return;
-      var token = localStorage.getItem(TOKEN_KEY);
+    var u = document.getElementById("premUp");
+    if (u) u.onclick = function () {
+      var c = prompt("Activation code (test: SIDHI2026):");
+      if (!c) return;
       fetch("/api/premium/activate", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
-        body: JSON.stringify({ code: code.trim() })
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + localStorage.getItem(TOKEN) },
+        body: JSON.stringify({ code: c.trim() })
       }).then(function (r) { return r.json(); }).then(function (d) {
-        if (d.ok) { toast("Premium on!"); setTimeout(function () { location.reload(); }, 600); }
+        if (d.ok) { toast("Premium on"); setTimeout(function () { location.reload(); }, 500); }
         else toast(d.error || "Invalid");
       });
     };
-    var ex = document.getElementById("premExport");
-    if (ex) ex.onclick = function () {
-      var token = localStorage.getItem(TOKEN_KEY);
-      fetch("/api/export.csv", { headers: { Authorization: "Bearer " + token } })
+    var e = document.getElementById("premExp");
+    if (e) e.onclick = function () {
+      fetch("/api/export.csv", { headers: { Authorization: "Bearer " + localStorage.getItem(TOKEN) } })
         .then(function (r) {
-          if (!r.ok) return r.json().then(function (e) { toast(e.error || "Fail"); });
+          if (!r.ok) return r.json().then(function (x) { toast(x.error || "Fail"); });
           return r.blob().then(function (b) {
             var a = document.createElement("a");
             a.href = URL.createObjectURL(b);
             a.download = "sidhi.csv";
             a.click();
-            toast("Downloaded");
+            toast("CSV ok");
           });
         });
     };
   }
 
-  function boot() {
-    var token = localStorage.getItem(TOKEN_KEY);
+  function run() {
+    var token = localStorage.getItem(TOKEN);
     if (!token) return;
     fetch("/api/me", { headers: { Authorization: "Bearer " + token } })
       .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (me) { if (me) addCard(me); })
-      .catch(function () {});
+      .then(function (me) {
+        if (!me) return;
+        badge(!!me.premium);
+        card(me);
+      });
   }
 
-  setTimeout(boot, 800);
-  setTimeout(boot, 2500);
+  setTimeout(run, 1200);
+  setTimeout(run, 3000);
 })();
