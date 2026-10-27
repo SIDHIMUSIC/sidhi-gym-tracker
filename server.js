@@ -129,6 +129,15 @@ function num(v) {
 function dayFromDate(dateStr) {
   return DAYS[new Date(dateStr + "T12:00:00").getDay()];
 }
+function isAdminUser(username) {
+  return !!(PREM.adminUsers && PREM.adminUsers.map(function (x) { return String(x).toLowerCase(); }).includes(String(username || "").toLowerCase()));
+}
+function hasActivePremium(u) {
+  if (!u) return false;
+  if (isAdminUser(u.username)) return true;
+  if (!u.premium) return false;
+  return !u.premiumUntil || new Date(u.premiumUntil).getTime() > Date.now();
+}
 function publicUser(u) {
   if (!u) {
     return {
@@ -150,8 +159,10 @@ function publicUser(u) {
     trainingLevel: u.trainingLevel || "",
     photoUrl: u.photoUrl || "",
     preferredDays: Array.isArray(u.preferredDays) ? u.preferredDays : [],
-    premium: !!u.premium,
-    premiumUntil: u.premiumUntil || null
+    premium: hasActivePremium(u),
+    premiumUntil: isAdminUser(u.username) ? null : (u.premiumUntil || null),
+    isAdmin: isAdminUser(u.username),
+    premiumDaysLeft: isAdminUser(u.username) || !u.premiumUntil ? null : Math.max(0, Math.ceil((new Date(u.premiumUntil).getTime() - Date.now()) / 86400000))
   };
 }
 function withDiff(rows) {
@@ -293,9 +304,14 @@ app.get("/api/me", auth, async (req, res) => {
     cacheSet(ck, u, 30 * 1000);
   }
   const pub = publicUser(u);
-  if (PREM.adminUsers && PREM.adminUsers.includes(req.gymUser)) {
+  if (isAdminUser(req.gymUser)) {
     pub.premium = true;
     pub.isAdmin = true;
+    pub.premiumUntil = null;
+    pub.premiumDaysLeft = null;
+    pub.membershipType = "admin-lifetime";
+  } else {
+    pub.membershipType = pub.premium ? "premium" : "normal";
   }
   res.json(Object.assign({ ok: true }, pub));
 });
@@ -422,7 +438,7 @@ app.delete("/api/session/:date", auth, async (req, res) => {
 // Premium: CSV export
 app.get("/api/export.csv", auth, async (req, res) => {
   const u = await User.findOne({ username: req.gymUser }).lean();
-  if (!u || !u.premium) return res.status(402).json({ error: "Premium chahiye export ke liye" });
+  if (!hasActivePremium(u)) return res.status(402).json({ error: "Premium chahiye export ke liye" });
   const rows = await GymSession.find({ owner: req.gymUser }).sort({ date: -1 }).lean();
   let csv = "date,day,workout,entryWeight,finished,note\n";
   rows.forEach(r => {
@@ -449,9 +465,14 @@ app.post("/api/premium/activate", auth, async (req, res) => {
 const RAZOR_KEY = process.env.RAZORPAY_KEY_ID || "rzp_live_Tt4gpscQgtM9j0";
 const RAZOR_SECRET = process.env.RAZORPAY_KEY_SECRET || "";
 
+app.get("/api/premium/price", (_req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  res.json({ ok: true, price: Number(PREM.price || 49), label: String(PREM.label || "month"), offer: String(PREM.offer || ""), durationDays: Math.max(1, Number(PREM.durationDays || 30)) });
+});
+
 app.post("/api/premium/order", auth, async (req, res) => {
   if (!RAZOR_SECRET) return res.status(500).json({ error: "Razorpay secret missing on server" });
-  const amount = 9900; // ₹99 in paise
+  const amount = Math.max(100, Math.round(Number(PREM.price || 49) * 100)); // configured price in paise
   const orderId = "order_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
   // Simple order create via Razorpay API
   const authHeader = Buffer.from(RAZOR_KEY + ":" + RAZOR_SECRET).toString("base64");
@@ -476,10 +497,11 @@ app.post("/api/premium/verify", auth, async (req, res) => {
   }
   const expected = crypto.createHmac("sha256", RAZOR_SECRET).update(razorpay_order_id + "|" + razorpay_payment_id).digest("hex");
   if (expected !== razorpay_signature) return res.status(400).json({ error: "Invalid signature" });
-  const until = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+  const durationDays = Math.max(1, Number(PREM.durationDays || 30));
+  const until = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
   await User.updateOne({ username: req.gymUser }, { $set: { premium: true, premiumUntil: until } });
   cacheDel("me:" + req.gymUser);
-  res.json({ ok: true, premium: true });
+  res.json({ ok: true, premium: true, until, daysLeft: durationDays });
 });
 
 
@@ -519,8 +541,10 @@ app.get("/api/admin/premium-users", auth, async (req, res) => {
   const list = users.map(u => ({
     username: u.username,
     name: u.displayName || u.username,
-    until: u.premiumUntil,
-    daysLeft: u.premiumUntil ? Math.max(0, Math.ceil((new Date(u.premiumUntil) - Date.now()) / 86400000)) : null
+    isAdmin: isAdminUser(u.username),
+    until: isAdminUser(u.username) ? null : u.premiumUntil,
+    daysLeft: isAdminUser(u.username) || !u.premiumUntil ? null : Math.max(0, Math.ceil((new Date(u.premiumUntil) - Date.now()) / 86400000)),
+    active: hasActivePremium(u)
   }));
   res.json({ ok: true, users: list });
 });
