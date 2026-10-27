@@ -32,9 +32,9 @@
     var b = document.createElement("span");
     b.id = "premBadge";
     b.style.cssText = "display:inline-block;margin-left:6px;padding:2px 8px;border-radius:9px;font-size:10px;font-weight:700";
-    if (me.isAdmin) { b.textContent = "ADMIN"; b.style.background = "#a78bfa"; b.style.color = "#111"; }
+    if (me.isAdmin) { b.textContent = "ADMIN"; b.style.background = "linear-gradient(90deg,#ff6b6b,#feca57,#48dbfb,#ff9ff3)"; b.style.color = "#111"; b.style.fontWeight = "800"; }
     else if (me.premium) { b.textContent = "PREMIUM"; b.style.background = "linear-gradient(90deg,#f0c27a,#63e2b3)"; b.style.color = "#111"; }
-    else { b.textContent = "FREE"; b.style.background = "#333"; b.style.color = "#aaa"; }
+    else { b.textContent = "FREE"; b.style.background = "#2a2a2a"; b.style.color = "#888"; }
     var n = document.querySelector("#view-profile strong,#view-profile h1,#view-profile h2");
     if (n) n.appendChild(b);
   }
