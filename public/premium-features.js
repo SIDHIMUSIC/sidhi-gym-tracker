@@ -17,6 +17,50 @@
   }
   function api(path) { return fetch(path, { headers: { Authorization: "Bearer " + token() }, cache: "no-store" }).then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || "Request failed"); return d; }); }); }
   function apiPost(path, body) { return fetch(path, { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token() }, body: JSON.stringify(body), cache: "no-store" }).then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || "Request failed"); return d; }); }); }
+  function localDateString() { var d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+  function initFoodDiary() {
+    var d=document.getElementById("ps-food-date"), t=document.getElementById("ps-food-time");
+    if(d&&!d.value)d.value=localDateString();
+    if(t&&!t.value)t.value=String(new Date().getHours()).padStart(2,"0")+":"+String(new Date().getMinutes()).padStart(2,"0");
+    loadFoodDay();
+  }
+  function foodRequest(path, body) {
+    var options={headers:{Authorization:"Bearer "+token()},cache:"no-store"};
+    if(body){options.method="POST";options.headers["Content-Type"]="application/json";options.body=JSON.stringify(body);}
+    return fetch(path,options).then(function(r){return r.json().then(function(d){if(!r.ok)throw new Error(d.error||"Request failed");return d;});});
+  }
+  function foodStatus(message){var el=document.getElementById("ps-food-status");if(el)el.textContent=message;}
+  function renderFoodDay(data) {
+    var totals=data.totals||{}, meals=data.meals||[], totalEl=document.getElementById("ps-food-totals"), list=document.getElementById("ps-food-list");
+    if(totalEl){var cards=[["Calories",Math.round(totals.calories||0)+" kcal"],["Protein",Math.round(totals.proteinG||0)+" g"],["Carbs",Math.round(totals.carbsG||0)+" g"],["Fat",Math.round(totals.fatG||0)+" g"],["Fibre",Math.round(totals.fiberG||0)+" g"]];totalEl.innerHTML=cards.map(function(c){return '<div style="padding:11px;border:1px solid #ffffff18;border-radius:12px"><small style="color:#9aa7b8">'+c[0]+'</small><b style="display:block;color:#f0c27a;font-size:18px;margin-top:4px">'+esc(c[1])+'</b></div>';}).join("");}
+    if(list)list.innerHTML=meals.length?meals.map(function(m){return '<div style="padding:11px 0;border-bottom:1px solid #ffffff16"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>'+esc(m.time)+' · '+esc(m.food)+'</b><b style="color:#f0c27a">'+Math.round(m.calories||0)+' kcal</b></div><div style="font-size:12px;color:#cbd5e1;margin-top:3px">'+esc(m.quantity)+'</div>'+(m.notes?'<div style="font-size:12px;color:#9aa7b8;margin-top:3px">Note: '+esc(m.notes)+'</div>':'')+'<div style="font-size:12px;margin-top:5px">P '+Math.round(m.proteinG||0)+'g · C '+Math.round(m.carbsG||0)+'g · F '+Math.round(m.fatG||0)+'g · Fibre '+Math.round(m.fiberG||0)+'g</div><div style="font-size:11px;color:#9aa7b8;margin-top:4px">'+esc(m.estimateNote||"AI estimate; actual nutrition may vary.")+'</div></div>';}).join(""):'<p style="font-size:12px;color:#9aa7b8">Is date ke liye meals abhi log nahi hue.</p>';
+  }
+  function loadFoodDay() {
+    var date=val("ps-food-date")||localDateString(); foodStatus("Food diary load ho rahi hai…");
+    foodRequest("/api/premium/food-log?date="+encodeURIComponent(date)).then(function(d){renderFoodDay(d);foodStatus("Saved meals: "+d.meals.length+" · Date: "+date);}).catch(function(e){foodStatus(e.message);});
+  }
+  function saveFoodMeal() {
+    var body={date:val("ps-food-date")||localDateString(),time:val("ps-food-time"),food:val("ps-food-name").trim(),quantity:val("ps-food-quantity").trim(),notes:val("ps-food-notes").trim()};
+    if(!body.food||!body.quantity)return toast("Kya aur kitna khaya, dono bharo");
+    var button=document.getElementById("ps-food-save");if(button){button.disabled=true;button.textContent="AI macros calculate kar raha…";}
+    foodStatus("Gemini portion ke hisaab se nutrition estimate kar raha hai. Ismein kuch seconds lag sakte hain.");
+    foodRequest("/api/premium/food-log",body).then(function(d){
+      var n=document.getElementById("ps-food-name"),q=document.getElementById("ps-food-quantity"),notes=document.getElementById("ps-food-notes");
+      if(n)n.value="";if(q)q.value="";if(notes)notes.value="";
+      foodStatus("Meal account mein save ho gaya. Macro estimates approximate hain.");loadFoodDay();toast("Meal saved · AI macros ready");
+    }).catch(function(e){foodStatus(e.message);}).finally(function(){if(button){button.disabled=false;button.textContent="Save meal & estimate macros";}});
+  }
+  function reviewFoodDay() {
+    var body={date:val("ps-food-date")||localDateString(),targets:{calories:Number(val("ps-food-target-cal")),proteinG:Number(val("ps-food-target-protein")),carbsG:Number(val("ps-food-target-carbs")),fatG:Number(val("ps-food-target-fat"))}};
+    var button=document.getElementById("ps-food-summary"),out=document.getElementById("ps-food-review");if(button){button.disabled=true;button.textContent="Reviewing day…";}if(out)out.textContent="Gemini tumhare poore din ke logged meals aur targets compare kar raha hai…";
+    foodRequest("/api/premium/food-summary",body).then(function(d){
+      var r=d.review||{},lines=[r.summary||"Daily review ready."];
+      if(r.positives&&r.positives.length)lines.push("\nAchha kya raha:\n• "+r.positives.join("\n• "));
+      if(r.improvements&&r.improvements.length)lines.push("\nKal kya improve karein:\n• "+r.improvements.join("\n• "));
+      if(r.flags&&r.flags.length)lines.push("\nMacro check:\n"+r.flags.map(function(f){return "• "+f.nutrient+" — "+f.status+": "+f.reason;}).join("\n"));
+      if(r.reminder)lines.push("\n"+r.reminder);if(out)out.textContent=lines.join("\n");foodStatus("AI daily review ready.");
+    }).catch(function(e){if(out)out.textContent=e.message;}).finally(function(){if(button){button.disabled=false;button.textContent="AI review my whole day";}});
+  }
   function askAiCoach() {
     var question = val("ps-ai-question").trim(), button = document.getElementById("ps-ai-ask"), answer = document.getElementById("ps-ai-answer");
     if (!question) return toast("Apna sawaal likho");
@@ -50,6 +94,7 @@
       section("ps-ai-chat","Gemini AI Gym Coach",'<label for="ps-ai-question">Ask your AI Gym Coach</label><textarea id="ps-ai-question" rows="3" maxlength="1200" placeholder="e.g. Mere workout log ke hisaab se strength kaise badhaun?" style="width:100%;box-sizing:border-box;margin:7px 0 10px;padding:12px;border-radius:12px;background:#101722;color:#fff;border:1px solid #ffffff24"></textarea><div class="row" style="align-items:center;gap:8px">' + btn("ps-ai-ask","Ask Gemini Coach") + '<small style="color:#9aa7b8">5 questions/day · Premium</small></div><div id="ps-ai-answer" aria-live="polite" style="white-space:pre-wrap;line-height:1.7;margin-top:12px;color:#e2e8f0"></div><p style="font-size:11px;color:#9aa7b8">Fitness guidance only, not medical advice. Don’t enter private medical or identity details.</p>') +
       section("ps-builder","3. Custom Workout Builder",'<div class="grid"><div>' + field("ps-ex-name","Exercise name","e.g. Dumbbell press") + '</div><div>' + field("ps-ex-sets","Sets","3","number") + '</div><div>' + field("ps-ex-reps","Reps","8–12") + '</div><div>' + field("ps-ex-rest","Rest (seconds)","90","number") + '</div></div><div class="row" style="margin-top:10px">' + btn("ps-add-exercise","Add exercise") + btn("ps-save-routine","Save routine") + '</div><div id="ps-routine-list" style="margin-top:10px"></div>') +
       section("ps-transform","4. Transformation Tracker",'<div class="grid"><div>' + field("ps-body-weight","Current weight (kg)","72","number") + '</div><div>' + field("ps-waist","Waist (cm)","82","number") + '</div><div>' + field("ps-chest","Chest (cm)","") + '</div><div>' + field("ps-hips","Hips (cm)","") + '</div></div><label for="ps-photo">Progress photo (saved on this device)</label><input id="ps-photo" type="file" accept="image/*"><div class="row" style="margin-top:10px">' + btn("ps-save-body","Save measurements") + '</div><div id="ps-body-history" style="margin-top:10px"></div>') +
+      section("ps-food-diary","Premium Food Diary & AI Nutrition Coach",'<p style="font-size:13px;color:#cbd5e1">Jo khaya, kitna khaya, aur kis time khaya—log karo. Gemini estimated calories, protein, carbs, fat aur fibre calculate karega; raat ko daily review le sakte ho.</p><div class="grid"><div><label for="ps-food-date">Date</label><input id="ps-food-date" type="date"></div><div><label for="ps-food-time">Meal time</label><input id="ps-food-time" type="time"></div><div><label for="ps-food-name">What did you eat?</label><input id="ps-food-name" maxlength="180" placeholder="e.g. 2 roti, dal, aloo sabzi"></div><div><label for="ps-food-quantity">Quantity</label><input id="ps-food-quantity" maxlength="120" placeholder="e.g. 2 medium roti, 1 katori dal"></div></div><label for="ps-food-notes">Notes (optional)</label><textarea id="ps-food-notes" maxlength="500" rows="2" placeholder="Oil/ghee, sugar, hunger, workout ke pehle/baad..." style="width:100%;box-sizing:border-box;padding:10px;border-radius:10px;background:#101722;color:#fff;border:1px solid #ffffff24"></textarea><div class="row" style="margin-top:10px;gap:8px">' + btn("ps-food-save","Save meal & estimate macros") + btn("ps-food-load","Load selected day") + '</div><div id="ps-food-status" style="font-size:12px;color:#9aa7b8;margin-top:8px"></div><div id="ps-food-totals" class="grid" style="margin-top:12px"></div><div id="ps-food-list" style="margin-top:12px"></div><div style="margin-top:14px;padding-top:12px;border-top:1px solid #ffffff18"><b style="color:#f0c27a">Daily targets (editable estimates)</b><div class="grid" style="margin-top:8px"><div><label for="ps-food-target-cal">Calories</label><input id="ps-food-target-cal" type="number" min="500" max="6000" value="2000"></div><div><label for="ps-food-target-protein">Protein (g)</label><input id="ps-food-target-protein" type="number" min="20" max="350" value="115"></div><div><label for="ps-food-target-carbs">Carbs (g)</label><input id="ps-food-target-carbs" type="number" min="20" max="800" value="225"></div><div><label for="ps-food-target-fat">Fat (g)</label><input id="ps-food-target-fat" type="number" min="15" max="250" value="60"></div></div><div class="row" style="margin-top:10px">' + btn("ps-food-summary","AI review my whole day") + '</div><div id="ps-food-review" style="white-space:pre-wrap;line-height:1.7;margin-top:12px"></div></div><p style="font-size:11px;color:#9aa7b8">Nutrition values are AI estimates and depend on portion size, recipe and oil. Diary entries are saved to your SIDHI GYM account.</p>') +
       section("ps-nutrition","5. Nutrition & Recovery",'<div class="grid"><div>' + field("ps-nut-weight","Body weight (kg)","72","number") + '</div><div>' + field("ps-nut-age","Age","23","number") + '</div><div><label for="ps-nut-goal">Goal</label><select id="ps-nut-goal"><option value="fat">Fat loss</option><option value="maintain">Maintain</option><option value="muscle">Muscle gain</option></select></div><div><label for="ps-nut-activity">Activity</label><select id="ps-nut-activity"><option value="1.35">Light</option><option value="1.55" selected>Moderate</option><option value="1.75">High</option></select></div></div><div class="row" style="margin-top:10px">' + btn("ps-calc-nutrition","Calculate targets") + '</div><div id="ps-nut-output" style="margin-top:10px;font-size:13px;line-height:1.8"></div><p style="font-size:11px;color:#9aa7b8">Estimates only; actual needs vary. Avoid aggressive calorie cuts.</p>') +
       section("ps-history","6. Unlimited Workout History",'<div class="row">' + btn("ps-history-load","Load all workouts") + btn("ps-history-csv","Export all CSV") + '</div><div id="ps-history-list" style="margin-top:12px;max-height:360px;overflow:auto"></div>') +
       section("ps-timer","7. Rest & Superset Timer",'<div class="grid"><div><label for="ps-timer-preset">Timer preset</label><select id="ps-timer-preset"><option value="30">30 sec</option><option value="60" selected>60 sec</option><option value="90">90 sec</option><option value="120">2 min</option><option value="180">3 min</option><option value="custom">Custom</option></select></div><div>' + field("ps-timer-custom","Custom seconds","75","number") + '</div></div><div id="ps-timer-display" style="font-size:42px;font-weight:900;text-align:center;color:#f0c27a;margin:16px 0">01:00</div><div class="row" style="justify-content:center">' + btn("ps-timer-start","Start") + btn("ps-timer-pause","Pause") + btn("ps-timer-reset","Reset") + '</div>') +
@@ -58,7 +103,7 @@
       section("ps-report","10. Export & Monthly Reports",'<div class="row">' + btn("ps-report-csv","Download CSV") + btn("ps-report-print","Monthly PDF / Print") + btn("ps-share-card","Create shareable card") + '</div><div id="ps-share-preview" style="margin-top:12px"></div>') +
       section("ps-programs","11. Four-week Goal Programs",'<label for="ps-program">Choose program</label><select id="ps-program"><option value="strength">4-week Strength</option><option value="beginner">Beginner Gym</option><option value="fatloss">Fat-loss Basics</option><option value="muscle">Muscle-building</option></select><div class="row" style="margin-top:10px">' + btn("ps-program-view","View plan") + btn("ps-program-save","Save my plan") + '</div><div id="ps-program-output" style="margin-top:12px;font-size:13px;line-height:1.8"></div>') +
       section("ps-profile-theme","12. Gold Profile & Dashboard",'<label for="ps-theme">Premium theme</label><select id="ps-theme"><option value="gold">Gold Luxury</option><option value="mint">Mint Focus</option><option value="violet">Violet Night</option></select><div class="row" style="margin-top:10px">' + btn("ps-theme-apply","Apply theme") + btn("ps-theme-reset","Reset theme") + '</div><div id="ps-theme-status" style="font-size:12px;color:#9aa7b8;margin-top:8px"></div>');
-    bind(); renderRoutine(); renderBodyHistory(); renderHistory(); renderAchievements(); renderProgram(); renderAnalytics(); loadSavedInputs(); applyTheme(false); checkReminders();
+    bind(); initFoodDiary(); renderRoutine(); renderBodyHistory(); renderHistory(); renderAchievements(); renderProgram(); renderAnalytics(); loadSavedInputs(); applyTheme(false); checkReminders();
   }
   function bindClick(id, fn) { var el = document.getElementById(id); if (el) el.onclick = fn; }
   function val(id) { var el = document.getElementById(id); return el ? el.value : ""; }
@@ -75,6 +120,10 @@
     bindClick("ps-save-body", saveBody);
     var photo=document.getElementById("ps-photo"); if(photo) photo.onchange=savePhoto;
     bindClick("ps-calc-nutrition", nutrition);
+    bindClick("ps-food-save", saveFoodMeal);
+    bindClick("ps-food-load", loadFoodDay);
+    bindClick("ps-food-summary", reviewFoodDay);
+    var foodDate = document.getElementById("ps-food-date"); if (foodDate) foodDate.onchange = loadFoodDay;
     bindClick("ps-history-load", renderHistory);
     bindClick("ps-history-csv", exportCSV);
     bindClick("ps-timer-start", startTimer);
