@@ -126,10 +126,8 @@
           document.getElementById("closeM").onclick = function () { modal.remove(); };
         });
     };
-    // Insert near password area or end of profile
-    var passArea = prof.querySelector("input[type=password], button");
-    if (passArea && passArea.parentNode) passArea.parentNode.appendChild(btn);
-    else prof.appendChild(btn);
+    // Keep this control at the bottom of the profile; profile rendering can rebuild its contents.
+    prof.appendChild(btn);
   }
 
   async function doPay() {
@@ -194,6 +192,7 @@
   }
 
   boot();
+  setInterval(function () { if (me && me.isAdmin) profileAdmin(); }, 1200);
   checkExpiryReminders();
   window.addEventListener("focus", checkExpiryReminders);
   setInterval(checkExpiryReminders, 30 * 60 * 1000);
