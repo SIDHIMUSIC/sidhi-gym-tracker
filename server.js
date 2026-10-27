@@ -445,7 +445,8 @@ const RAZOR_SECRET = process.env.RAZORPAY_KEY_SECRET || "";
 
 app.post("/api/premium/order", auth, async (req, res) => {
   if (!RAZOR_SECRET) return res.status(500).json({ error: "Razorpay secret missing on server" });
-  const amount = 9900; // ₹99 in paise
+  const priceRupees = Number(process.env.PREMIUM_PRICE || 99);
+  const amount = priceRupees * 100; // paise
   const orderId = "order_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
   // Simple order create via Razorpay API
   const authHeader = Buffer.from(RAZOR_KEY + ":" + RAZOR_SECRET).toString("base64");
@@ -474,6 +475,13 @@ app.post("/api/premium/verify", auth, async (req, res) => {
   await User.updateOne({ username: req.gymUser }, { $set: { premium: true, premiumUntil: until } });
   cacheDel("me:" + req.gymUser);
   res.json({ ok: true, premium: true });
+});
+
+
+app.get("/api/premium/price", (_req, res) => {
+  const price = Number(process.env.PREMIUM_PRICE || 99);
+  const label = process.env.PREMIUM_LABEL || "year";
+  res.json({ ok: true, price, label, offer: process.env.PREMIUM_OFFER || "" });
 });
 
 require("./admin-routes")(app, { User: User, Token: Token, hashPass: hashPass });
