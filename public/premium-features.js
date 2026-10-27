@@ -1,131 +1,129 @@
-// Sidhi Gym — Premium features
+// SIDHI GYM Premium Suite — client-side tools, guarded by membership status.
 (function () {
-  var TOKEN = "sidhi-gym-token";
-
-  function isPrem() {
-    return window.__sidhiMe && (window.__sidhiMe.premium || window.__sidhiMe.isAdmin);
-  }
-
-  function toast(m) {
+  "use strict";
+  var TOKEN_KEY = "sidhi-gym-token";
+  var me = null, sessions = [], timerId = null, timerLeft = 0, timerTotal = 60, timerRunning = false;
+  var rootId = "sidhiPremiumSuite";
+  function token() { try { return localStorage.getItem(TOKEN_KEY) || ""; } catch (_) { return ""; } }
+  function key(suffix) { return "sidhi-premium:" + ((me && me.username) || localStorage.getItem("sidhi-gym-username") || "guest") + ":" + suffix; }
+  function read(suffix, fallback) { try { var v = localStorage.getItem(key(suffix)); return v ? JSON.parse(v) : fallback; } catch (_) { return fallback; } }
+  function write(suffix, value) { try { localStorage.setItem(key(suffix), JSON.stringify(value)); return true; } catch (_) { toast("Storage full. Remove a large photo and retry."); return false; } }
+  function premium() { return !!(me && (me.premium || me.isAdmin)); }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+  function toast(msg) {
     var t = document.getElementById("toast");
-    if (!t) return;
-    t.textContent = m;
-    t.style.display = "block";
-    setTimeout(function () { t.style.display = "none"; }, 1800);
+    if (!t) { t = document.createElement("div"); t.id = "premiumToast"; t.style.cssText = "position:fixed;z-index:999999;bottom:90px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;border:1px solid #f0c27a;padding:11px 16px;border-radius:12px;max-width:90vw;text-align:center"; document.body.appendChild(t); }
+    t.textContent = msg; t.style.display = "block"; clearTimeout(t._hide); t._hide = setTimeout(function () { t.style.display = "none"; }, 2400);
   }
-
-  // Personal Records card
-  function prCard() {
-    if (!isPrem() || document.getElementById("prCard")) return;
+  function api(path) { return fetch(path, { headers: { Authorization: "Bearer " + token() }, cache: "no-store" }).then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || "Request failed"); return d; }); }); }
+  function btn(id, label) { return '<button type="button" id="' + id + '" class="btn ghost" style="min-height:42px;padding:10px 13px;font-size:12px">' + label + '</button>'; }
+  function field(id, label, placeholder, type) { return '<label for="' + id + '">' + label + '</label><input id="' + id + '" type="' + (type || "text") + '" placeholder="' + (placeholder || "") + '">'; }
+  function section(id, title, content) { return '<section class="glass card" id="' + id + '" style="margin-top:12px;border-color:#f0c27a44"><h2 style="color:#f0c27a;margin-top:0">' + title + '</h2>' + content + '</section>'; }
+  function getRoot() {
+    var root = document.getElementById(rootId);
+    if (root) return root;
     var home = document.getElementById("view-home");
-    if (!home) return;
-    var box = document.createElement("div");
-    box.id = "prCard";
-    box.className = "glass card";
-    box.style.marginTop = "12px";
-    box.innerHTML = '<h2 style="color:#f0c27a">Personal Records</h2><div id="prList" style="font-size:14px;color:#9aa7b8">Loading...</div>';
-    home.appendChild(box);
-    loadPRs();
+    if (!home) return null;
+    root = document.createElement("div"); root.id = rootId; root.style.cssText = "margin-top:14px";
+    home.appendChild(root);
+    return root;
   }
-
-  function loadPRs() {
-    var token = localStorage.getItem(TOKEN);
-    fetch("/api/sessions", { headers: { Authorization: "Bearer " + token } })
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        var sessions = d.sessions || [];
-        var prs = {};
-        sessions.forEach(function (s) {
-          (s.lifts || []).forEach(function (l) {
-            var name = (l.name || l.exercise || "").toLowerCase();
-            var w = Number(l.weight || l.kg || 0);
-            if (name && w > (prs[name] || 0)) prs[name] = w;
-          });
-        });
-        var html = "";
-        var keys = Object.keys(prs).slice(0, 6);
-        if (!keys.length) html = "No lifts yet";
-        else keys.forEach(function (k) {
-          html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #222"><span>' + k + '</span><span style="color:#63e2b3">' + prs[k] + ' kg</span></div>';
-        });
-        var el = document.getElementById("prList");
-        if (el) el.innerHTML = html;
-      });
+  function render() {
+    if (!premium()) return;
+    var root = getRoot(); if (!root) return;
+    root.innerHTML = '<div class="glass card" style="border:1px solid #f0c27a88;background:linear-gradient(130deg,#17120a,#0c1820);margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><div><div style="font-size:10px;letter-spacing:.2em;color:#f0c27a;font-weight:900">SIDHI GYM • PREMIUM</div><h2 style="margin:6px 0">Your Performance Hub</h2><div style="font-size:12px;color:#9aa7b8">Coach · analytics · plans · reports</div></div><span style="background:linear-gradient(90deg,#f0c27a,#fff0b5);color:#241707;padding:7px 10px;border-radius:99px;font-size:11px;font-weight:900">✦ GOLD MEMBER</span></div><div class="row" style="margin-top:14px">' + btn("ps-refresh","Refresh data") + btn("ps-coach-jump","Gym Coach") + btn("ps-timer-jump","Rest timer") + btn("ps-report-jump","Reports") + '</div></div>' +
+      section("ps-coach","1. Gym Coach & Progress Analytics",'<div id="ps-coach-output" style="font-size:13px;line-height:1.8;color:#dbeafe">Analysing your workout log…</div><div id="ps-analytics" class="grid" style="margin-top:12px"></div>') +
+      section("ps-builder","3. Custom Workout Builder",'<div class="grid"><div>' + field("ps-ex-name","Exercise name","e.g. Dumbbell press") + '</div><div>' + field("ps-ex-sets","Sets","3","number") + '</div><div>' + field("ps-ex-reps","Reps","8–12") + '</div><div>' + field("ps-ex-rest","Rest (seconds)","90","number") + '</div></div><div class="row" style="margin-top:10px">' + btn("ps-add-exercise","Add exercise") + btn("ps-save-routine","Save routine") + '</div><div id="ps-routine-list" style="margin-top:10px"></div>') +
+      section("ps-transform","4. Transformation Tracker",'<div class="grid"><div>' + field("ps-body-weight","Current weight (kg)","72","number") + '</div><div>' + field("ps-waist","Waist (cm)","82","number") + '</div><div>' + field("ps-chest","Chest (cm)","") + '</div><div>' + field("ps-hips","Hips (cm)","") + '</div></div><label for="ps-photo">Progress photo (saved on this device)</label><input id="ps-photo" type="file" accept="image/*"><div class="row" style="margin-top:10px">' + btn("ps-save-body","Save measurements") + '</div><div id="ps-body-history" style="margin-top:10px"></div>') +
+      section("ps-nutrition","5. Nutrition & Recovery",'<div class="grid"><div>' + field("ps-nut-weight","Body weight (kg)","72","number") + '</div><div>' + field("ps-nut-age","Age","23","number") + '</div><div><label for="ps-nut-goal">Goal</label><select id="ps-nut-goal"><option value="fat">Fat loss</option><option value="maintain">Maintain</option><option value="muscle">Muscle gain</option></select></div><div><label for="ps-nut-activity">Activity</label><select id="ps-nut-activity"><option value="1.35">Light</option><option value="1.55" selected>Moderate</option><option value="1.75">High</option></select></div></div><div class="row" style="margin-top:10px">' + btn("ps-calc-nutrition","Calculate targets") + '</div><div id="ps-nut-output" style="margin-top:10px;font-size:13px;line-height:1.8"></div><p style="font-size:11px;color:#9aa7b8">Estimates only; actual needs vary. Avoid aggressive calorie cuts.</p>') +
+      section("ps-history","6. Unlimited Workout History",'<div class="row">' + btn("ps-history-load","Load all workouts") + btn("ps-history-csv","Export all CSV") + '</div><div id="ps-history-list" style="margin-top:12px;max-height:360px;overflow:auto"></div>') +
+      section("ps-timer","7. Rest & Superset Timer",'<div class="grid"><div><label for="ps-timer-preset">Timer preset</label><select id="ps-timer-preset"><option value="30">30 sec</option><option value="60" selected>60 sec</option><option value="90">90 sec</option><option value="120">2 min</option><option value="180">3 min</option><option value="custom">Custom</option></select></div><div>' + field("ps-timer-custom","Custom seconds","75","number") + '</div></div><div id="ps-timer-display" style="font-size:42px;font-weight:900;text-align:center;color:#f0c27a;margin:16px 0">01:00</div><div class="row" style="justify-content:center">' + btn("ps-timer-start","Start") + btn("ps-timer-pause","Pause") + btn("ps-timer-reset","Reset") + '</div>') +
+      section("ps-reminders","8. Smart Reminders",'<p style="font-size:13px;color:#cbd5e1">Reminders work while the app/browser is open. Expiry notices also depend on browser notification permission.</p><div class="grid"><div>' + field("ps-reminder-time","Workout reminder time","16:00","time") + '</div><div><label for="ps-reminder-days">Days</label><select id="ps-reminder-days" multiple style="min-height:80px"><option value="1">Mon</option><option value="2">Tue</option><option value="3">Wed</option><option value="4">Thu</option><option value="5">Fri</option><option value="6">Sat</option><option value="0">Sun</option></select></div></div><div class="row" style="margin-top:10px">' + btn("ps-reminder-save","Save reminders") + btn("ps-reminder-enable","Enable notifications") + '</div><div id="ps-reminder-status" style="font-size:12px;color:#9aa7b8;margin-top:8px"></div>') +
+      section("ps-achievements","9. Achievements & Challenges",'<div id="ps-badges" class="grid"></div><label for="ps-challenge">Monthly challenge</label><select id="ps-challenge"><option value="12">12 workouts this month</option><option value="16">16 workouts this month</option><option value="20">20 workouts this month</option></select><div id="ps-challenge-progress" style="font-size:13px;margin-top:8px"></div>') +
+      section("ps-report","10. Export & Monthly Reports",'<div class="row">' + btn("ps-report-csv","Download CSV") + btn("ps-report-print","Monthly PDF / Print") + btn("ps-share-card","Create shareable card") + '</div><div id="ps-share-preview" style="margin-top:12px"></div>') +
+      section("ps-programs","11. Four-week Goal Programs",'<label for="ps-program">Choose program</label><select id="ps-program"><option value="strength">4-week Strength</option><option value="beginner">Beginner Gym</option><option value="fatloss">Fat-loss Basics</option><option value="muscle">Muscle-building</option></select><div class="row" style="margin-top:10px">' + btn("ps-program-view","View plan") + btn("ps-program-save","Save my plan") + '</div><div id="ps-program-output" style="margin-top:12px;font-size:13px;line-height:1.8"></div>') +
+      section("ps-profile-theme","12. Gold Profile & Dashboard",'<label for="ps-theme">Premium theme</label><select id="ps-theme"><option value="gold">Gold Luxury</option><option value="mint">Mint Focus</option><option value="violet">Violet Night</option></select><div class="row" style="margin-top:10px">' + btn("ps-theme-apply","Apply theme") + btn("ps-theme-reset","Reset theme") + '</div><div id="ps-theme-status" style="font-size:12px;color:#9aa7b8;margin-top:8px"></div>');
+    bind(); renderRoutine(); renderBodyHistory(); renderHistory(); renderAchievements(); renderProgram(); renderAnalytics(); loadSavedInputs(); applyTheme(false); checkReminders();
   }
-
-  // Weekly summary
-  function weeklyCard() {
-    if (!isPrem() || document.getElementById("weekCard")) return;
-    var home = document.getElementById("view-home");
-    if (!home) return;
-    var box = document.createElement("div");
-    box.id = "weekCard";
-    box.className = "glass card";
-    box.style.marginTop = "12px";
-    box.innerHTML = '<h2 style="color:#f0c27a">This Week</h2><div id="weekStats" style="font-size:14px">...</div>';
-    home.appendChild(box);
-    var token = localStorage.getItem(TOKEN);
-    fetch("/api/sessions", { headers: { Authorization: "Bearer " + token } })
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        var sessions = d.sessions || [];
-        var now = new Date();
-        var weekAgo = new Date(now - 7 * 86400000);
-        var count = 0, weight = 0;
-        sessions.forEach(function (s) {
-          var dt = new Date(s.date);
-          if (dt >= weekAgo) {
-            count++;
-            if (s.entryWeight) weight = s.entryWeight;
-          }
-        });
-        var el = document.getElementById("weekStats");
-        if (el) el.innerHTML = '<div>' + count + ' workouts</div><div style="color:#9aa7b8;font-size:12px;margin-top:4px">Last weight: ' + (weight || "—") + ' kg</div>';
-      });
+  function bindClick(id, fn) { var el = document.getElementById(id); if (el) el.onclick = fn; }
+  function val(id) { var el = document.getElementById(id); return el ? el.value : ""; }
+  function setVal(id, v) { var el = document.getElementById(id); if (el && v != null) el.value = v; }
+  function bind() {
+    bindClick("ps-refresh", function(){ loadSessions().then(function(){ renderAnalytics(); renderHistory(); renderAchievements(); renderBodyHistory(); coach(); toast("Premium data refreshed"); }); });
+    bindClick("ps-coach-jump", function(){ document.getElementById("ps-coach").scrollIntoView({behavior:"smooth"}); });
+    bindClick("ps-timer-jump", function(){ document.getElementById("ps-timer").scrollIntoView({behavior:"smooth"}); });
+    bindClick("ps-report-jump", function(){ document.getElementById("ps-report").scrollIntoView({behavior:"smooth"}); });
+    bindClick("ps-add-exercise", function(){ var n=val("ps-ex-name").trim(); if(!n) return toast("Exercise name daalo"); var a=read("routine",[]); a.push({name:n,sets:Math.max(1,Number(val("ps-ex-sets"))||3),reps:val("ps-ex-reps")||"8–12",rest:Math.max(0,Number(val("ps-ex-rest"))||90)}); write("routine",a); setVal("ps-ex-name",""); renderRoutine(); });
+    bindClick("ps-save-routine", function(){ write("routine-saved",read("routine",[])); toast("Routine saved on this device"); });
+    bindClick("ps-save-body", saveBody);
+    var photo=document.getElementById("ps-photo"); if(photo) photo.onchange=savePhoto;
+    bindClick("ps-calc-nutrition", nutrition);
+    bindClick("ps-history-load", renderHistory);
+    bindClick("ps-history-csv", exportCSV);
+    bindClick("ps-timer-start", startTimer);
+    bindClick("ps-timer-pause", pauseTimer);
+    bindClick("ps-timer-reset", resetTimer);
+    var preset=document.getElementById("ps-timer-preset"); if(preset) preset.onchange=resetTimer;
+    bindClick("ps-reminder-save", saveReminders);
+    bindClick("ps-reminder-enable", enableNotifications);
+    bindClick("ps-report-csv", exportCSV);
+    bindClick("ps-report-print", printReport);
+    bindClick("ps-share-card", shareCard);
+    bindClick("ps-program-view", renderProgram);
+    bindClick("ps-program-save", function(){ write("program",val("ps-program")); toast("Your 4-week plan saved"); });
+    var program=document.getElementById("ps-program"); if(program) program.onchange=renderProgram;
+    bindClick("ps-theme-apply", function(){ write("theme",val("ps-theme")); applyTheme(true); });
+    bindClick("ps-theme-reset", function(){ write("theme","gold"); setVal("ps-theme","gold"); applyTheme(true); });
+    var challenge=document.getElementById("ps-challenge"); if(challenge) challenge.onchange=renderAchievements;
   }
-
-  // Rest timer button
-  function restTimer() {
-    if (!isPrem() || document.getElementById("restBtn")) return;
-    var home = document.getElementById("view-home");
-    if (!home) return;
-    var btn = document.createElement("button");
-    btn.id = "restBtn";
-    btn.textContent = "Rest Timer 60s";
-    btn.style.cssText = "margin:10px 14px;padding:10px 16px;border-radius:10px;border:0;background:#63e2b3;color:#111;font-weight:700";
-    btn.onclick = function () {
-      var sec = 60;
-      btn.disabled = true;
-      var iv = setInterval(function () {
-        sec--;
-        btn.textContent = "Rest " + sec + "s";
-        if (sec <= 0) {
-          clearInterval(iv);
-          btn.textContent = "Rest Timer 60s";
-          btn.disabled = false;
-          toast("Rest done!");
-          if (navigator.vibrate) navigator.vibrate(200);
-        }
-      }, 1000);
-    };
-    home.appendChild(btn);
+  function loadSessions() { return api("/api/sessions").then(function(d){ sessions=Array.isArray(d.sessions)?d.sessions:[]; coach(); return sessions; }).catch(function(e){ toast(e.message || "Workout data load nahi hua"); return sessions; }); }
+  function renderAnalytics() {
+    var el=document.getElementById("ps-analytics"); if(!el) return;
+    var now=new Date(), since=new Date(now.getTime()-7*86400000), week=sessions.filter(function(s){return new Date(s.date+"T12:00:00")>=since;});
+    var complete=sessions.filter(function(s){return !!s.finished;}).length;
+    var km=sessions.reduce(function(sum,s){return sum+(Number(s.beforeTreadmillKm)||0)+(Number(s.afterTreadmillKm)||0);},0);
+    var weights=sessions.map(function(s){return Number(s.entryWeight);}).filter(function(n){return Number.isFinite(n)&&n>0;});
+    var cards=[["All sessions",sessions.length],["This week",week.length],["Completed",complete],["Cardio distance",Math.round(km*100)/100+" km"],["Highest start weight",weights.length?Math.max.apply(null,weights)+" kg":"—"],["Current recorded",weights.length?weights[0]+" kg":"—"]];
+    el.innerHTML=cards.map(function(c){return '<div style="padding:12px;border:1px solid #ffffff14;border-radius:14px;background:#ffffff05"><div style="font-size:11px;color:#9aa7b8">'+c[0]+'</div><b style="display:block;color:#f0c27a;font-size:19px;margin-top:5px">'+esc(c[1])+'</b></div>';}).join("");
   }
-
-  function boot() {
-    var token = localStorage.getItem(TOKEN);
-    if (!token) return;
-    fetch("/api/me", { headers: { Authorization: "Bearer " + token } })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (m) {
-        if (!m) return;
-        window.__sidhiMe = m;
-        if (m.premium || m.isAdmin) {
-          setTimeout(prCard, 800);
-          setTimeout(weeklyCard, 1000);
-          setTimeout(restTimer, 1200);
-        }
-      });
+  function coach() {
+    var el=document.getElementById("ps-coach-output"); if(!el) return;
+    if(!sessions.length){el.textContent="Save a few workouts first. The coach will analyse your consistency, body-weight entries and cardio logs.";return;}
+    var completed=sessions.filter(function(s){return s.finished;}).length, recent=sessions.slice(0,7), prev=sessions.slice(7,14);
+    var w=sessions.map(function(s){return Number(s.entryWeight);}).filter(function(n){return Number.isFinite(n)&&n>0;});
+    var last7=recent.length, prior7=prev.length, advice=[];
+    advice.push("You have "+sessions.length+" logged sessions, with "+completed+" marked completed.");
+    advice.push(last7>prior7?"Recent logging is higher than the previous 7 records—keep the routine consistent.":last7<prior7?"Recent logging is lower than the previous 7 records. Set a realistic weekly target and schedule your next session.":"Your recent logging pace is steady.");
+    if(w.length>1){var delta=Math.round((w[0]-w[w.length-1])*10)/10;advice.push("Recorded start-weight change across available entries: "+(delta>0?"+":"")+delta+" kg. Compare weekly averages rather than daily changes.");}
+    var km=recent.reduce(function(s,r){return s+(Number(r.beforeTreadmillKm)||0)+(Number(r.afterTreadmillKm)||0);},0);advice.push("Recent recorded cardio: "+Math.round(km*100)/100+" km. Increase gradually and allow recovery.");
+    advice.push("Progressive overload: when you can complete all planned reps with good form, consider a small load increase. Stop for pain or dizziness.");
+    el.innerHTML=advice.map(function(x){return '<div style="padding:6px 0;border-bottom:1px solid #ffffff10">• '+esc(x)+'</div>';}).join("");
   }
-
-  setTimeout(boot, 1500);
+  function renderRoutine(){var el=document.getElementById("ps-routine-list");if(!el)return;var a=read("routine",[]);el.innerHTML=a.length?a.map(function(x,i){return '<div style="display:flex;gap:8px;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #ffffff12"><span><b>'+esc(x.name)+'</b><br><small style="color:#9aa7b8">'+x.sets+' sets · '+esc(x.reps)+' reps · '+x.rest+'s rest</small></span><button data-remove-ex="'+i+'" class="btn ghost" style="min-height:34px;padding:5px 9px">Remove</button></div>';}).join(""):"<p style='color:#9aa7b8;font-size:13px'>Add exercises to build a reusable routine.</p>";el.querySelectorAll("[data-remove-ex]").forEach(function(b){b.onclick=function(){var a=read("routine",[]);a.splice(Number(b.dataset.removeEx),1);write("routine",a);renderRoutine();};});}
+  function renderBodyHistory(){var el=document.getElementById("ps-body-history");if(!el)return;var a=read("body",[]);el.innerHTML=a.length?a.slice().reverse().map(function(x){return '<div style="padding:8px 0;border-bottom:1px solid #ffffff12;font-size:12px">'+esc(x.date)+' · '+(x.weight?esc(x.weight)+' kg':'weight —')+' · waist '+(x.waist?esc(x.waist)+' cm':'—')+(x.photo? ' · <span style="color:#63e2b3">photo saved</span>':'')+'</div>';}).join(""):"<p style='font-size:12px;color:#9aa7b8'>No measurements saved yet.</p>";}
+  function saveBody(){var x={date:new Date().toISOString().slice(0,10),weight:Number(val("ps-body-weight"))||null,waist:Number(val("ps-waist"))||null,chest:Number(val("ps-chest"))||null,hips:Number(val("ps-hips"))||null};var a=read("body",[]);a.push(x);write("body",a);renderBodyHistory();toast("Measurements saved");}
+  function savePhoto(e){var f=e.target.files&&e.target.files[0];if(!f)return;if(f.size>8*1024*1024){toast("Photo max 8 MB");e.target.value="";return;}var reader=new FileReader();reader.onload=function(){var img=new Image();img.onload=function(){var c=document.createElement("canvas"),scale=Math.min(1,800/img.width,1000/img.height);c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);c.getContext("2d").drawImage(img,0,0,c.width,c.height);var data=c.toDataURL("image/jpeg",.72),a=read("body",[]);if(!a.length)a.push({date:new Date().toISOString().slice(0,10)});a[a.length-1].photo=data;if(write("body",a)){renderBodyHistory();toast("Photo saved privately on this device");}};img.src=reader.result;};reader.readAsDataURL(f);}
+  function nutrition(){var w=Number(val("ps-nut-weight")),age=Number(val("ps-nut-age"))||25,goal=val("ps-nut-goal"),activity=Number(val("ps-nut-activity"))||1.55;if(!(w>0))return toast("Body weight sahi daalo");var maintenance=Math.round((10*w+6.25*168-5*age+5)*activity);var cal=Math.round(maintenance+(goal==="fat"?-300:goal==="muscle"?200:0));var protein=Math.round(w*1.6),high=Math.round(w*2);var el=document.getElementById("ps-nut-output");el.innerHTML='<div>Estimated maintenance: <b>'+maintenance+' kcal/day</b></div><div>Goal calorie guide: <b>'+cal+' kcal/day</b></div><div>Protein range: <b>'+protein+'–'+high+' g/day</b></div><div style="color:#9aa7b8;margin-top:6px">Low-cost basics: dal, chana, soy chunks, roasted chana, curd when affordable. Adjust for your health needs.</div>';}
+  function renderHistory(){var el=document.getElementById("ps-history-list");if(!el)return;if(!sessions.length){el.innerHTML="<p style='color:#9aa7b8;font-size:13px'>Loading all saved workouts…</p>";loadSessions().then(renderHistory);return;}el.innerHTML=sessions.map(function(s){var km=(Number(s.beforeTreadmillKm)||0)+(Number(s.afterTreadmillKm)||0);return '<div style="padding:10px 0;border-bottom:1px solid #ffffff12"><div style="display:flex;justify-content:space-between;gap:8px"><b>'+esc(s.date)+'</b><span style="color:'+(s.finished?'#63e2b3':'#f0c27a')+'">'+(s.finished?'Completed':'Saved')+'</span></div><div style="font-size:12px;color:#9aa7b8;margin-top:4px">'+esc(s.workoutName||s.day||"Workout")+' · Start weight '+(s.entryWeight||"—")+' kg · Cardio '+km.toFixed(2)+' km</div></div>';}).join("");}
+  function csvEscape(v){var s=String(v==null?"":v);return '"'+s.replace(/"/g,'""')+'"';}
+  function exportCSV(){if(!sessions.length)return loadSessions().then(exportCSV);var cols=["date","day","workoutName","entryTime","entryWeight","after1HourWeight","beforeTreadmillKm","beforeTreadmillMins","afterTreadmillKm","afterTreadmillMins","finished"];var csv=[cols.join(",")].concat(sessions.map(function(s){return cols.map(function(c){return csvEscape(s[c]);}).join(",");})).join("\r\n");download("sidhi-gym-premium-history.csv",csv,"text/csv;charset=utf-8");}
+  function download(name,data,type){var blob=new Blob([data],{type:type}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},1000);}
+  function printReport(){var now=new Date(),month=now.toISOString().slice(0,7),rows=sessions.filter(function(s){return String(s.date||"").slice(0,7)===month;});var body=rows.map(function(s){return "<tr><td>"+esc(s.date)+"</td><td>"+esc(s.workoutName||s.day||"Workout")+"</td><td>"+esc(s.entryWeight||"—")+"</td><td>"+(((Number(s.beforeTreadmillKm)||0)+(Number(s.afterTreadmillKm)||0)).toFixed(2))+"</td><td>"+(s.finished?"Yes":"No")+"</td></tr>";}).join("");var w=window.open("","_blank");if(!w)return toast("Allow pop-ups to print the report");w.document.write("<!doctype html><html><head><title>SIDHI GYM Monthly Report</title><style>body{font:14px Arial;padding:24px;color:#111}h1{color:#8a5a00}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ccc;padding:8px;text-align:left}</style></head><body><h1>SIDHI GYM — Monthly Report</h1><p>"+month+" · "+rows.length+" sessions · "+rows.filter(function(s){return s.finished;}).length+" completed</p><table><thead><tr><th>Date</th><th>Workout</th><th>Start kg</th><th>Cardio km</th><th>Completed</th></tr></thead><tbody>"+body+"</tbody></table><p>Use Print → Save as PDF to export this report.</p></body></html>");w.document.close();w.focus();setTimeout(function(){w.print();},300);}
+  function shareCard(){var n=sessions.length,c=sessions.filter(function(s){return s.finished;}).length,km=sessions.reduce(function(sum,s){return sum+(Number(s.beforeTreadmillKm)||0)+(Number(s.afterTreadmillKm)||0);},0);var text="SIDHI GYM PROGRESS ✦\n"+n+" workouts logged\n"+c+" completed\n"+Math.round(km*100)/100+" km cardio\nConsistency over perfection.";var el=document.getElementById("ps-share-preview");el.innerHTML='<div style="padding:18px;border-radius:18px;border:1px solid #f0c27a;background:linear-gradient(130deg,#17120a,#0d1a22);text-align:center"><div style="color:#f0c27a;font-weight:900;letter-spacing:.16em">SIDHI GYM</div><h2 style="margin:8px 0">YOUR PROGRESS</h2><div style="font-size:14px;line-height:2">'+n+' workouts · '+c+' completed<br>'+Math.round(km*100)/100+' km cardio</div><div style="font-size:11px;color:#9aa7b8;margin-top:8px">Consistency over perfection.</div></div><div class="row" style="margin-top:8px">'+btn("ps-share-copy","Copy progress text")+'</div>';bindClick("ps-share-copy",function(){if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(text).then(function(){toast("Progress text copied");}).catch(function(){toast(text);});else toast(text);});}
+  function renderAchievements(){var el=document.getElementById("ps-badges");if(!el)return;var finished=sessions.filter(function(s){return s.finished;}).length;var streak=0,dates=sessions.filter(function(s){return s.finished;}).map(function(s){return s.date;}).sort().reverse();var cur=new Date();for(var i=0;i<365;i++){var iso=cur.getFullYear()+"-"+String(cur.getMonth()+1).padStart(2,"0")+"-"+String(cur.getDate()).padStart(2,"0");if(dates.indexOf(iso)>=0)streak++;else if(i>0)break;cur.setDate(cur.getDate()-1);}var month=new Date().toISOString().slice(0,7),monthCount=sessions.filter(function(s){return s.finished&&String(s.date).slice(0,7)===month;}).length,goal=Number(val("ps-challenge"))||12;var badges=[["🏁","First session",finished>=1],["🔥","7 completed",finished>=7],["💪","25 completed",finished>=25],["👑","50 completed",finished>=50],["⚡","3-day streak",streak>=3],["🏆","10-day streak",streak>=10]];el.innerHTML=badges.map(function(b){return '<div style="padding:11px;border-radius:13px;border:1px solid '+(b[2]?'#f0c27a88':'#ffffff14')+';opacity:'+(b[2]?'1':'.55')+'"><div style="font-size:22px">'+b[0]+'</div><b style="font-size:12px">'+b[1]+'</b><div style="font-size:10px;color:'+(b[2]?'#63e2b3':'#9aa7b8')+'">'+(b[2]?'Unlocked':'Locked')+'</div></div>';}).join("");var p=document.getElementById("ps-challenge-progress");if(p)p.textContent="This month: "+monthCount+" / "+goal+" completed workouts. "+(monthCount>=goal?"Challenge complete! 🎉":(goal-monthCount)+" more to go.");}
+  var plans={strength:{title:"4-week Strength",days:["Week 1: 3 full-body sessions; focus on technique, 3 sets × 6–8 reps.","Week 2: Repeat main lifts; add a rep where form stays clean.","Week 3: Add a small load only if all sets were controlled.","Week 4: Reduce volume slightly, review progress and recovery."],note:"Rest 2–3 minutes for main lifts. Never test max loads without competent supervision."},beginner:{title:"Beginner Gym",days:["Week 1: 2–3 full-body sessions; learn movement patterns.","Week 2: 3 sessions; 2–3 sets per exercise.","Week 3: Add reps gradually and record each session.","Week 4: Review technique and build a sustainable schedule."],note:"Prioritise squat/leg press, hinge, push, pull, core and easy cardio."},fatloss:{title:"Fat-loss Basics",days:["Week 1: 3 strength sessions and comfortable walking.","Week 2: Keep strength training; add small amounts of walking.","Week 3: Track food portions and protein consistently.","Week 4: Review weekly average weight, waist and energy."],note:"Use a modest calorie deficit. Spot reduction is not possible; retain resistance training."},muscle:{title:"Muscle-building",days:["Week 1: 3–4 sessions with repeatable exercises.","Week 2: Add reps while maintaining good technique.","Week 3: Increase load slightly when all target reps are achieved.","Week 4: Review lifts, sleep, appetite and recovery."],note:"Eat enough overall, include protein across meals and allow muscle groups to recover."}};
+  function renderProgram(){var el=document.getElementById("ps-program-output");if(!el)return;var p=plans[val("ps-program")]||plans.beginner;el.innerHTML='<b style="color:#f0c27a">'+p.title+'</b>'+p.days.map(function(d){return '<div style="padding:7px 0;border-bottom:1px solid #ffffff12">'+esc(d)+'</div>';}).join("")+'<p style="color:#9aa7b8">'+esc(p.note)+'</p>';}
+  function saveReminders(){var days=Array.prototype.slice.call(document.getElementById("ps-reminder-days").selectedOptions).map(function(o){return Number(o.value);});write("reminders",{time:val("ps-reminder-time")||"16:00",days:days});var el=document.getElementById("ps-reminder-status");if(el)el.textContent="Saved on this device. Keep SIDHI GYM open for scheduled reminders.";toast("Reminder schedule saved");}
+  function enableNotifications(){if(!("Notification"in window))return toast("Browser notifications not supported");Notification.requestPermission().then(function(p){var el=document.getElementById("ps-reminder-status");if(el)el.textContent=p==="granted"?"Notifications enabled. Reminders run while the app is open.":"Notification permission not granted.";toast(p==="granted"?"Notifications enabled":"Permission not granted");});}
+  var lastReminder="";
+  function checkReminders(){var r=read("reminders",null);if(!r)return;var now=new Date(),day=now.getDay(),hm=String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0"),stamp=now.toDateString()+hm;if(hm!==r.time||r.days.indexOf(day)<0||lastReminder===stamp)return;lastReminder=stamp;var msg="SIDHI GYM: Time for your planned workout.";if("Notification"in window&&Notification.permission==="granted")new Notification("Workout reminder",{body:msg});else toast(msg);}
+  function loadSavedInputs(){var b=read("body",[]);if(b.length){var x=b[b.length-1];setVal("ps-body-weight",x.weight);setVal("ps-waist",x.waist);setVal("ps-chest",x.chest);setVal("ps-hips",x.hips);}var r=read("reminders",null);if(r){setVal("ps-reminder-time",r.time);var sel=document.getElementById("ps-reminder-days");if(sel)Array.prototype.forEach.call(sel.options,function(o){o.selected=r.days.indexOf(Number(o.value))>=0;});}setVal("ps-program",read("program","beginner"));setVal("ps-theme",read("theme","gold"));}
+  function applyTheme(notify){var t=read("theme","gold"),root=document.getElementById(rootId);if(!root)return;var c=t==="mint"?"#63e2b3":t==="violet"?"#c4b5fd":"#f0c27a";root.querySelectorAll("section.glass").forEach(function(s){s.style.borderColor=c+"55";var h=s.querySelector("h2");if(h)h.style.color=c;});var status=document.getElementById("ps-theme-status");if(status)status.textContent="Applied: "+t+" theme";if(notify)toast("Premium theme applied");}
+  function startTimer(){if(timerRunning)return;var p=val("ps-timer-preset");if(timerLeft<=0){timerTotal=p==="custom"?Math.max(1,Number(val("ps-timer-custom"))||60):Number(p)||60;timerLeft=timerTotal;}timerRunning=true;timerId=setInterval(function(){timerLeft--;paintTimer();if(timerLeft<=0){pauseTimer();timerLeft=0;paintTimer();toast("Rest complete — next set!");if(navigator.vibrate)navigator.vibrate([150,80,150]);if("Notification"in window&&Notification.permission==="granted")new Notification("SIDHI GYM",{body:"Rest timer complete."});}},1000);paintTimer();}
+  function pauseTimer(){if(timerId)clearInterval(timerId);timerId=null;timerRunning=false;}
+  function resetTimer(){pauseTimer();var p=val("ps-timer-preset");timerTotal=p==="custom"?Math.max(1,Number(val("ps-timer-custom"))||60):Number(p)||60;timerLeft=timerTotal;paintTimer();}
+  function paintTimer(){var el=document.getElementById("ps-timer-display");if(el)el.textContent=String(Math.floor(timerLeft/60)).padStart(2,"0")+":"+String(timerLeft%60).padStart(2,"0");var b=document.getElementById("ps-timer-start");if(b)b.textContent=timerRunning?"Running…":"Start";}
+  function boot(){if(!token())return;api("/api/me").then(function(m){me=m;if(!premium())return;return loadSessions().then(function(){render();setInterval(checkReminders,15000);});}).catch(function(){/* Login/session may not be ready yet; retry below. */});}
+  setTimeout(boot,1200);
+  document.addEventListener("visibilitychange",function(){if(!document.hidden&&token()&&!premium())boot();});
 })();
