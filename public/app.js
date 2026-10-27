@@ -236,17 +236,26 @@ function paintCal() {
   $("calTitle").textContent = calCursor.toLocaleString("en-IN", { month: "long", year: "numeric" });
   $("cal").innerHTML = "";
 }
+
 function showTab(name) {
-  ["home", "workout", "progress", "history"].forEach(function (t) {
-    const v = $("view-" + t); if (v) v.classList.toggle("hidden", t !== name);
-    const tab = document.querySelector('.tab[data-tab="' + t + '"]');
-    if (tab) tab.classList.toggle("on", t === name);
+  var all = ["home", "workout", "progress", "history", "profile"];
+  all.forEach(function (t) {
+    var v = $("view-" + t);
+    if (v) v.classList.toggle("hidden", t !== name);
+  });
+  document.querySelectorAll(".tab").forEach(function (tab) {
+    tab.classList.toggle("on", tab.dataset.tab === name);
   });
   if (name === "home") paintHome();
   if (name === "workout") fillForm();
   if (name === "progress") { paintCal(); drawChart($("progChart"), sessions); if (goalWeight) $("goalWeight").value = goalWeight; }
   if (name === "history") paintHist();
+  if (name === "run") {
+    var ov = document.getElementById("runOv");
+    if (ov) ov.classList.add("on");
+  }
 }
+
 function formBody(finished) {
   const old = currentRow() || {};
   return {
@@ -336,9 +345,21 @@ $("date").addEventListener("change", fillForm);
 $("saveBtn").onclick = function () { save(false); };
 $("finishBtn").onclick = function () { save(true); };
 $("homeFinish").onclick = function () { showTab("workout"); };
-document.querySelectorAll(".tab").forEach(function (b) {
-  b.onclick = function () { showTab(b.dataset.tab); };
-});
+
+// Event delegation — works even if other scripts modify the tabbar later
+(function bindTabs() {
+  var bar = document.getElementById("tabbar");
+  if (!bar || bar.dataset.bound) return;
+  bar.dataset.bound = "1";
+  bar.addEventListener("click", function (e) {
+    var btn = e.target.closest(".tab");
+    if (!btn) return;
+    e.preventDefault();
+    var name = btn.dataset.tab;
+    if (name) showTab(name);
+  });
+})();
+
 $("calPrev").onclick = function () { calCursor.setMonth(calCursor.getMonth() - 1); paintCal(); };
 $("calNext").onclick = function () { calCursor.setMonth(calCursor.getMonth() + 1); paintCal(); };
 $("goalBtn").onclick = async function () {
