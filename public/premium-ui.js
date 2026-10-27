@@ -1,4 +1,4 @@
-// Sidhi Gym Premium — Home only card + profile badge
+// Sidhi Gym Premium — Razorpay
 (function () {
   var TOKEN = "sidhi-gym-token";
   var PRICE = 99;
@@ -8,7 +8,17 @@
     if (!t) return;
     t.textContent = m;
     t.style.display = "block";
-    setTimeout(function () { t.style.display = "none"; }, 2000);
+    setTimeout(function () { t.style.display = "none"; }, 2200);
+  }
+
+  function loadRazor() {
+    if (window.Razorpay) return Promise.resolve();
+    return new Promise(function (ok) {
+      var s = document.createElement("script");
+      s.src = "https://checkout.razorpay.com/v1/checkout.js";
+      s.onload = ok;
+      document.head.appendChild(s);
+    });
   }
 
   function badge(isPrem) {
@@ -26,43 +36,61 @@
       b.style.background = "#2a2a2a";
       b.style.color = "#888";
     }
-    var nameEl = document.querySelector("#view-profile strong, #view-profile h1, #view-profile h2, .profile-name");
-    if (!nameEl) {
-      var p = document.getElementById("view-profile");
-      if (p) nameEl = p.querySelector("strong, h1, h2, .name") || p;
-    }
+    var nameEl = document.querySelector("#view-profile strong, #view-profile h1, #view-profile h2");
     if (nameEl) nameEl.appendChild(b);
   }
 
   function homeCard(me) {
     var old = document.getElementById("premiumBox");
     if (old) old.remove();
-    if (!me || me.premium) return; // only show upgrade if not premium
+    if (!me || me.premium) return;
     var box = document.createElement("div");
     box.id = "premiumBox";
     box.style.cssText = "margin:12px 14px 6px;padding:14px;border-radius:16px;background:linear-gradient(135deg,#111827,#1a1a2e);border:1px solid #f0c27a55;text-align:center";
-    box.innerHTML = '<div style="color:#f0c27a;font-size:17px;font-weight:700">Go Premium</div><div style="color:#fff;font-size:22px;font-weight:800;margin:4px 0">₹' + PRICE + '<span style="font-size:13px;font-weight:500">/year</span></div><div style="font-size:12px;color:#9aa7b8;margin-bottom:10px">Unlimited history · CSV export · Custom splits</div><button id="premUp" style="padding:10px 28px;border-radius:12px;border:0;background:#63e2b3;color:#111;font-weight:700;font-size:15px">Upgrade Now</button>';
-    // Insert in home view
+    box.innerHTML = '<div style="color:#f0c27a;font-size:17px;font-weight:700">Go Premium</div><div style="color:#fff;font-size:22px;font-weight:800;margin:4px 0">₹' + PRICE + '<span style="font-size:13px;font-weight:500">/year</span></div><div style="font-size:12px;color:#9aa7b8;margin-bottom:10px">Unlimited history · CSV export</div><button id="premUp" style="padding:10px 28px;border-radius:12px;border:0;background:#63e2b3;color:#111;font-weight:700;font-size:15px">Pay with UPI / Card</button>';
     var home = document.getElementById("view-home");
     if (home) {
       var first = home.querySelector(".card, .glass") || home.firstElementChild;
       if (first) home.insertBefore(box, first.nextSibling);
       else home.appendChild(box);
     }
-
     var btn = document.getElementById("premUp");
-    if (btn) btn.onclick = function () {
-      var c = prompt("Activation code daalo:\\n(Test: SIDHI2026)");
-      if (!c) return;
-      fetch("/api/premium/activate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: "Bearer " + localStorage.getItem(TOKEN) },
-        body: JSON.stringify({ code: c.trim() })
-      }).then(function (r) { return r.json(); }).then(function (d) {
-        if (d.ok) { toast("Premium activated!"); setTimeout(function () { location.reload(); }, 600); }
-        else toast(d.error || "Invalid code");
-      });
+    if (btn) btn.onclick = startPay;
+  }
+
+  async function startPay() {
+    var token = localStorage.getItem(TOKEN);
+    if (!token) return toast("Login first");
+    toast("Opening payment...");
+    await loadRazor();
+    var r = await fetch("/api/premium/order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }
+    });
+    var data = await r.json();
+    if (!data.ok) return toast(data.error || "Order fail");
+    var options = {
+      key: data.key,
+      amount: data.amount,
+      currency: "INR",
+      name: "Sidhi Gym",
+      description: "Premium 1 Year",
+      order_id: data.orderId,
+      handler: function (response) {
+        fetch("/api/premium/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+          body: JSON.stringify(response)
+        }).then(function (x) { return x.json(); }).then(function (d) {
+          if (d.ok) { toast("Premium activated!"); setTimeout(function () { location.reload(); }, 700); }
+          else toast(d.error || "Verify fail");
+        });
+      },
+      prefill: { name: data.username },
+      theme: { color: "#63e2b3" }
     };
+    var rzp = new Razorpay(options);
+    rzp.open();
   }
 
   function run() {
