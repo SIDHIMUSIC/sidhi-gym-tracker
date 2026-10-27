@@ -19,6 +19,14 @@ Daily gym + morning run log. Username / password MongoDB me. Token phone pe reht
 - PWA: Add to Home Screen (`manifest.json` + `sw.js`)
 - Profile avatar, join weight, goal kg
 
+## Project navigation
+
+New contributors / future edits ke liye:
+- [Project file map](docs/PROJECT-STRUCTURE.md) — important files aur unka purpose
+- [Safe change checklist](docs/SAFE-CHANGES.md) — deployment aur glitch-fix files ko safe rakhne ke rules
+
+**Important:** Current active files ko bina reference audit ke move/rename mat karna. HTML script paths, dynamic loaders, service worker cache aur Vercel routes break ho sakte hain.
+
 ## Env
 
 Vercel → Project → Settings → Environment Variables:
