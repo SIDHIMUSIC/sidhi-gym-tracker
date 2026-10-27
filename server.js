@@ -565,6 +565,7 @@ app.post("/api/premium/redeem", auth, async (req, res) => {
 
 
 app.get("/api/premium/reminders", auth, async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
   const user = await User.findOne({ username: req.gymUser }).lean();
   if (!user || isAdminUser(req.gymUser) || !hasActivePremium(user) || !user.premiumUntil) {
     return res.json({ ok: true, reminders: [] });
@@ -584,7 +585,7 @@ app.get("/api/premium/reminders", auth, async (req, res) => {
 
 app.get("/api/admin/premium-users", auth, async (req, res) => {
   if (!isAdminUser(req.gymUser)) return res.status(403).json({ error: "Admin only" });
-  const users = await User.find({ premium: true }, { username: 1, displayName: 1, premiumUntil: 1, createdAt: 1 }).lean();
+  const users = await User.find({ $or: [{ premium: true }, { username: { $in: PREM.adminUsers.map(x => String(x).toLowerCase()) } }] }, { username: 1, displayName: 1, premium: 1, premiumUntil: 1, createdAt: 1 }).lean();
   const list = users.map(u => ({
     username: u.username,
     name: u.displayName || u.username,
