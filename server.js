@@ -61,7 +61,8 @@ const User = model(
       photoUrl: { type: String, default: "" },
       preferredDays: { type: Array, default: [] },
       premium: { type: Boolean, default: false },
-      premiumUntil: { type: Date, default: null }
+      premiumUntil: { type: Date, default: null },
+      premiumReminderDaysSent: { type: [Number], default: [] }
     },
     { timestamps: true }
   )
@@ -78,6 +79,16 @@ const Token = model(
     { timestamps: true }
   )
 );
+
+const PromoCode = model("PromoCode", new mongoose.Schema({
+  code: { type: String, unique: true, required: true, uppercase: true, trim: true, index: true },
+  days: { type: Number, required: true, min: 1, max: 365 },
+  used: { type: Boolean, default: false, index: true },
+  usedBy: { type: String, default: "" },
+  usedAt: { type: Date, default: null },
+  createdBy: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now }
+}));
 
 const gymSchema = new mongoose.Schema(
   {
@@ -137,6 +148,17 @@ function hasActivePremium(u) {
   if (isAdminUser(u.username)) return true;
   if (!u.premium) return false;
   return !u.premiumUntil || new Date(u.premiumUntil).getTime() > Date.now();
+}
+async function grantPremium(username, days) {
+  const user = await User.findOne({ username }).lean();
+  if (!user) throw new Error("User nahi mila");
+  const now = Date.now();
+  const currentUntil = user.premium && user.premiumUntil ? new Date(user.premiumUntil).getTime() : 0;
+  const base = currentUntil > now ? currentUntil : now;
+  const until = new Date(base + Math.max(1, Number(days) || 30) * 86400000);
+  await User.updateOne({ username }, { $set: { premium: true, premiumUntil: until, premiumReminderDaysSent: [] } });
+  cacheDel("me:" + username);
+  return until;
 }
 function publicUser(u) {
   if (!u) {
@@ -449,19 +471,6 @@ app.get("/api/export.csv", auth, async (req, res) => {
   res.send(csv);
 });
 
-// Manual premium unlock (admin / UPI confirm later)
-app.post("/api/premium/activate", auth, async (req, res) => {
-  const code = String(req.body.code || "").trim();
-  // Simple code for now — replace with Razorpay webhook later
-  if (code !== "SIDHI2026") return res.status(400).json({ error: "Invalid code" });
-  const durationDays = Math.max(1, Number(PREM.durationDays || 30));
-  const until = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
-  await User.updateOne({ username: req.gymUser }, { $set: { premium: true, premiumUntil: until } });
-  cacheDel("me:" + req.gymUser);
-  res.json({ ok: true, premium: true, until, daysLeft: durationDays });
-});
-
-
 // Razorpay premium
 const RAZOR_KEY = process.env.RAZORPAY_KEY_ID || "rzp_live_Tt4gpscQgtM9j0";
 const RAZOR_SECRET = process.env.RAZORPAY_KEY_SECRET || "";
@@ -499,45 +508,82 @@ app.post("/api/premium/verify", auth, async (req, res) => {
   const expected = crypto.createHmac("sha256", RAZOR_SECRET).update(razorpay_order_id + "|" + razorpay_payment_id).digest("hex");
   if (expected !== razorpay_signature) return res.status(400).json({ error: "Invalid signature" });
   const durationDays = Math.max(1, Number(PREM.durationDays || 30));
-  const until = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
-  await User.updateOne({ username: req.gymUser }, { $set: { premium: true, premiumUntil: until } });
-  cacheDel("me:" + req.gymUser);
+  const until = await grantPremium(req.gymUser, durationDays);
   res.json({ ok: true, premium: true, until, daysLeft: durationDays });
 });
 
 
-// Promo codes (in-memory + simple persist via env or just memory for now)
-const promoCodes = new Map();
-
+// Promo codes are stored in MongoDB and atomically claimed so each code works once.
 app.post("/api/admin/promo", auth, async (req, res) => {
-  if (!PREM.adminUsers.includes(req.gymUser)) return res.status(403).json({ error: "Admin only" });
-  const code = (req.body.code || ("GIFT" + Math.random().toString(36).slice(2, 8).toUpperCase())).trim().toUpperCase();
-  const days = Number(req.body.days || 30);
-  promoCodes.set(code, { days, used: false, created: Date.now() });
-  res.json({ ok: true, code, days });
+  if (!isAdminUser(req.gymUser)) return res.status(403).json({ error: "Admin only" });
+  const days = Math.max(1, Math.min(365, Math.floor(Number(req.body.days || 30))));
+  let code = String(req.body.code || "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 32);
+  try {
+    if (code) {
+      const existing = await PromoCode.findOne({ code }).lean();
+      if (existing) return res.status(409).json({ error: "Ye code pehle se hai. Naya code banao." });
+    } else {
+      for (let i = 0; i < 5; i++) {
+        const candidate = "GIFT" + crypto.randomBytes(4).toString("hex").toUpperCase();
+        if (!(await PromoCode.exists({ code: candidate }))) { code = candidate; break; }
+      }
+      if (!code) return res.status(500).json({ error: "Code generate nahi hua, retry karo." });
+    }
+    const doc = await PromoCode.create({ code, days, used: false, createdBy: req.gymUser });
+    res.json({ ok: true, code: doc.code, days: doc.days, used: false });
+  } catch (err) {
+    if (err && err.code === 11000) return res.status(409).json({ error: "Ye code pehle se hai. Naya code banao." });
+    res.status(500).json({ error: "Gift code save nahi hua." });
+  }
 });
 
 app.get("/api/admin/promos", auth, async (req, res) => {
-  if (!PREM.adminUsers.includes(req.gymUser)) return res.status(403).json({ error: "Admin only" });
-  const list = [];
-  promoCodes.forEach((v, k) => list.push({ code: k, days: v.days, used: v.used }));
-  res.json({ ok: true, promos: list });
+  if (!isAdminUser(req.gymUser)) return res.status(403).json({ error: "Admin only" });
+  const promos = await PromoCode.find({}).sort({ createdAt: -1 }).limit(200).lean();
+  res.json({ ok: true, promos: promos.map(p => ({ code: p.code, days: p.days, used: !!p.used, usedBy: p.usedBy || "", usedAt: p.usedAt || null })) });
 });
 
 app.post("/api/premium/redeem", auth, async (req, res) => {
   const code = String(req.body.code || "").trim().toUpperCase();
-  const p = promoCodes.get(code);
-  if (!p || p.used) return res.status(400).json({ error: "Invalid or used code" });
-  p.used = true;
-  const until = new Date(Date.now() + p.days * 24 * 60 * 60 * 1000);
-  await User.updateOne({ username: req.gymUser }, { $set: { premium: true, premiumUntil: until } });
-  cacheDel("me:" + req.gymUser);
-  res.json({ ok: true, days: p.days });
+  if (!code || code.length > 32) return res.status(400).json({ error: "Invalid or used code" });
+  // Atomic claim prevents two users from redeeming the same code concurrently.
+  const p = await PromoCode.findOneAndUpdate(
+    { code, used: false },
+    { $set: { used: true, usedBy: req.gymUser, usedAt: new Date() } },
+    { new: true }
+  ).lean();
+  if (!p) return res.status(400).json({ error: "Invalid or used code" });
+  try {
+    const until = await grantPremium(req.gymUser, p.days);
+    res.json({ ok: true, days: p.days, until });
+  } catch (err) {
+    // Do not silently leave a claimed code unusable if activation fails.
+    await PromoCode.updateOne({ code, usedBy: req.gymUser }, { $set: { used: false, usedBy: "", usedAt: null } });
+    res.status(500).json({ error: "Premium activate nahi hua. Dobara try karo." });
+  }
 });
 
 
+app.get("/api/premium/reminders", auth, async (req, res) => {
+  const user = await User.findOne({ username: req.gymUser }).lean();
+  if (!user || isAdminUser(req.gymUser) || !hasActivePremium(user) || !user.premiumUntil) {
+    return res.json({ ok: true, reminders: [] });
+  }
+  const daysLeft = Math.max(0, Math.ceil((new Date(user.premiumUntil).getTime() - Date.now()) / 86400000));
+  if (![1, 2].includes(daysLeft) || (user.premiumReminderDaysSent || []).includes(daysLeft)) {
+    return res.json({ ok: true, reminders: [] });
+  }
+  const claimed = await User.updateOne(
+    { username: req.gymUser, premiumReminderDaysSent: { $ne: daysLeft } },
+    { $addToSet: { premiumReminderDaysSent: daysLeft } }
+  );
+  if (!claimed.modifiedCount) return res.json({ ok: true, reminders: [] });
+  res.setHeader("Cache-Control", "no-store");
+  res.json({ ok: true, reminders: [{ daysLeft, message: daysLeft === 1 ? "Your SIDHI GYM Premium expires tomorrow. Renew now to keep premium features." : "Your SIDHI GYM Premium expires in 2 days. Renew now to keep premium features." }] });
+});
+
 app.get("/api/admin/premium-users", auth, async (req, res) => {
-  if (!PREM.adminUsers.includes(req.gymUser)) return res.status(403).json({ error: "Admin only" });
+  if (!isAdminUser(req.gymUser)) return res.status(403).json({ error: "Admin only" });
   const users = await User.find({ premium: true }, { username: 1, displayName: 1, premiumUntil: 1, createdAt: 1 }).lean();
   const list = users.map(u => ({
     username: u.username,
