@@ -438,6 +438,44 @@ app.post("/api/premium/activate", auth, async (req, res) => {
   res.json({ ok: true, premium: true, until });
 });
 
+
+// Razorpay premium
+const RAZOR_KEY = process.env.RAZORPAY_KEY_ID || "rzp_live_Tt4gpscQgtM9j0";
+const RAZOR_SECRET = process.env.RAZORPAY_KEY_SECRET || "";
+
+app.post("/api/premium/order", auth, async (req, res) => {
+  if (!RAZOR_SECRET) return res.status(500).json({ error: "Razorpay secret missing on server" });
+  const amount = 9900; // ₹99 in paise
+  const orderId = "order_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
+  // Simple order create via Razorpay API
+  const authHeader = Buffer.from(RAZOR_KEY + ":" + RAZOR_SECRET).toString("base64");
+  try {
+    const r = await fetch("https://api.razorpay.com/v1/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Basic " + authHeader },
+      body: JSON.stringify({ amount, currency: "INR", receipt: orderId, notes: { user: req.gymUser } })
+    });
+    const data = await r.json();
+    if (!r.ok) return res.status(400).json({ error: data.error?.description || "Order fail" });
+    res.json({ ok: true, orderId: data.id, amount, key: RAZOR_KEY, username: req.gymUser });
+  } catch (e) {
+    res.status(500).json({ error: "Razorpay unreachable" });
+  }
+});
+
+app.post("/api/premium/verify", auth, async (req, res) => {
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body || {};
+  if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+    return res.status(400).json({ error: "Missing payment data" });
+  }
+  const expected = crypto.createHmac("sha256", RAZOR_SECRET).update(razorpay_order_id + "|" + razorpay_payment_id).digest("hex");
+  if (expected !== razorpay_signature) return res.status(400).json({ error: "Invalid signature" });
+  const until = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+  await User.updateOne({ username: req.gymUser }, { $set: { premium: true, premiumUntil: until } });
+  cacheDel("me:" + req.gymUser);
+  res.json({ ok: true, premium: true });
+});
+
 require("./admin-routes")(app, { User: User, Token: Token, hashPass: hashPass });
 require("./otp-routes")(app);
 
