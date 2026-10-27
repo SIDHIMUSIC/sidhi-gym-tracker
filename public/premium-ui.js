@@ -81,16 +81,31 @@
       };
     }
 
-    // Badge
+    // Badge — force near name
     if (!document.getElementById("premBadge")) {
       var b = document.createElement("span");
       b.id = "premBadge";
-      b.style.cssText = "display:inline-block;margin-left:6px;padding:2px 8px;border-radius:9px;font-size:10px;font-weight:700";
-      if (me.isAdmin) { b.textContent = "ADMIN"; b.style.background = "linear-gradient(90deg,#ff6b6b,#feca57,#48dbfb)"; b.style.color = "#111"; }
+      b.style.cssText = "display:inline-block;margin-left:8px;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:800;vertical-align:middle";
+      if (me.isAdmin) { b.textContent = "ADMIN"; b.style.background = "linear-gradient(90deg,#ff6b6b,#feca57,#48dbfb,#ff9ff3)"; b.style.color = "#111"; }
       else if (me.premium) { b.textContent = "PREMIUM"; b.style.background = "linear-gradient(90deg,#f0c27a,#63e2b3)"; b.style.color = "#111"; }
       else { b.textContent = "FREE"; b.style.background = "#333"; b.style.color = "#aaa"; }
-      var n = document.querySelector("#view-profile strong, #view-profile h1, #view-profile h2");
-      if (n) n.appendChild(b);
+      // Try multiple places
+      var target = document.querySelector("#view-profile strong") ||
+                   document.querySelector("#view-profile h1") ||
+                   document.querySelector("#view-profile h2") ||
+                   document.querySelector("[id*=profile] strong") ||
+                   document.querySelector(".profile-name");
+      if (!target) {
+        // Find element containing @username
+        var all = document.querySelectorAll("div, span, p, h1, h2, h3, strong");
+        for (var i = 0; i < all.length; i++) {
+          if (all[i].textContent.indexOf("@harryashu") > -1 || all[i].textContent.indexOf("Ashutosh") > -1) {
+            if (all[i].children.length < 3) { target = all[i]; break; }
+          }
+        }
+      }
+      if (target) target.appendChild(b);
+      else document.body.appendChild(b); // fallback
     }
   }
 
