@@ -114,7 +114,9 @@
           var html = "<div style='padding:10px;max-height:300px;overflow:auto'>";
           if (!d.users.length) html += "<p>No premium users yet</p>";
           else d.users.forEach(function (u) {
-            html += "<div style='padding:6px 0;border-bottom:1px solid #333'>" + (u.name || u.username) + " <span style='color:#f0c27a'>" + (u.daysLeft != null ? u.daysLeft + "d left" : "") + "</span></div>";
+            var status = u.isAdmin ? "ADMIN • LIFETIME" : (u.active ? (u.daysLeft != null ? u.daysLeft + " days left" : "PREMIUM ACTIVE") : "EXPIRED");
+            var statusStyle = u.isAdmin ? "background:linear-gradient(90deg,#ff6b6b,#feca57,#48dbfb,#ff9ff3);color:#111" : (u.active ? "background:linear-gradient(90deg,#f0c27a,#63e2b3);color:#111" : "background:#7f1d1d;color:#fecaca");
+            html += "<div style='padding:8px 0;border-bottom:1px solid #333;display:flex;justify-content:space-between;gap:8px;align-items:center'><span>" + (u.name || u.username) + "</span><span style='padding:4px 7px;border-radius:8px;font-size:10px;font-weight:800;" + statusStyle + "'>" + status + "</span></div>";
           });
           html += "</div>";
           var modal = document.createElement("div");
