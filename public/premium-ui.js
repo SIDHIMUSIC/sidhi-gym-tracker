@@ -1,7 +1,6 @@
-// Sidhi Gym Premium — Razorpay
+// Sidhi Gym Premium — dynamic price + Razorpay
 (function () {
   var TOKEN = "sidhi-gym-token";
-  var PRICE = 99;
 
   function toast(m) {
     var t = document.getElementById("toast");
@@ -40,14 +39,18 @@
     if (nameEl) nameEl.appendChild(b);
   }
 
-  function homeCard(me) {
+  function homeCard(me, priceInfo) {
     var old = document.getElementById("premiumBox");
     if (old) old.remove();
     if (!me || me.premium) return;
+    var price = priceInfo.price || 99;
+    var label = priceInfo.label || "year";
+    var offer = priceInfo.offer || "";
     var box = document.createElement("div");
     box.id = "premiumBox";
     box.style.cssText = "margin:12px 14px 6px;padding:14px;border-radius:16px;background:linear-gradient(135deg,#111827,#1a1a2e);border:1px solid #f0c27a55;text-align:center";
-    box.innerHTML = '<div style="color:#f0c27a;font-size:17px;font-weight:700">Go Premium</div><div style="color:#fff;font-size:22px;font-weight:800;margin:4px 0">₹' + PRICE + '<span style="font-size:13px;font-weight:500">/year</span></div><div style="font-size:12px;color:#9aa7b8;margin-bottom:10px">Unlimited history · CSV export</div><button id="premUp" style="padding:10px 28px;border-radius:12px;border:0;background:#63e2b3;color:#111;font-weight:700;font-size:15px">Pay with UPI / Card</button>';
+    var offerHtml = offer ? '<div style="color:#fb7185;font-size:12px;font-weight:600;margin-bottom:4px">' + offer + '</div>' : '';
+    box.innerHTML = offerHtml + '<div style="color:#f0c27a;font-size:17px;font-weight:700">Go Premium</div><div style="color:#fff;font-size:22px;font-weight:800;margin:4px 0">₹' + price + '<span style="font-size:13px;font-weight:500">/' + label + '</span></div><div style="font-size:12px;color:#9aa7b8;margin-bottom:10px">Unlimited history · CSV export</div><button id="premUp" style="padding:10px 28px;border-radius:12px;border:0;background:#63e2b3;color:#111;font-weight:700;font-size:15px">Pay with UPI / Card</button>';
     var home = document.getElementById("view-home");
     if (home) {
       var first = home.querySelector(".card, .glass") || home.firstElementChild;
@@ -55,10 +58,10 @@
       else home.appendChild(box);
     }
     var btn = document.getElementById("premUp");
-    if (btn) btn.onclick = startPay;
+    if (btn) btn.onclick = function () { startPay(price); };
   }
 
-  async function startPay() {
+  async function startPay(price) {
     var token = localStorage.getItem(TOKEN);
     if (!token) return toast("Login first");
     toast("Opening payment...");
@@ -74,7 +77,7 @@
       amount: data.amount,
       currency: "INR",
       name: "Sidhi Gym",
-      description: "Premium 1 Year",
+      description: "Premium",
       order_id: data.orderId,
       handler: function (response) {
         fetch("/api/premium/verify", {
@@ -96,13 +99,15 @@
   function run() {
     var token = localStorage.getItem(TOKEN);
     if (!token) return;
-    fetch("/api/me", { headers: { Authorization: "Bearer " + token } })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (me) {
-        if (!me) return;
-        badge(!!me.premium);
-        homeCard(me);
-      });
+    Promise.all([
+      fetch("/api/me", { headers: { Authorization: "Bearer " + token } }).then(function (r) { return r.ok ? r.json() : null; }),
+      fetch("/api/premium/price").then(function (r) { return r.json(); })
+    ]).then(function (res) {
+      var me = res[0], price = res[1] || {};
+      if (!me) return;
+      badge(!!me.premium);
+      homeCard(me, price);
+    });
   }
 
   setTimeout(run, 1000);
