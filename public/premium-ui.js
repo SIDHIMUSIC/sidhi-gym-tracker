@@ -1,4 +1,4 @@
-// Sidhi Gym Premium — working buttons + badges
+// Sidhi Gym Premium — days left + admin list
 (function () {
   var TOKEN = "sidhi-gym-token";
   var me = null;
@@ -9,7 +9,7 @@
     if (!t) {
       t = document.createElement("div");
       t.id = "toast";
-      t.style.cssText = "position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:10px 16px;border-radius:8px;z-index:99999;font-size:14px";
+      t.style.cssText = "position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:10px 16px;border-radius:8px;z-index:99999";
       document.body.appendChild(t);
     }
     t.textContent = m;
@@ -40,7 +40,8 @@
       b.style.background = "linear-gradient(90deg,#ff6b6b,#feca57,#48dbfb,#ff9ff3)";
       b.style.color = "#111";
     } else if (me.premium) {
-      b.textContent = "PREMIUM";
+      var days = me.premiumUntil ? Math.max(0, Math.ceil((new Date(me.premiumUntil) - Date.now()) / 86400000)) : "";
+      b.textContent = "PREMIUM" + (days ? " · " + days + "d" : "");
       b.style.background = "linear-gradient(90deg,#f0c27a,#63e2b3)";
       b.style.color = "#111";
     } else {
@@ -51,7 +52,7 @@
     var target = null;
     var nodes = document.querySelectorAll("strong, h1, h2, h3, div, span");
     for (var i = 0; i < nodes.length; i++) {
-      var txt = (nodes[i].textContent || "");
+      var txt = nodes[i].textContent || "";
       if ((txt.indexOf("Ashutosh") > -1 || txt.indexOf("@") > -1) && nodes[i].children.length < 5) {
         target = nodes[i];
         break;
@@ -60,12 +61,10 @@
     if (target) target.appendChild(b);
   }
 
-  function cards() {
+  function homeCards() {
     if (!me) return;
     var home = document.getElementById("view-home");
     if (!home) return;
-
-    // Pay + Gift for non-premium
     if (!me.premium && !document.getElementById("premiumBox")) {
       var box = document.createElement("div");
       box.id = "premiumBox";
@@ -82,12 +81,9 @@
       var first = home.querySelector(".card, .glass");
       if (first) home.insertBefore(box, first.nextSibling);
       else home.insertBefore(box, home.firstChild);
-
       document.getElementById("payBtn").onclick = doPay;
       document.getElementById("promoBtn").onclick = doPromo;
     }
-
-    // Admin gift
     if (me.isAdmin && !document.getElementById("adminGiftBox")) {
       var ab = document.createElement("div");
       ab.id = "adminGiftBox";
@@ -103,51 +99,65 @@
     }
   }
 
+  function profileAdmin() {
+    if (!me || !me.isAdmin) return;
+    var prof = document.getElementById("view-profile");
+    if (!prof || document.getElementById("adminListBtn")) return;
+    var btn = document.createElement("button");
+    btn.id = "adminListBtn";
+    btn.textContent = "View Premium Users";
+    btn.style.cssText = "display:block;margin:14px auto;padding:10px 20px;border-radius:10px;border:0;background:#a78bfa;color:#111;font-weight:700";
+    btn.onclick = function () {
+      fetch("/api/admin/premium-users", { headers: { Authorization: "Bearer " + localStorage.getItem(TOKEN) } })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d.ok) return toast(d.error || "Fail");
+          var html = "<div style='padding:10px;max-height:300px;overflow:auto'>";
+          if (!d.users.length) html += "<p>No premium users yet</p>";
+          else d.users.forEach(function (u) {
+            html += "<div style='padding:6px 0;border-bottom:1px solid #333'>" + (u.name || u.username) + " <span style='color:#f0c27a'>" + (u.daysLeft != null ? u.daysLeft + "d left" : "") + "</span></div>";
+          });
+          html += "</div>";
+          var modal = document.createElement("div");
+          modal.style.cssText = "position:fixed;inset:0;background:#000a;z-index:9999;display:flex;align-items:center;justify-content:center";
+          modal.innerHTML = "<div style='background:#111;border-radius:16px;padding:16px;width:90%;max-width:360px;color:#fff'>" + html + "<button id='closeM' style='margin-top:10px;padding:8px 16px;border-radius:8px;border:0;background:#333;color:#fff'>Close</button></div>";
+          document.body.appendChild(modal);
+          document.getElementById("closeM").onclick = function () { modal.remove(); };
+        });
+    };
+    // Insert near password area or end of profile
+    var passArea = prof.querySelector("input[type=password], button");
+    if (passArea && passArea.parentNode) passArea.parentNode.appendChild(btn);
+    else prof.appendChild(btn);
+  }
+
   async function doPay() {
     var token = localStorage.getItem(TOKEN);
-    toast("Opening payment...");
+    toast("Opening...");
     await loadRazor();
     var r = await fetch("/api/premium/order", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token } });
     var data = await r.json();
-    if (!data.ok) return toast(data.error || "Order fail");
+    if (!data.ok) return toast(data.error || "Fail");
     new Razorpay({
       key: data.key, amount: data.amount, currency: "INR", name: "Sidhi Gym", description: "Premium", order_id: data.orderId,
       handler: function (resp) {
         fetch("/api/premium/verify", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify(resp) })
-          .then(function (x) { return x.json(); }).then(function (d) {
-            if (d.ok) { toast("Premium on!"); setTimeout(function () { location.reload(); }, 500); }
-            else toast("Verify fail");
-          });
-      },
-      theme: { color: "#63e2b3" }
+          .then(function (x) { return x.json(); }).then(function (d) { if (d.ok) { toast("Premium!"); setTimeout(function () { location.reload(); }, 500); } });
+      }, theme: { color: "#63e2b3" }
     }).open();
   }
 
   function doPromo() {
     var c = (document.getElementById("promoIn").value || "").trim();
     if (!c) return toast("Code daalo");
-    fetch("/api/premium/redeem", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: "Bearer " + localStorage.getItem(TOKEN) },
-      body: JSON.stringify({ code: c })
-    }).then(function (r) { return r.json(); }).then(function (d) {
-      if (d.ok) { toast("Applied " + d.days + " days"); setTimeout(function () { location.reload(); }, 600); }
-      else toast(d.error || "Invalid code");
-    });
+    fetch("/api/premium/redeem", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + localStorage.getItem(TOKEN) }, body: JSON.stringify({ code: c }) })
+      .then(function (r) { return r.json(); }).then(function (d) { if (d.ok) { toast(d.days + " days"); setTimeout(function () { location.reload(); }, 500); } else toast(d.error || "Invalid"); });
   }
 
   function doGen() {
     var days = Number(document.getElementById("giftDays").value) || 30;
-    fetch("/api/admin/promo", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: "Bearer " + localStorage.getItem(TOKEN) },
-      body: JSON.stringify({ days: days })
-    }).then(function (r) { return r.json(); }).then(function (d) {
-      if (d.ok) {
-        document.getElementById("codeOut").textContent = d.code;
-        toast("Code: " + d.code);
-      } else toast(d.error || "Fail");
-    });
+    fetch("/api/admin/promo", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + localStorage.getItem(TOKEN) }, body: JSON.stringify({ days: days }) })
+      .then(function (r) { return r.json(); }).then(function (d) { if (d.ok) { document.getElementById("codeOut").textContent = d.code; toast("Ready"); } });
   }
 
   function boot() {
@@ -161,10 +171,11 @@
       me = a[0];
       if (a[1] && a[1].price) price = a[1];
       badge();
-      cards();
+      homeCards();
+      profileAdmin();
     });
   }
 
   boot();
-  setInterval(function () { badge(); cards(); }, 2000);
+  setInterval(function () { badge(); homeCards(); profileAdmin(); }, 2500);
 })();
