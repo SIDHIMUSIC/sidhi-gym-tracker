@@ -16,6 +16,20 @@
     t.textContent = msg; t.style.display = "block"; clearTimeout(t._hide); t._hide = setTimeout(function () { t.style.display = "none"; }, 2400);
   }
   function api(path) { return fetch(path, { headers: { Authorization: "Bearer " + token() }, cache: "no-store" }).then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || "Request failed"); return d; }); }); }
+  function apiPost(path, body) { return fetch(path, { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token() }, body: JSON.stringify(body), cache: "no-store" }).then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || "Request failed"); return d; }); }); }
+  function askAiCoach() {
+    var question = val("ps-ai-question").trim(), button = document.getElementById("ps-ai-ask"), answer = document.getElementById("ps-ai-answer");
+    if (!question) return toast("Apna sawaal likho");
+    if (button) { button.disabled = true; button.textContent = "Thinking…"; }
+    if (answer) answer.textContent = "Gemini tumhare workout log ko dekh kar jawab bana raha hai…";
+    apiPost("/api/premium/ai-coach", { question: question }).then(function (data) {
+      if (answer) answer.textContent = data.answer + (data.remainingToday != null ? "\\n\\nQuestions left today: " + data.remainingToday : "");
+    }).catch(function (err) {
+      if (answer) answer.textContent = err.message || "AI Coach abhi unavailable hai.";
+    }).finally(function () {
+      if (button) { button.disabled = false; button.textContent = "Ask Gemini Coach"; }
+    });
+  }
   function btn(id, label) { return '<button type="button" id="' + id + '" class="btn ghost" style="min-height:42px;padding:10px 13px;font-size:12px">' + label + '</button>'; }
   function field(id, label, placeholder, type) { return '<label for="' + id + '">' + label + '</label><input id="' + id + '" type="' + (type || "text") + '" placeholder="' + (placeholder || "") + '">'; }
   function section(id, title, content) { return '<section class="glass card" id="' + id + '" style="margin-top:12px;border-color:#f0c27a44"><h2 style="color:#f0c27a;margin-top:0">' + title + '</h2>' + content + '</section>'; }
@@ -33,6 +47,7 @@
     var root = getRoot(); if (!root) return;
     root.innerHTML = '<div class="glass card" style="border:1px solid #f0c27a88;background:linear-gradient(130deg,#17120a,#0c1820);margin-bottom:14px"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><div><div style="font-size:10px;letter-spacing:.2em;color:#f0c27a;font-weight:900">SIDHI GYM • PREMIUM</div><h2 style="margin:6px 0">Your Performance Hub</h2><div style="font-size:12px;color:#9aa7b8">Coach · analytics · plans · reports</div></div><span style="background:linear-gradient(90deg,#f0c27a,#fff0b5);color:#241707;padding:7px 10px;border-radius:99px;font-size:11px;font-weight:900">✦ GOLD MEMBER</span></div><div class="row" style="margin-top:14px">' + btn("ps-refresh","Refresh data") + btn("ps-coach-jump","Gym Coach") + btn("ps-timer-jump","Rest timer") + btn("ps-report-jump","Reports") + '</div></div>' +
       section("ps-coach","1. Gym Coach & Progress Analytics",'<div id="ps-coach-output" style="font-size:13px;line-height:1.8;color:#dbeafe">Analysing your workout log…</div><div id="ps-analytics" class="grid" style="margin-top:12px"></div>') +
+      section("ps-ai-chat","Gemini AI Gym Coach",'<label for="ps-ai-question">Ask your AI Gym Coach</label><textarea id="ps-ai-question" rows="3" maxlength="1200" placeholder="e.g. Mere workout log ke hisaab se strength kaise badhaun?" style="width:100%;box-sizing:border-box;margin:7px 0 10px;padding:12px;border-radius:12px;background:#101722;color:#fff;border:1px solid #ffffff24"></textarea><div class="row" style="align-items:center;gap:8px">' + btn("ps-ai-ask","Ask Gemini Coach") + '<small style="color:#9aa7b8">5 questions/day · Premium</small></div><div id="ps-ai-answer" aria-live="polite" style="white-space:pre-wrap;line-height:1.7;margin-top:12px;color:#e2e8f0"></div><p style="font-size:11px;color:#9aa7b8">Fitness guidance only, not medical advice. Don’t enter private medical or identity details.</p>') +
       section("ps-builder","3. Custom Workout Builder",'<div class="grid"><div>' + field("ps-ex-name","Exercise name","e.g. Dumbbell press") + '</div><div>' + field("ps-ex-sets","Sets","3","number") + '</div><div>' + field("ps-ex-reps","Reps","8–12") + '</div><div>' + field("ps-ex-rest","Rest (seconds)","90","number") + '</div></div><div class="row" style="margin-top:10px">' + btn("ps-add-exercise","Add exercise") + btn("ps-save-routine","Save routine") + '</div><div id="ps-routine-list" style="margin-top:10px"></div>') +
       section("ps-transform","4. Transformation Tracker",'<div class="grid"><div>' + field("ps-body-weight","Current weight (kg)","72","number") + '</div><div>' + field("ps-waist","Waist (cm)","82","number") + '</div><div>' + field("ps-chest","Chest (cm)","") + '</div><div>' + field("ps-hips","Hips (cm)","") + '</div></div><label for="ps-photo">Progress photo (saved on this device)</label><input id="ps-photo" type="file" accept="image/*"><div class="row" style="margin-top:10px">' + btn("ps-save-body","Save measurements") + '</div><div id="ps-body-history" style="margin-top:10px"></div>') +
       section("ps-nutrition","5. Nutrition & Recovery",'<div class="grid"><div>' + field("ps-nut-weight","Body weight (kg)","72","number") + '</div><div>' + field("ps-nut-age","Age","23","number") + '</div><div><label for="ps-nut-goal">Goal</label><select id="ps-nut-goal"><option value="fat">Fat loss</option><option value="maintain">Maintain</option><option value="muscle">Muscle gain</option></select></div><div><label for="ps-nut-activity">Activity</label><select id="ps-nut-activity"><option value="1.35">Light</option><option value="1.55" selected>Moderate</option><option value="1.75">High</option></select></div></div><div class="row" style="margin-top:10px">' + btn("ps-calc-nutrition","Calculate targets") + '</div><div id="ps-nut-output" style="margin-top:10px;font-size:13px;line-height:1.8"></div><p style="font-size:11px;color:#9aa7b8">Estimates only; actual needs vary. Avoid aggressive calorie cuts.</p>') +
@@ -51,6 +66,8 @@
   function bind() {
     bindClick("ps-refresh", function(){ loadSessions().then(function(){ renderAnalytics(); renderHistory(); renderAchievements(); renderBodyHistory(); coach(); toast("Premium data refreshed"); }); });
     bindClick("ps-coach-jump", function(){ document.getElementById("ps-coach").scrollIntoView({behavior:"smooth"}); });
+    bindClick("ps-ai-ask", askAiCoach);
+    var aiQuestion = document.getElementById("ps-ai-question"); if (aiQuestion) aiQuestion.addEventListener("keydown", function(e){ if ((e.ctrlKey || e.metaKey) && e.key === "Enter") askAiCoach(); });
     bindClick("ps-timer-jump", function(){ document.getElementById("ps-timer").scrollIntoView({behavior:"smooth"}); });
     bindClick("ps-report-jump", function(){ document.getElementById("ps-report").scrollIntoView({behavior:"smooth"}); });
     bindClick("ps-add-exercise", function(){ var n=val("ps-ex-name").trim(); if(!n) return toast("Exercise name daalo"); var a=read("routine",[]); a.push({name:n,sets:Math.max(1,Number(val("ps-ex-sets"))||3),reps:val("ps-ex-reps")||"8–12",rest:Math.max(0,Number(val("ps-ex-rest"))||90)}); write("routine",a); setVal("ps-ex-name",""); renderRoutine(); });
