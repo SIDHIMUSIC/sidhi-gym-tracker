@@ -416,6 +416,7 @@ app.delete("/api/me", auth, async (req, res) => {
 });
 
 app.get("/api/export", auth, async (req, res) => {
+  if (!(await premiumFeatureIsEnabled("reports"))) return res.status(403).json({ error: "Premium reports admin ne off kiye hain." });
   const rows = await GymSession.find({ owner: req.gymUser }).sort({ date: -1 }).lean();
   const u = await User.findOne({ username: req.gymUser }).lean();
   res.json({ ok: true, user: publicUser(u), sessions: withDiff(rows) });
@@ -501,6 +502,7 @@ app.delete("/api/session/:date", auth, async (req, res) => {
 
 // Premium: CSV export
 app.get("/api/export.csv", auth, async (req, res) => {
+  if (!(await premiumFeatureIsEnabled("reports"))) return res.status(403).json({ error: "Premium reports admin ne off kiye hain." });
   const u = await User.findOne({ username: req.gymUser }).lean();
   if (!hasActivePremium(u)) return res.status(402).json({ error: "Premium chahiye export ke liye" });
   const rows = await GymSession.find({ owner: req.gymUser }).sort({ date: -1 }).lean();
@@ -626,6 +628,13 @@ app.get("/api/premium/insights", auth, async (req, res) => {
 
 
 
+app.get("/api/premium/features", async (_req, res) => {
+  try {
+    const settings = await getPremiumFeatureSettings();
+    res.setHeader("Cache-Control", "no-store");
+    res.json({ ok: true, masterEnabled: settings.masterEnabled, features: settings.features });
+  } catch (_) { res.status(500).json({ error: "Premium settings load nahi ho sake." }); }
+});
 app.get("/api/admin/premium-features", auth, async (req, res) => {
   if (!isAdminUser(req.gymUser)) return res.status(403).json({ error: "Admin only" });
   try {
