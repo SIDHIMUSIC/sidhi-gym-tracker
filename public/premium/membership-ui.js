@@ -107,6 +107,13 @@
     if (!token) return;
     busy = true;
     try {
+      var modeResponse = await fetch("/api/premium/features", { cache: "no-store" });
+      var mode = await modeResponse.json();
+      if (!mode || mode.modeEnabled !== true) {
+        var hiddenCard = document.getElementById("membershipCard");
+        if (hiddenCard) hiddenCard.remove();
+        return;
+      }
       var r = await fetch("/api/me", { headers: { Authorization: "Bearer " + token }, cache: "no-store" });
       if (!r.ok) return;
       var me = await r.json(); if (me && me.ok) paint(me);
