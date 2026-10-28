@@ -178,17 +178,20 @@
   function boot() {
     var token = localStorage.getItem(TOKEN);
     if (!token) return;
-    Promise.all([
+    fetch("/api/premium/features", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (mode) {
+      if (!mode || mode.modeEnabled !== true) return;
+      Promise.all([
       fetch("/api/me", { headers: { Authorization: "Bearer " + token } }).then(function (r) { return r.ok ? r.json() : null; }),
       fetch("/api/premium/price").then(function (r) { return r.json(); }).catch(function () { return {}; })
-    ]).then(function (a) {
-      if (!a[0]) return;
-      me = a[0];
-      if (a[1] && a[1].price) price = a[1];
-      badge();
-      homeCards();
-      profileAdmin();
-    });
+      ]).then(function (a) {
+        if (!a[0]) return;
+        me = a[0];
+        if (a[1] && a[1].price) price = a[1];
+        badge();
+        homeCards();
+        profileAdmin();
+      });
+    }).catch(function () {});
   }
 
   boot();
