@@ -34,6 +34,13 @@
   }
   function apply(flags) {
     window.SIDHI_PREMIUM_FLAGS = flags;
+    if (document.body) document.body.setAttribute("data-sidhi-premium-off", flags.masterEnabled === false ? "true" : "false");
+    if (!document.getElementById("sidhiPremiumMasterOffStyle")) {
+      var style = document.createElement("style");
+      style.id = "sidhiPremiumMasterOffStyle";
+      style.textContent = 'body[data-sidhi-premium-off="true"] #premiumBox, body[data-sidhi-premium-off="true"] #membershipCard, body[data-sidhi-premium-off="true"] #premBadge { display:none !important; }';
+      document.head.appendChild(style);
+    }
     window.dispatchEvent(new CustomEvent("sidhi-premium-flags-updated", { detail: flags }));
     var tab = document.querySelector('.premium-tab[data-tab="premium"]');
     if (tab) tab.style.display = flags.masterEnabled === false && !window.SIDHI_IS_ADMIN ? "none" : "";
