@@ -146,6 +146,30 @@ const foodLogSchema = new mongoose.Schema({
 foodLogSchema.index({ owner: 1, date: 1, time: 1 });
 const FoodLog = model("FoodLog", foodLogSchema);
 
+const premiumFeatureSettingsSchema = new mongoose.Schema({
+  _id: { type: String, default: "global" },
+  masterEnabled: { type: Boolean, default: true },
+  features: { type: mongoose.Schema.Types.Mixed, default: {} },
+  updatedBy: { type: String, default: "" }
+}, { timestamps: true });
+const PremiumFeatureSettings = model("PremiumFeatureSettings", premiumFeatureSettingsSchema);
+const PREMIUM_FEATURE_DEFAULTS = {
+  dailyReview: true, coachAnalytics: true, aiCoach: true, workoutBuilder: true,
+  transformationTracker: true, foodDiary: true, nutritionRecovery: true, workoutHistory: true,
+  restTimer: true, smartReminders: true, achievements: true, reports: true,
+  goalPrograms: true, themes: true
+};
+async function getPremiumFeatureSettings() {
+  const row = await PremiumFeatureSettings.findById("global").lean();
+  const features = Object.assign({}, PREMIUM_FEATURE_DEFAULTS, row && row.features || {});
+  return { masterEnabled: row ? row.masterEnabled !== false : true, features };
+}
+async function premiumFeatureIsEnabled(key) {
+  const settings = await getPremiumFeatureSettings();
+  return settings.masterEnabled && settings.features[key] !== false;
+}
+
+
 function hashPass(pass, salt) {
   return crypto.scryptSync(String(pass), salt, 32).toString("hex");
 }
@@ -392,6 +416,7 @@ app.delete("/api/me", auth, async (req, res) => {
 });
 
 app.get("/api/export", auth, async (req, res) => {
+  if (!(await premiumFeatureIsEnabled("reports"))) return res.status(403).json({ error: "Premium reports admin ne off kiye hain." });
   const rows = await GymSession.find({ owner: req.gymUser }).sort({ date: -1 }).lean();
   const u = await User.findOne({ username: req.gymUser }).lean();
   res.json({ ok: true, user: publicUser(u), sessions: withDiff(rows) });
@@ -477,6 +502,7 @@ app.delete("/api/session/:date", auth, async (req, res) => {
 
 // Premium: CSV export
 app.get("/api/export.csv", auth, async (req, res) => {
+  if (!(await premiumFeatureIsEnabled("reports"))) return res.status(403).json({ error: "Premium reports admin ne off kiye hain." });
   const u = await User.findOne({ username: req.gymUser }).lean();
   if (!hasActivePremium(u)) return res.status(402).json({ error: "Premium chahiye export ke liye" });
   const rows = await GymSession.find({ owner: req.gymUser }).sort({ date: -1 }).lean();
@@ -583,6 +609,7 @@ app.post("/api/premium/redeem", auth, async (req, res) => {
 
 
 app.get("/api/premium/insights", auth, async (req, res) => {
+  if (!(await premiumFeatureIsEnabled("coachAnalytics"))) return res.status(403).json({ error: "Workout insights admin ne off kiye hain." });
   const user = await User.findOne({ username: req.gymUser }).lean();
   if (!hasActivePremium(user)) return res.status(402).json({ error: "Premium chahiye workout insights ke liye" });
   const rows = await GymSession.find({ owner: req.gymUser }).sort({ date: -1 }).lean();
@@ -600,9 +627,48 @@ app.get("/api/premium/insights", auth, async (req, res) => {
 });
 
 
+
+app.get("/api/premium/features", async (_req, res) => {
+  try {
+    const settings = await getPremiumFeatureSettings();
+    res.setHeader("Cache-Control", "no-store");
+    res.json({ ok: true, masterEnabled: settings.masterEnabled, features: settings.features });
+  } catch (_) { res.status(500).json({ error: "Premium settings load nahi ho sake." }); }
+});
+app.get("/api/admin/premium-features", auth, async (req, res) => {
+  if (!isAdminUser(req.gymUser)) return res.status(403).json({ error: "Admin only" });
+  try {
+    const settings = await getPremiumFeatureSettings();
+    res.setHeader("Cache-Control", "no-store");
+    res.json({ ok: true, masterEnabled: settings.masterEnabled, features: settings.features });
+  } catch (_) { res.status(500).json({ error: "Premium settings load nahi ho sake." }); }
+});
+app.put("/api/admin/premium-features", auth, async (req, res) => {
+  if (!isAdminUser(req.gymUser)) return res.status(403).json({ error: "Admin only" });
+  const body = req.body || {};
+  const current = await getPremiumFeatureSettings();
+  const masterEnabled = typeof body.masterEnabled === "boolean" ? body.masterEnabled : current.masterEnabled;
+  const incoming = body.features && typeof body.features === "object" ? body.features : {};
+  const features = Object.assign({}, current.features);
+  Object.keys(PREMIUM_FEATURE_DEFAULTS).forEach(key => {
+    if (typeof incoming[key] === "boolean") features[key] = incoming[key];
+  });
+  try {
+    await PremiumFeatureSettings.findOneAndUpdate(
+      { _id: "global" },
+      { $set: { masterEnabled, features, updatedBy: req.gymUser } },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+    cacheDel("premium-features:");
+    res.setHeader("Cache-Control", "no-store");
+    res.json({ ok: true, masterEnabled, features });
+  } catch (_) { res.status(500).json({ error: "Premium settings save nahi ho sake." }); }
+});
+
  // SIDHI AI-powered Premium Gym Coach. The API key is read only on the server.
 const aiCoachUsage = new Map();
 app.post("/api/premium/ai-coach", auth, async (req, res) => {
+  if (!(await premiumFeatureIsEnabled("aiCoach"))) return res.status(403).json({ error: "SIDHI AI Coach admin ne off kiya hai." });
   res.setHeader("Cache-Control", "no-store");
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return res.status(503).json({ error: "AI Coach abhi setup nahi hai. Admin ko Vercel mein GEMINI_API_KEY set karni hogi." });
@@ -724,6 +790,7 @@ function foodApiError(res, err) {
 }
 
 app.get("/api/premium/food-log", auth, async (req, res) => {
+  if (!(await premiumFeatureIsEnabled("foodDiary"))) return res.status(403).json({ error: "Food Diary admin ne off ki hai." });
   const user = await User.findOne({ username: req.gymUser }).lean();
   if (!hasActivePremium(user)) return res.status(402).json({ error: "Food diary ke liye Premium chahiye." });
   const date = String(req.query.date || new Date().toISOString().slice(0, 10));
@@ -738,6 +805,7 @@ app.get("/api/premium/food-log", auth, async (req, res) => {
 });
 
 app.post("/api/premium/food-log", auth, async (req, res) => {
+  if (!(await premiumFeatureIsEnabled("foodDiary"))) return res.status(403).json({ error: "Food Diary admin ne off ki hai." });
   const user = await User.findOne({ username: req.gymUser }).lean();
   if (!hasActivePremium(user)) return res.status(402).json({ error: "Food diary ke liye Premium chahiye." });
   const date = String((req.body && req.body.date) || "");
@@ -771,6 +839,7 @@ app.post("/api/premium/food-log", auth, async (req, res) => {
 });
 
 app.post("/api/premium/food-summary", auth, async (req, res) => {
+  if (!(await premiumFeatureIsEnabled("foodDiary"))) return res.status(403).json({ error: "Food Diary admin ne off ki hai." });
   const user = await User.findOne({ username: req.gymUser }).lean();
   if (!hasActivePremium(user)) return res.status(402).json({ error: "AI food summary ke liye Premium chahiye." });
   const date = String((req.body && req.body.date) || "");
@@ -803,6 +872,7 @@ app.post("/api/premium/food-summary", auth, async (req, res) => {
 });
 
 app.get("/api/premium/reminders", auth, async (req, res) => {
+  if (!(await premiumFeatureIsEnabled("smartReminders"))) return res.json({ ok: true, reminders: [] });
   res.setHeader("Cache-Control", "no-store");
   const user = await User.findOne({ username: req.gymUser }).lean();
   if (!user || isAdminUser(req.gymUser) || !hasActivePremium(user) || !user.premiumUntil) {

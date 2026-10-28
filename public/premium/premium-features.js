@@ -64,6 +64,8 @@
   }
 
   function reviewFinishedWorkout(row) {
+    var flags = window.SIDHI_PREMIUM_FLAGS;
+    if (flags && (flags.masterEnabled === false || (flags.features && flags.features.dailyReview === false))) return;
     var out=document.getElementById("ps-finish-review");
     if(out)out.textContent="Workout saved. AI coach is checking your logged workout and cardio…";
     var snapshot=row||{};
@@ -134,13 +136,45 @@
       section("ps-report","10. Export & Monthly Reports",'<div class="row">' + btn("ps-report-csv","Download CSV") + btn("ps-report-print","Monthly PDF / Print") + btn("ps-share-card","Create shareable card") + '</div><div id="ps-share-preview" style="margin-top:12px"></div>') +
       section("ps-programs","11. Four-week Goal Programs",'<label for="ps-program">Choose program</label><select id="ps-program"><option value="strength">4-week Strength</option><option value="beginner">Beginner Gym</option><option value="fatloss">Fat-loss Basics</option><option value="muscle">Muscle-building</option></select><div class="row" style="margin-top:10px">' + btn("ps-program-view","View plan") + btn("ps-program-save","Save my plan") + '</div><div id="ps-program-output" style="margin-top:12px;font-size:13px;line-height:1.8"></div>') +
       section("ps-profile-theme","12. Gold Profile & Dashboard",'<label for="ps-theme">Premium theme</label><select id="ps-theme"><option value="gold">Gold Luxury</option><option value="mint">Mint Focus</option><option value="violet">Violet Night</option></select><div class="row" style="margin-top:10px">' + btn("ps-theme-apply","Apply theme") + btn("ps-theme-reset","Reset theme") + '</div><div id="ps-theme-status" style="font-size:12px;color:#9aa7b8;margin-top:8px"></div>');
-    bind(); initFoodDiary(); renderRoutine(); renderBodyHistory(); renderHistory(); renderAchievements(); renderProgram(); renderAnalytics(); loadSavedInputs(); applyTheme(false); checkReminders(); setPremiumGroup(activePremiumGroup);
+    bind(); initFoodDiary(); renderRoutine(); renderBodyHistory(); renderHistory(); renderAchievements(); renderProgram(); renderAnalytics(); loadSavedInputs(); applyTheme(false); checkReminders(); setPremiumGroup(activePremiumGroup); applyFeatureFlags();
+    window.addEventListener("sidhi-premium-flags-updated", applyFeatureFlags);
   }
+
+  function applyFeatureFlags() {
+    var flags = window.SIDHI_PREMIUM_FLAGS || { masterEnabled: true, features: {} };
+    var root = document.getElementById(rootId);
+    if (!root) return;
+    root.style.display = flags.masterEnabled === false ? "none" : "";
+    var map = {
+      "ps-daily-flow":"dailyReview", "ps-coach":"coachAnalytics", "ps-ai-chat":"aiCoach",
+      "ps-builder":"workoutBuilder", "ps-transform":"transformationTracker", "ps-food-diary":"foodDiary",
+      "ps-nutrition":"nutritionRecovery", "ps-history":"workoutHistory", "ps-timer":"restTimer",
+      "ps-reminders":"smartReminders", "ps-achievements":"achievements", "ps-report":"reports",
+      "ps-programs":"goalPrograms", "ps-profile-theme":"themes"
+    };
+    Object.keys(map).forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.style.display = flags.masterEnabled !== false && flags.features[map[id]] !== false ? "" : "none";
+    });
+    var groups = { ai:["dailyReview","coachAnalytics","aiCoach"], food:["foodDiary","nutritionRecovery"], sleep:["dailyReview"], tools:["workoutBuilder","transformationTracker","nutritionRecovery","workoutHistory","restTimer","smartReminders","achievements","reports","goalPrograms","themes"] };
+    root.querySelectorAll("[data-premium-group]").forEach(function(btn) {
+      var group = btn.getAttribute("data-premium-group");
+      var visible = flags.masterEnabled !== false && (groups[group] || []).some(function(k){return flags.features[k] !== false;});
+      btn.style.display = visible ? "" : "none";
+    });
+    var active = root.querySelector('[data-premium-group="' + activePremiumGroup + '"]');
+    if ((!active || active.style.display === "none") && flags.masterEnabled !== false) {
+      var first = Array.prototype.find.call(root.querySelectorAll("[data-premium-group]"), function(b){return b.style.display !== "none";});
+      if (first) setPremiumGroup(first.getAttribute("data-premium-group"));
+    }
+  }
+
   function setPremiumGroup(group) {
     activePremiumGroup=group||"ai";
     var root=document.getElementById(rootId);if(!root)return;
     root.querySelectorAll("[data-premium-section]").forEach(function(s){s.classList.toggle("hidden",s.getAttribute("data-premium-section")!==activePremiumGroup);});
     root.querySelectorAll("[data-premium-group]").forEach(function(b){b.classList.toggle("active",b.getAttribute("data-premium-group")===activePremiumGroup);});
+    applyFeatureFlags();
   }
   function openPremiumGroup(group) {
     if(typeof window.showTab==="function")window.showTab("premium");
