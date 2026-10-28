@@ -160,9 +160,9 @@ const PREMIUM_FEATURE_DEFAULTS = {
   goalPrograms: true, themes: true
 };
 async function getPremiumFeatureSettings() {
-  const row = await PremiumFeatureSettings.findById("global").lean();
-  const features = Object.assign({}, PREMIUM_FEATURE_DEFAULTS, row && row.features || {});
-  return { masterEnabled: row ? row.masterEnabled !== false : true, features };
+  const modeEnabled = isPremiumModeOn();
+  const features = Object.fromEntries(Object.keys(PREMIUM_FEATURE_DEFAULTS).map(key => [key, modeEnabled]));
+  return { modeEnabled, masterEnabled: modeEnabled, features };
 }
 async function premiumFeatureIsEnabled(key) {
   const settings = await getPremiumFeatureSettings();
@@ -181,16 +181,20 @@ function num(v) {
 function dayFromDate(dateStr) {
   return DAYS[new Date(dateStr + "T12:00:00").getDay()];
 }
+function isPremiumModeOn() {
+  return String(process.env.PREMIUM_MODE || "NO").trim().toUpperCase() === "YES";
+}
 function isAdminUser(username) {
   return !!(PREM.adminUsers && PREM.adminUsers.map(function (x) { return String(x).toLowerCase(); }).includes(String(username || "").toLowerCase()));
 }
 function hasActivePremium(u) {
-  if (!u) return false;
+  if (!isPremiumModeOn() || !u) return false;
   if (isAdminUser(u.username)) return true;
   if (!u.premium) return false;
   return !u.premiumUntil || new Date(u.premiumUntil).getTime() > Date.now();
 }
 async function grantPremium(username, days) {
+  if (!isPremiumModeOn()) throw new Error("Premium disabled: Vercel PREMIUM_MODE=NO");
   const user = await User.findOne({ username }).lean();
   if (!user) throw new Error("User nahi mila");
   const now = Date.now();
@@ -368,11 +372,11 @@ app.get("/api/me", auth, async (req, res) => {
   }
   const pub = publicUser(u);
   if (isAdminUser(req.gymUser)) {
-    pub.premium = true;
+    pub.premium = isPremiumModeOn();
     pub.isAdmin = true;
     pub.premiumUntil = null;
     pub.premiumDaysLeft = null;
-    pub.membershipType = "admin-lifetime";
+    pub.membershipType = isPremiumModeOn() ? "admin-lifetime" : "normal";
   } else {
     pub.membershipType = pub.premium ? "premium" : "normal";
   }
@@ -519,6 +523,12 @@ app.get("/api/export.csv", auth, async (req, res) => {
 const RAZOR_KEY = process.env.RAZORPAY_KEY_ID || "rzp_live_Tt4gpscQgtM9j0";
 const RAZOR_SECRET = process.env.RAZORPAY_KEY_SECRET || "";
 
+app.use("/api/premium", (req, res, next) => {
+  if (req.method === "GET" && req.path === "/features") return next();
+  if (!isPremiumModeOn()) return res.status(404).json({ error: "Premium is disabled. Set PREMIUM_MODE=YES in Vercel to enable it." });
+  next();
+});
+
 app.get("/api/premium/price", (_req, res) => {
   res.setHeader("Cache-Control", "no-store");
   res.json({ ok: true, price: Number(PREM.price || 49), label: String(PREM.label || "month"), offer: String(PREM.offer || ""), durationDays: Math.max(1, Number(PREM.durationDays || 30)) });
@@ -559,6 +569,7 @@ app.post("/api/premium/verify", auth, async (req, res) => {
 
 // Promo codes are stored in MongoDB and atomically claimed so each code works once.
 app.post("/api/admin/promo", auth, async (req, res) => {
+  if (!isPremiumModeOn()) return res.status(404).json({ error: "Premium gifting is disabled by PREMIUM_MODE." });
   if (!isAdminUser(req.gymUser)) return res.status(403).json({ error: "Admin only" });
   const days = Math.max(1, Math.min(365, Math.floor(Number(req.body.days || 30))));
   let code = String(req.body.code || "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 32);
@@ -582,6 +593,7 @@ app.post("/api/admin/promo", auth, async (req, res) => {
 });
 
 app.get("/api/admin/promos", auth, async (req, res) => {
+  if (!isPremiumModeOn()) return res.status(404).json({ error: "Premium gifting is disabled by PREMIUM_MODE." });
   if (!isAdminUser(req.gymUser)) return res.status(403).json({ error: "Admin only" });
   const promos = await PromoCode.find({}).sort({ createdAt: -1 }).limit(200).lean();
   res.json({ ok: true, promos: promos.map(p => ({ code: p.code, days: p.days, used: !!p.used, usedBy: p.usedBy || "", usedAt: p.usedAt || null })) });
@@ -632,10 +644,11 @@ app.get("/api/premium/features", async (_req, res) => {
   try {
     const settings = await getPremiumFeatureSettings();
     res.setHeader("Cache-Control", "no-store");
-    res.json({ ok: true, masterEnabled: settings.masterEnabled, features: settings.features });
+    res.json({ ok: true, modeEnabled: settings.modeEnabled, masterEnabled: settings.masterEnabled, features: settings.features });
   } catch (_) { res.status(500).json({ error: "Premium settings load nahi ho sake." }); }
 });
 app.get("/api/admin/premium-features", auth, async (req, res) => {
+  if (!isPremiumModeOn()) return res.status(404).json({ error: "Premium is disabled by PREMIUM_MODE." });
   if (!isAdminUser(req.gymUser)) return res.status(403).json({ error: "Admin only" });
   try {
     const settings = await getPremiumFeatureSettings();
@@ -644,26 +657,10 @@ app.get("/api/admin/premium-features", auth, async (req, res) => {
   } catch (_) { res.status(500).json({ error: "Premium settings load nahi ho sake." }); }
 });
 app.put("/api/admin/premium-features", auth, async (req, res) => {
+  if (!isPremiumModeOn()) return res.status(404).json({ error: "Premium is disabled by PREMIUM_MODE." });
   if (!isAdminUser(req.gymUser)) return res.status(403).json({ error: "Admin only" });
-  const body = req.body || {};
-  const current = await getPremiumFeatureSettings();
-  const masterEnabled = typeof body.masterEnabled === "boolean" ? body.masterEnabled : current.masterEnabled;
-  const incoming = body.features && typeof body.features === "object" ? body.features : {};
-  const features = Object.assign({}, current.features);
-  Object.keys(PREMIUM_FEATURE_DEFAULTS).forEach(key => {
-    if (typeof incoming[key] === "boolean") features[key] = incoming[key];
-  });
-  try {
-    await PremiumFeatureSettings.findOneAndUpdate(
-      { _id: "global" },
-      { $set: { masterEnabled, features, updatedBy: req.gymUser } },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
-    cacheDel("premium-features:");
-    res.setHeader("Cache-Control", "no-store");
-    res.json({ ok: true, masterEnabled, features });
-  } catch (_) { res.status(500).json({ error: "Premium settings save nahi ho sake." }); }
-});
+  return res.status(409).json({ error: "Premium is controlled by Vercel PREMIUM_MODE. Set it to YES or NO and redeploy." });
+});;
 
  // SIDHI AI-powered Premium Gym Coach. The API key is read only on the server.
 const aiCoachUsage = new Map();
@@ -892,6 +889,7 @@ app.get("/api/premium/reminders", auth, async (req, res) => {
 });
 
 app.get("/api/admin/premium-users", auth, async (req, res) => {
+  if (!isPremiumModeOn()) return res.status(404).json({ error: "Premium is disabled by PREMIUM_MODE." });
   if (!isAdminUser(req.gymUser)) return res.status(403).json({ error: "Admin only" });
   const users = await User.find({ $or: [{ premium: true }, { username: { $in: PREM.adminUsers.map(x => String(x).toLowerCase()) } }] }, { username: 1, displayName: 1, premium: 1, premiumUntil: 1, createdAt: 1 }).lean();
   const list = users.map(u => ({
