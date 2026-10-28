@@ -660,27 +660,7 @@ app.put("/api/admin/premium-features", auth, async (req, res) => {
   if (!isPremiumModeOn()) return res.status(404).json({ error: "Premium is disabled by PREMIUM_MODE." });
   if (!isAdminUser(req.gymUser)) return res.status(403).json({ error: "Admin only" });
   return res.status(409).json({ error: "Premium is controlled by Vercel PREMIUM_MODE. Set it to YES or NO and redeploy." });
-  if (!isAdminUser(req.gymUser)) return res.status(403).json({ error: "Admin only" });
-  return res.status(409).json({ error: "Premium is controlled by Vercel PREMIUM_MODE. Set it to YES or NO and redeploy." });
-  const body = req.body || {};
-  const current = await getPremiumFeatureSettings();
-  const masterEnabled = typeof body.masterEnabled === "boolean" ? body.masterEnabled : current.masterEnabled;
-  const incoming = body.features && typeof body.features === "object" ? body.features : {};
-  const features = Object.assign({}, current.features);
-  Object.keys(PREMIUM_FEATURE_DEFAULTS).forEach(key => {
-    if (typeof incoming[key] === "boolean") features[key] = incoming[key];
-  });
-  try {
-    await PremiumFeatureSettings.findOneAndUpdate(
-      { _id: "global" },
-      { $set: { masterEnabled, features, updatedBy: req.gymUser } },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
-    cacheDel("premium-features:");
-    res.setHeader("Cache-Control", "no-store");
-    res.json({ ok: true, masterEnabled, features });
-  } catch (_) { res.status(500).json({ error: "Premium settings save nahi ho sake." }); }
-});
+});;
 
  // SIDHI AI-powered Premium Gym Coach. The API key is read only on the server.
 const aiCoachUsage = new Map();
