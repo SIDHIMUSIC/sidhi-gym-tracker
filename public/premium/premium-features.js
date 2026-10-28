@@ -64,6 +64,8 @@
   }
 
   function reviewFinishedWorkout(row) {
+    var flags = window.SIDHI_PREMIUM_FLAGS;
+    if (flags && (flags.masterEnabled === false || (flags.features && flags.features.dailyReview === false))) return;
     var out=document.getElementById("ps-finish-review");
     if(out)out.textContent="Workout saved. AI coach is checking your logged workout and cardio…";
     var snapshot=row||{};
