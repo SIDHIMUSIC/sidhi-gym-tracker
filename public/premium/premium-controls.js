@@ -78,10 +78,13 @@
     if (!t) return;
     request("/api/me").then(function (me) {
       window.SIDHI_IS_ADMIN = !!me.isAdmin;
-      if (!me.isAdmin) return;
-      return request("/api/admin/premium-features").then(function (flags) {
-        apply(flags);
-        makePanel(flags);
+      return request("/api/premium/features").then(function (publicFlags) {
+        apply(publicFlags);
+        if (!me.isAdmin) return;
+        return request("/api/admin/premium-features").then(function (adminFlags) {
+          apply(adminFlags);
+          makePanel(adminFlags);
+        });
       });
     }).catch(function () {});
   }
