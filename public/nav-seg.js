@@ -35,6 +35,8 @@
       b.onclick = function () {
         var ov = document.getElementById("runOv");
         if (ov) ov.classList.add("on");
+        var tb = document.getElementById("tabbar");
+        if (tb) tb.classList.add("run-hide");
       };
       var hist = bar.querySelector('.tab[data-tab="history"]');
       if (hist) bar.insertBefore(b, hist); else bar.appendChild(b);
