@@ -1,11 +1,11 @@
 (function () {
   const RUN_KEY = "sidhi-gym-run";
-  const MODE_MIN = { walk: 1.4, jog: 3.2, run: 4.5, sprint: 7.5, auto: 1.6 };
-  const MAX_ACC_M = 55;
+  const MODE_MIN = { walk: 0.6, jog: 1.5, run: 2.2, sprint: 4, auto: 0.5 };
+  const MAX_ACC_M = 180;
   const MIN_DT = 0.5;
   const MAX_DT = 20;
-  const MIN_D_KM = 0.001;
-  const MAX_D_KM = 0.12;
+  const MIN_D_KM = 0.0004;
+  const MAX_D_KM = 0.25;
   const run = {
     state: "idle", mode: "auto", speed: 0, incline: 0,
     startedAt: 0, elapsedMs: 0, distanceKm: 0, maxSpeed: 0,
@@ -185,10 +185,16 @@
     document.addEventListener("touchend", onRunTap, true);
   }
 
-  if (el("runStartBtn")) el("runStartBtn").classList.toggle("hidden", run.state !== "idle");
-    if (el("runPauseBtn")) el("runPauseBtn").classList.toggle("hidden", run.state !== "running");
-    if (el("runResumeBtn")) el("runResumeBtn").classList.toggle("hidden", run.state !== "paused");
-    if (el("runEndBtn")) el("runEndBtn").classList.toggle("hidden", run.state === "idle");
+  function showBtn(id, on) {
+      var b = el(id);
+      if (!b) return;
+      b.classList.toggle("hidden", !on);
+      b.style.display = on ? "" : "none";
+    }
+    showBtn("runStartBtn", run.state === "idle");
+    showBtn("runPauseBtn", run.state === "running");
+    showBtn("runResumeBtn", run.state === "paused");
+    showBtn("runEndBtn", run.state !== "idle");
     drawGraph();
   }
   function persistRun() {
@@ -203,7 +209,7 @@
     if (run.state !== "running") return;
     const acc = pos.coords.accuracy || 0;
     if (acc && acc > MAX_ACC_M) {
-      if (el("runStatus")) el("runStatus").textContent = fancy("gps weak " + Math.round(acc) + "m — go outside");
+      if (el("runStatus")) el("runStatus").textContent = "GPS weak " + Math.round(acc) + "m — bahar niklo";
       return;
     }
     const fix = { lat: pos.coords.latitude, lng: pos.coords.longitude, t: Date.now() };
@@ -221,12 +227,13 @@
       else if (gpsKmh > 0) use = gpsKmh;
       run.speed = Math.round(use * 10) / 10;
       const need = MODE_MIN[run.mode] || MODE_MIN.auto;
-      if (d >= MIN_D_KM && use >= need && use < 32) {
+      if (d >= MIN_D_KM && use >= need && use < 40) {
         run.distanceKm += d;
         if (run.speed > run.maxSpeed) run.maxSpeed = run.speed;
         run.points.push({ t: fix.t, spd: run.speed, km: run.distanceKm });
         if (run.points.length > 120) run.points.shift();
       }
+      if (el("runStatus")) el("runStatus").textContent = "GPS " + Math.round(acc || 0) + "m • " + run.speed.toFixed(1) + " km/h";
     } else if (gpsKmh) {
       run.speed = Math.round(gpsKmh * 10) / 10;
     }
