@@ -266,12 +266,22 @@
     if (run.state === "running") startGps();
     paintRun();
   }
+  function flipBtns() {
+    var map = { runStartBtn: run.state === "idle", runPauseBtn: run.state === "running", runResumeBtn: run.state === "paused", runEndBtn: run.state !== "idle" };
+    Object.keys(map).forEach(function (id) {
+      var b = el(id);
+      if (!b) return;
+      b.style.display = map[id] ? "block" : "none";
+      b.classList.toggle("hidden", !map[id]);
+    });
+  }
   function startRun() {
     run.state = "running";
     run.startedAt = Date.now() - run.elapsedMs;
+    flipBtns();
     persistRun(); lockScreen(); startTicker(); startGps();
     paintRun(); paintSummary();
-    if (typeof toast === "function") toast(fancy("gps start — bahar chalo"));
+    if (typeof toast === "function") toast("started — bahar chalo");
   }
   function pauseRun() {
     if (run.state !== "running") return;
@@ -377,6 +387,13 @@
     if (!st) { st = document.createElement("style"); st.id = "run-css"; document.head.appendChild(st); }
     st.textContent = css;
     var logout = el("logoutBtn");
+    if (!el("livebar")) {
+      var lb = document.createElement("div");
+      lb.className = "livebar";
+      lb.id = "livebar";
+      lb.innerHTML = '<span class="chip" id="liveTime">00:00</span><span class="chip" id="liveKm">0.00</span><span class="chip" id="liveSpd">0.0</span><span class="chip" id="liveCal">0</span>';
+      document.body.appendChild(lb);
+    }
     if (logout && !el("runOpenBtn")) {
       var wrap = document.createElement("div"); wrap.className = "head-actions";
       wrap.innerHTML = '<div class="head-btns"><button class="btn run" id="runOpenBtn" type="button">' + fancy("run") + '</button></div><div class="livebar" id="livebar"><span class="chip" id="liveTime">00:00</span><span class="chip" id="liveKm">0.00</span><span class="chip" id="liveSpd">0.0</span><span class="chip" id="liveCal">0</span></div>';
@@ -411,6 +428,25 @@
   if (el("runPauseBtn")) el("runPauseBtn").onclick = pauseRun;
   if (el("runResumeBtn")) el("runResumeBtn").onclick = resumeRun;
   if (el("runEndBtn")) el("runEndBtn").onclick = function () { endRun(false); };
+  
+  if (!window._runForce) {
+    window._runForce = true;
+    document.addEventListener("pointerup", function (e) {
+      var btn = e.target && e.target.closest && e.target.closest("#runStartBtn");
+      if (!btn) return;
+      e.preventDefault();
+      if (typeof toast === "function") toast("starting…");
+      startRun();
+    }, true);
+  }
+  setInterval(function () {
+    var b = el("runStartBtn");
+    if (b && !b._wired) {
+      b._wired = true;
+      b.onclick = function (e) { e.preventDefault(); startRun(); };
+    }
+  }, 500);
+
   restoreRun();
   paintSummary();
 })();
