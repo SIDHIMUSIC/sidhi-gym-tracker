@@ -143,7 +143,15 @@
     if (!el("livebar")) return;
     const snap = runSnap();
     el("livebar").classList.toggle("on", run.state !== "idle");
-    if (el("runOpenBtn")) {
+    
+  if (!document.getElementById("run-fix-css")) {
+    var fx = document.createElement("style");
+    fx.id = "run-fix-css";
+    fx.textContent = ".run-ov{z-index:80 !important;padding-bottom:120px}.run-ov.on~#tabbar,#tabbar.run-hide{display:none !important}.run-acts{position:relative;z-index:2}";
+    document.head.appendChild(fx);
+  }
+
+  if (el("runOpenBtn")) {
       el("runOpenBtn").classList.toggle("live", run.state === "running");
       el("runOpenBtn").textContent = run.state === "running" ? "● " + fancy("run") : run.state === "paused" ? fancy("paused") : fancy("run");
     }
@@ -374,10 +382,10 @@
     if (incCard) { var card = incCard.closest(".glass"); if (card) card.style.display = "none"; }
     ov.innerHTML = ovHtml;
   })();
-  if (el("runOpenBtn")) el("runOpenBtn").onclick = function () { el("runOv").classList.add("on"); paintRunEmpty(); paintRun(); paintSummary(); };
-  if (el("runCloseBtn")) el("runCloseBtn").onclick = function () { el("runOv").classList.remove("on"); };
+  if (el("runOpenBtn")) el("runOpenBtn").onclick = function () { el("runOv").classList.add("on"); var tb = document.getElementById("tabbar"); if (tb) tb.classList.add("run-hide"); paintRunEmpty(); paintRun(); paintSummary(); };
+  if (el("runCloseBtn")) el("runCloseBtn").onclick = function () { el("runOv").classList.remove("on"); var tb = document.getElementById("tabbar"); if (tb) tb.classList.remove("run-hide"); };
   if (el("runModes")) el("runModes").addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) applyMode(b); });
-  if (el("runStartBtn")) el("runStartBtn").onclick = startRun;
+  if (el("runStartBtn")) el("runStartBtn").onclick = function (e) { e.preventDefault(); e.stopPropagation(); startRun(); };
   if (el("runPauseBtn")) el("runPauseBtn").onclick = pauseRun;
   if (el("runResumeBtn")) el("runResumeBtn").onclick = resumeRun;
   if (el("runEndBtn")) el("runEndBtn").onclick = function () { endRun(false); };
