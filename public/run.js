@@ -147,7 +147,7 @@
   if (!document.getElementById("run-fix-css")) {
     var fx = document.createElement("style");
     fx.id = "run-fix-css";
-    fx.textContent = ".run-ov{z-index:80 !important;padding-bottom:120px}.run-ov.on~#tabbar,#tabbar.run-hide{display:none !important}.run-acts{position:relative;z-index:2}";
+    fx.textContent = ".run-ov{z-index:90 !important;padding-bottom:140px}.run-ov.on~#tabbar,#tabbar.run-hide{display:none !important}.run-acts{position:sticky;bottom:10px;z-index:30;background:#070b12;padding-top:8px}.run-acts .btn{position:relative;z-index:31;pointer-events:auto;touch-action:manipulation}.btn.ok::after{pointer-events:none}";
     document.head.appendChild(fx);
   }
 
@@ -170,7 +170,22 @@
         ? fancy(snap.zone === "idle" ? "walk outside — gps locking" : (run.mode + " gps live"))
         : run.state === "paused" ? fancy("paused — tap resume") : fancy("start then walk outside");
     }
-    if (el("runStartBtn")) el("runStartBtn").classList.toggle("hidden", run.state !== "idle");
+    
+  if (!window._runTap) {
+    window._runTap = true;
+    function onRunTap(e) {
+      var btn = e.target && e.target.closest && e.target.closest("#runStartBtn");
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof toast === "function") toast("starting…");
+      try { startRun(); } catch (err) { if (typeof toast === "function") toast(err.message || "start fail"); }
+    }
+    document.addEventListener("click", onRunTap, true);
+    document.addEventListener("touchend", onRunTap, true);
+  }
+
+  if (el("runStartBtn")) el("runStartBtn").classList.toggle("hidden", run.state !== "idle");
     if (el("runPauseBtn")) el("runPauseBtn").classList.toggle("hidden", run.state !== "running");
     if (el("runResumeBtn")) el("runResumeBtn").classList.toggle("hidden", run.state !== "paused");
     if (el("runEndBtn")) el("runEndBtn").classList.toggle("hidden", run.state === "idle");
