@@ -171,31 +171,7 @@
         : run.state === "paused" ? fancy("paused — tap resume") : fancy("start then walk outside");
     }
     
-  if (!window._runTap) {
-    window._runTap = true;
-    function onRunTap(e) {
-      var btn = e.target && e.target.closest && e.target.closest("#runStartBtn");
-      if (!btn) return;
-      e.preventDefault();
-      e.stopPropagation();
-      if (typeof toast === "function") toast("starting…");
-      try { startRun(); } catch (err) { if (typeof toast === "function") toast(err.message || "start fail"); }
-    }
-    document.addEventListener("click", onRunTap, true);
-    document.addEventListener("touchend", onRunTap, true);
-  }
-
-  function showBtn(id, on) {
-      var b = el(id);
-      if (!b) return;
-      b.classList.toggle("hidden", !on);
-      b.style.display = on ? "" : "none";
-    }
-    showBtn("runStartBtn", run.state === "idle");
-    showBtn("runPauseBtn", run.state === "running");
-    showBtn("runResumeBtn", run.state === "paused");
-    showBtn("runEndBtn", run.state !== "idle");
-    drawGraph();
+  drawGraph();
   }
   function persistRun() {
     if (run.state === "idle") { localStorage.removeItem(RUN_KEY); return; }
@@ -269,19 +245,12 @@
   function renderActs() {
     var box = el("runActs");
     if (!box) return;
-    var html = "";
-    if (run.state === "idle") {
-      html = '<button class="btn ok full" id="runStartBtn" type="button">START</button>';
-    } else if (run.state === "running") {
-      html = '<button class="btn ghost full" id="runPauseBtn" type="button">STOP</button><button class="btn danger full" id="runEndBtn" type="button">END RUN</button>';
-    } else {
-      html = '<button class="btn ok full" id="runResumeBtn" type="button">RESUME</button><button class="btn danger full" id="runEndBtn" type="button">END RUN</button>';
-    }
-    box.innerHTML = html;
-    var s = el("runStartBtn"); if (s) s.onclick = function (e) { e.preventDefault(); startRun(); };
-    var p = el("runPauseBtn"); if (p) p.onclick = function (e) { e.preventDefault(); pauseRun(); };
-    var r = el("runResumeBtn"); if (r) r.onclick = function (e) { e.preventDefault(); resumeRun(); };
-    var n = el("runEndBtn"); if (n) n.onclick = function (e) { e.preventDefault(); endRun(false); };
+    var want = run.state;
+    if (box.dataset.state === want) return;
+    box.dataset.state = want;
+    if (want === "idle") box.innerHTML = '<button class="btn ok full" type="button" data-act="start">START</button>';
+    else if (want === "running") box.innerHTML = '<button class="btn ghost full" type="button" data-act="stop">STOP</button><button class="btn danger full" type="button" data-act="end">END</button>';
+    else box.innerHTML = '<button class="btn ok full" type="button" data-act="resume">RESUME</button><button class="btn danger full" type="button" data-act="end">END</button>';
   }
   function startRun() {
     run.state = "running";
@@ -320,7 +289,8 @@
     };
     clearInterval(run.tick); stopGps(); unlockScreen();
     run.state = "idle"; run.elapsedMs = 0; run.startedAt = 0; run.distanceKm = 0; run.maxSpeed = 0; run.points = []; run.moving = 0; run.lastFix = null;
-    persistRun(); paintRun();
+    var box = el("runActs"); if (box) box.dataset.state = "";
+    renderActs(); persistRun(); paintRun();
     if (el("runOv")) el("runOv").classList.remove("on");
     if (typeof token === "undefined" || !token) return;
     try {
@@ -438,23 +408,21 @@
   if (el("runResumeBtn")) el("runResumeBtn").onclick = resumeRun;
   if (el("runEndBtn")) el("runEndBtn").onclick = function () { endRun(false); };
   
-  if (!window._runForce) {
-    window._runForce = true;
-    document.addEventListener("pointerup", function (e) {
-      var btn = e.target && e.target.closest && e.target.closest("#runStartBtn");
-      if (!btn) return;
+
+  
+  if (!window._runActs) {
+    window._runActs = true;
+    document.addEventListener("click", function (e) {
+      var btn = e.target && e.target.closest && e.target.closest("[data-act]");
+      if (!btn || !el("runOv") || !el("runOv").classList.contains("on")) return;
       e.preventDefault();
-      if (typeof toast === "function") toast("starting…");
-      startRun();
-    }, true);
+      var act = btn.getAttribute("data-act");
+      if (act === "start") startRun();
+      else if (act === "stop") pauseRun();
+      else if (act === "resume") resumeRun();
+      else if (act === "end") endRun(false);
+    });
   }
-  setInterval(function () {
-    var b = el("runStartBtn");
-    if (b && !b._wired) {
-      b._wired = true;
-      b.onclick = function (e) { e.preventDefault(); startRun(); };
-    }
-  }, 500);
 
   renderActs();
   restoreRun();
