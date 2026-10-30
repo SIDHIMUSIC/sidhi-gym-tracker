@@ -266,19 +266,27 @@
     if (run.state === "running") startGps();
     paintRun();
   }
-  function flipBtns() {
-    var map = { runStartBtn: run.state === "idle", runPauseBtn: run.state === "running", runResumeBtn: run.state === "paused", runEndBtn: run.state !== "idle" };
-    Object.keys(map).forEach(function (id) {
-      var b = el(id);
-      if (!b) return;
-      b.style.display = map[id] ? "block" : "none";
-      b.classList.toggle("hidden", !map[id]);
-    });
+  function renderActs() {
+    var box = el("runActs");
+    if (!box) return;
+    var html = "";
+    if (run.state === "idle") {
+      html = '<button class="btn ok full" id="runStartBtn" type="button">START</button>';
+    } else if (run.state === "running") {
+      html = '<button class="btn ghost full" id="runPauseBtn" type="button">STOP</button><button class="btn danger full" id="runEndBtn" type="button">END RUN</button>';
+    } else {
+      html = '<button class="btn ok full" id="runResumeBtn" type="button">RESUME</button><button class="btn danger full" id="runEndBtn" type="button">END RUN</button>';
+    }
+    box.innerHTML = html;
+    var s = el("runStartBtn"); if (s) s.onclick = function (e) { e.preventDefault(); startRun(); };
+    var p = el("runPauseBtn"); if (p) p.onclick = function (e) { e.preventDefault(); pauseRun(); };
+    var r = el("runResumeBtn"); if (r) r.onclick = function (e) { e.preventDefault(); resumeRun(); };
+    var n = el("runEndBtn"); if (n) n.onclick = function (e) { e.preventDefault(); endRun(false); };
   }
   function startRun() {
     run.state = "running";
     run.startedAt = Date.now() - run.elapsedMs;
-    flipBtns();
+    renderActs();
     persistRun(); lockScreen(); startTicker(); startGps();
     paintRun(); paintSummary();
     if (typeof toast === "function") toast("started — bahar chalo");
@@ -286,14 +294,15 @@
   function pauseRun() {
     if (run.state !== "running") return;
     run.elapsedMs = Date.now() - run.startedAt;
-    run.state = "paused"; clearInterval(run.tick); stopGps(); persistRun(); paintRun();
-    if (typeof toast === "function") toast(fancy("paused"));
+    run.state = "paused"; clearInterval(run.tick); stopGps(); persistRun(); renderActs(); paintRun();
+    if (typeof toast === "function") toast("paused");
   }
   function resumeRun() {
     if (run.state !== "paused") return;
     run.state = "running"; run.startedAt = Date.now() - run.elapsedMs;
+    renderActs();
     persistRun(); startTicker(); startGps(); lockScreen(); paintRun();
-    if (typeof toast === "function") toast(fancy("resume"));
+    if (typeof toast === "function") toast("resumed");
   }
   async function endRun(silent) {
     if (run.state === "idle") return;
@@ -414,14 +423,14 @@
       '<div class="run-stats"><div class="glass run-stat"><b id="ovKm">0.00</b><span>' + fancy("km") + '</span></div><div class="glass run-stat"><b id="ovSpd">0.0</b><span>' + fancy("km/h") + '</span></div><div class="glass run-stat"><b id="ovCal">0</b><span>' + fancy("kcal") + '</span></div><div class="glass run-stat"><b id="ovPace">—</b><span>' + fancy("pace min/km") + '</span></div></div>' +
       '<canvas id="runGraph" width="640" height="160"></canvas><p class="sub" id="graphHint" style="text-align:center">' + fancy("tap graph for speed + time") + '</p>' +
       '<div id="runSum"></div>' +
-      '<div class="run-acts"><button class="btn ok full" id="runStartBtn" type="button">' + fancy("start") + '</button><div class="row"><button class="btn ghost full hidden" id="runPauseBtn" type="button">' + fancy("stop") + '</button><button class="btn full hidden" id="runResumeBtn" type="button">' + fancy("resume") + '</button></div><button class="btn danger full hidden" id="runEndBtn" type="button">' + fancy("end run") + '</button></div></div>';
+      '<div class="run-acts" id="runActs"></div></div>';
     var ov = el("runOv");
     if (!ov) { ov = document.createElement("div"); ov.className = "run-ov"; ov.id = "runOv"; document.body.appendChild(ov); }
     var incCard = el("afterTreadmillIncline");
     if (incCard) { var card = incCard.closest(".glass"); if (card) card.style.display = "none"; }
     ov.innerHTML = ovHtml;
   })();
-  if (el("runOpenBtn")) el("runOpenBtn").onclick = function () { el("runOv").classList.add("on"); var tb = document.getElementById("tabbar"); if (tb) tb.classList.add("run-hide"); paintRunEmpty(); paintRun(); paintSummary(); };
+  if (el("runOpenBtn")) el("runOpenBtn").onclick = function () { el("runOv").classList.add("on"); var tb = document.getElementById("tabbar"); if (tb) tb.classList.add("run-hide"); paintRunEmpty(); renderActs(); paintRun(); paintSummary(); };
   if (el("runCloseBtn")) el("runCloseBtn").onclick = function () { el("runOv").classList.remove("on"); var tb = document.getElementById("tabbar"); if (tb) tb.classList.remove("run-hide"); };
   if (el("runModes")) el("runModes").addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) applyMode(b); });
   if (el("runStartBtn")) el("runStartBtn").onclick = function (e) { e.preventDefault(); e.stopPropagation(); startRun(); };
@@ -447,6 +456,7 @@
     }
   }, 500);
 
+  renderActs();
   restoreRun();
   paintSummary();
 })();
