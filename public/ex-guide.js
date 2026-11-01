@@ -81,14 +81,24 @@
     X("Calf Raise", "3 × 12–20", "gwLzBJYoNlA", "Standing_Calf_Raises")
   ];
 
+
+  const FAT = [
+    X("Mountain Climber", "3 × 20", "nmwgirgXLYM", "Mountain_Climbers"),
+    X("Bodyweight Squat", "3 × 15", "aclHkVaku9U", "Bodyweight_Squat"),
+    X("Russian Twist", "3 × 16", "wkD8rjkodUI", "Russian_Twist"),
+    X("Oblique Crunch", "3 × 12/side", "9FGilxCbdz8", "Oblique_Crunches"),
+    X("Knee Tuck Jump", "3 × 10", "52r_Ul5k03g", "Knee_Tuck_Jump"),
+    X("Plank", "3 × 30–45 sec", "ASdvN_XEl_c", "Plank")
+  ];
+
   const PLAN = {
-    Monday: { title: "Day 1 — Chest + Triceps", list: D1, abs: ABSA },
-    Tuesday: { title: "Day 2 — Back + Biceps", list: D2, abs: ABSB },
-    Wednesday: { title: "Day 3 — Shoulders + Legs", list: D3, abs: ABSC },
-    Thursday: { title: "Day 4 — Chest + Triceps", list: D4, abs: ABSA },
-    Friday: { title: "Day 5 — Back + Biceps", list: D5, abs: ABSB },
-    Saturday: { title: "Day 6 — Shoulders + Legs", list: D6, abs: ABSC },
-    Sunday: { title: "Day 7 — Rest / Recovery", list: [], abs: [] }
+    Monday: { title: "Day 1 — Chest + Triceps", list: D1, fat: FAT, abs: ABSA },
+    Tuesday: { title: "Day 2 — Back + Biceps", list: D2, fat: FAT, abs: ABSB },
+    Wednesday: { title: "Day 3 — Shoulders + Legs", list: D3, fat: FAT, abs: ABSC },
+    Thursday: { title: "Day 4 — Chest + Triceps", list: D4, fat: FAT, abs: ABSA },
+    Friday: { title: "Day 5 — Back + Biceps", list: D5, fat: FAT, abs: ABSB },
+    Saturday: { title: "Day 6 — Shoulders + Legs", list: D6, fat: FAT, abs: ABSC },
+    Sunday: { title: "Day 7 — Rest / Recovery", list: [], fat: FAT.slice(0, 3), abs: [] }
   };
   window.SIDHI_PLAN = PLAN;
   window.SIDHI_DAY_OPTIONS = KEYS.map(function (k) { return PLAN[k].title; });
@@ -145,6 +155,10 @@
     if (plan.list.length) {
       html += '<p class="ex-sec">' + fancy("exercises") + '</p>';
       html += '<div class="ex-list">' + plan.list.map(cardHtml).join("") + "</div>";
+    }
+    if (plan.fat && plan.fat.length) {
+      html += '<p class="ex-sec" style="margin-top:16px">' + fancy("fat loss") + '</p>';
+      html += '<div class="ex-list">' + plan.fat.map(cardHtml).join("") + "</div>";
     }
     if (plan.abs && plan.abs.length) {
       html += '<p class="ex-sec" style="margin-top:16px">' + fancy("abs") + '</p>';
