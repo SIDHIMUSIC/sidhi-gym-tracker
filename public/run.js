@@ -126,7 +126,7 @@
     box.innerHTML = '<div class="sum-grid">' +
       '<div class="glass run-stat"><b>' + w.km.toFixed(1) + '</b><span>' + fancy("week km") + '</span></div>' +
       '<div class="glass run-stat"><b>' + mo.km.toFixed(1) + '</b><span>' + fancy("month km") + '</span></div>' +
-      '<div class="glass run-stat"><b>' + (bestRun ? Number(bestRun.distanceKm).toFixed(2) : "—") + '</b><span>' + fancy("best run km") + '</span></div>' +
+      '<div class="glass run-stat"><b>' + (bestRun ? Number(bestRun.distanceKm).toFixed(2) : "—") + '</b><span>' + fancy("best run km") + (bestRun && bestRun.date ? " • " + bestRun.date : "") + '</span></div>' +
       '<div class="glass run-stat"><b>' + (bestGym ? (bestGym.date || "—") : "—") + '</b><span>' + fancy("top gym day") + '</span></div></div>' +
       '<p class="sub" style="text-align:center;margin-top:8px">' + fancy("pace = min per km") + " • " + fancy("go outside + allow location") + '</p>';
   }
