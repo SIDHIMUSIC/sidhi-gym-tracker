@@ -434,7 +434,7 @@ app.get("/api/sessions", auth, async (req, res) => {
       .sort({ date: -1 })
       .lean();
     withD = withDiff(rows);
-    cacheSet(ck, withD, 15 * 1000); // 15s — short so finish workout feels fresh
+    cacheSet(ck, withD, 60 * 1000);
   }
   res.json({ sessions: withD });
 });
