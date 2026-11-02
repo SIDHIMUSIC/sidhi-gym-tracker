@@ -340,9 +340,8 @@ function setAuth(data) {
   localStorage.setItem(USER_KEY, username);
 }
 async function afterAuth() {
-  const me = await api("/api/me");
+  const [me, data] = await Promise.all([api("/api/me"), api("/api/sessions")]);
   goalWeight = me.goalWeight;
-  const data = await api("/api/sessions");
   sessions = data.sessions || [];
   openApp();
 }
