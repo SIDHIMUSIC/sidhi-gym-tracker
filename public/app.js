@@ -406,7 +406,7 @@ $("goalBtn").onclick = async function () {
   } catch (err) { toast(err.message); }
 };
 (async function boot() {
-  if (!token) return;
+  if (!token) { if (window.killSplash) window.killSplash(); return; }
   try { await afterAuth(); }
-  catch (e) { toast("Reconnect ho raha hai"); }
+  catch (e) { toast("Reconnect ho raha hai"); if (window.killSplash) window.killSplash(); }
 })();
