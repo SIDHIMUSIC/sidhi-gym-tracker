@@ -222,11 +222,14 @@
 <script src="premium/membership-ui.js?v=5"></script>
 <script src="premium/premium-controls.js?v=2"></script>
 <script>
-  setTimeout(function () {
+  function killSplash() {
     var s = document.getElementById("bootSplash");
-    if (s && !document.getElementById("app")?.classList.contains("hidden") === false) return;
-    if (s && document.getElementById("gate") && !document.getElementById("gate").classList.contains("hidden")) s.classList.add("off");
-  }, 1600);
+    if (!s) return;
+    s.classList.add("off");
+    setTimeout(function () { if (s.parentNode) s.remove(); }, 350);
+  }
+  window.killSplash = killSplash;
+  setTimeout(killSplash, 900);
 </script>
 
 <footer style="text-align:center;padding:20px 14px 40px;font-size:12px;color:#9aa7b8;position:relative;z-index:5">
