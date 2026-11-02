@@ -37,6 +37,33 @@
     if (b) return "out " + b;
     return "";
   }
+
+  function showDetail(date) {
+    var list = (typeof sessions !== "undefined" && sessions) || [];
+    var s = list.find(function (x) { return x.date === date; });
+    if (!s) return;
+    var runs = (s.runs || []).map(function (r) {
+      return (r.mode || "run") + " • " + (Number(r.distanceKm) || 0).toFixed(2) + " km • " + Math.round((Number(r.durationSec) || 0) / 60) + " min";
+    }).join("<br>");
+    var html = '<div class="glass card" style="position:fixed;inset:16px;z-index:120;overflow:auto;background:#0c121c;padding:18px;border-radius:20px">' +
+      '<b style="font-size:18px">' + (s.date || "") + " • " + (s.workoutName || "gym") + '</b>' +
+      '<p class="sub">' + (s.day || "") + '</p>' +
+      '<p>Start ' + (s.entryWeight || "—") + ' kg at ' + (s.entryTime || "—") + '</p>' +
+      '<p>End ' + (s.afterTreadmillWeight || "—") + ' kg at ' + (s.exitTime || s.afterTreadmillTime || "—") + '</p>' +
+      '<p>Finished: ' + (s.finished ? "yes" : "no") + '</p>' +
+      (runs ? '<p>Runs<br>' + runs + '</p>' : '') +
+      (s.after1HourNote ? '<p>' + s.after1HourNote + '</p>' : '') +
+      '<button class="btn ok full" id="closeDetail" type="button" style="margin-top:12px">CLOSE</button></div>';
+    var old = document.getElementById("sessionDetail");
+    if (old) old.remove();
+    var wrap = document.createElement("div");
+    wrap.id = "sessionDetail";
+    wrap.innerHTML = html;
+    document.body.appendChild(wrap);
+    var c = document.getElementById("closeDetail");
+    if (c) c.onclick = function () { wrap.remove(); };
+  }
+
   function paintSplitHist() {
     var gymBox = el("histGym");
     var runBox = el("histRun");
@@ -95,10 +122,7 @@
     view.addEventListener("click", async function (e) {
       var btn = e.target.closest("button");
       if (!btn) return;
-      if (btn.dataset.open && typeof showTab === "function") {
-        if (el("date")) el("date").value = btn.dataset.open;
-        showTab("workout");
-      }
+      if (btn.dataset.open) showDetail(btn.dataset.open);
       if (btn.dataset.del) {
         if (!confirm("Delete " + btn.dataset.del + "?")) return;
         try {
