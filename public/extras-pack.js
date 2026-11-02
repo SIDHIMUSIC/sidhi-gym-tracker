@@ -156,11 +156,16 @@
       });
       var bestRun = runs.reduce(function (a, b) { return !a || b.km > a.km ? b : a; }, null);
       var gyms = ((typeof sessions !== "undefined" && sessions) || []).filter(function (s) { return s.finished; });
-      var bestGym = gyms.reduce(function (a, b) {
-        var nb = String(b.after1HourNote || "").length;
-        var na = a ? String(a.after1HourNote || "").length : -1;
-        return nb > na ? b : a;
-      }, null);
+      function drop(s) {
+        var a = Number(s.entryWeight), b = Number(s.afterTreadmillWeight);
+        if (!isFinite(a) || !isFinite(b)) return 0;
+        return Math.round((a - b) * 1000) / 1000;
+      }
+      function exCount(s) {
+        return String(s.after1HourNote || "").split(/\n/).filter(function (l) { return l.trim() && /\d/.test(l); }).length;
+      }
+      var bestDrop = gyms.reduce(function (a, b) { return !a || drop(b) > drop(a) ? b : a; }, null);
+      var bestEx = gyms.reduce(function (a, b) { return !a || exCount(b) > exCount(a) ? b : a; }, null);
       box.innerHTML =
         "<h2>this week</h2>" +
         "<div class=\"week-grid\">" +
@@ -169,7 +174,7 @@
         "<div><b>" + se + "</b><span>start → end</span></div>" +
         "<div><b>" + dlt + "</b><span>week change</span></div>" +
         "<div><b>" + (bestRun ? bestRun.km.toFixed(2) + " km" : "—") + "</b><span>best run" + (bestRun ? " • " + bestRun.date : "") + "</span></div>" +
-        "<div><b>" + (bestGym ? (bestGym.date || "—") : "—") + "</b><span>best gym" + (bestGym && bestGym.workoutName ? " • " + bestGym.workoutName : "") + "</span></div></div>" +
+        "<div><b>" + (bestDrop && drop(bestDrop) > 0 ? "-" + drop(bestDrop) + " kg" : "—") + "</b><span>best drop" + (bestDrop ? " • " + bestDrop.date : "") + "</span></div>" +"<div><b>" + (bestEx && exCount(bestEx) ? exCount(bestEx) + " ex" : "—") + "</b><span>most exercises" + (bestEx ? " • " + bestEx.date : "") + "</span></div></div>" +
         "<div class=\"pwa-bar\">" +
         "<button class=\"btn ok\" id=\"tgShare\" type=\"button\">Telegram summary</button>" +
         "<button class=\"btn ghost\" id=\"pwaBtn\" type=\"button\">Add to Home</button></div>";
