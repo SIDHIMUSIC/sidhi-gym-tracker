@@ -232,8 +232,22 @@ function paintHome() {
   var runKm = ((row && row.runs) || []).reduce(function (a, r) { return a + (Number(r.distanceKm) || 0); }, 0);
   var showKm = runKm || km;
   $("homeTm").textContent = showKm ? showKm.toFixed(2) + " km" : "—";
-  var homeRun = $("homeRun");
-  if (homeRun) homeRun.textContent = runKm ? runKm.toFixed(2) + " km" : "—";
+  var card = $("homeRunCard");
+  if (!card) {
+    card = document.createElement("div");
+    card.id = "homeRunCard";
+    card.className = "glass card";
+    card.style.marginTop = "14px";
+    var kg = $("homeKg");
+    if (kg && kg.parentNode && kg.parentNode.parentNode) kg.parentNode.parentNode.insertBefore(card, kg.parentNode.nextSibling);
+    else $("view-home").insertBefore(card, $("view-home").firstChild);
+  }
+  var runs = [];
+  (sessions || []).forEach(function (s) { (s.runs || []).forEach(function (r) { runs.push(Object.assign({ date: s.date }, r)); }); });
+  var best = null;
+  runs.forEach(function (r) { if (!best || (Number(r.distanceKm) || 0) > (Number(best.distanceKm) || 0)) best = r; });
+  card.innerHTML = '<h2>today run</h2><div class="kv"><span>km</span><b>' + (runKm ? runKm.toFixed(2) : "0.00") + ' km</b></div>' +
+    '<div class="kv"><span>best</span><b>' + (best ? Number(best.distanceKm).toFixed(2) + " km • " + (best.date || "") : "—") + '</b></div>';
   drawChart($("homeChart"), sessions);
 }
 function paintCal() {
@@ -305,12 +319,19 @@ async function save(finished) {
     } else toast("Saved");
   } catch (err) { toast(err.message); }
 }
+function hideSplash() {
+  var s = document.getElementById("bootSplash");
+  if (!s) return;
+  s.classList.add("off");
+  setTimeout(function () { if (s.parentNode) s.remove(); }, 400);
+}
 function openApp() {
   $("gate").classList.add("hidden");
   $("app").classList.remove("hidden");
   $("tabbar").classList.remove("hidden");
   if (!$("date").value) $("date").value = todayISO();
   showTab("home");
+  hideSplash();
 }
 function setAuth(data) {
   token = data.token;
@@ -331,7 +352,7 @@ async function login() {
   if (!user || !pass) return toast("Enter username and password");
   try {
     setAuth(await api("/api/login", { method: "POST", body: { username: user, password: pass } }));
-    toast("Login ok");
+    var sp = document.getElementById("bootSplash"); if (sp) sp.classList.remove("off");
     await afterAuth();
   } catch (err) { toast(err.message); }
 }
