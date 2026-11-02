@@ -46,7 +46,7 @@
         stayIn();
       } catch (err) {
         stayIn();
-        if (typeof toast === "function") toast("Server late, cache se khula");
+        
       }
     };
     afterAuth._stay = true;
