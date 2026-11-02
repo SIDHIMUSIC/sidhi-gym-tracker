@@ -150,13 +150,26 @@
     if (box) {
       var dlt = w.delta == null ? "—" : ((w.delta > 0 ? "+" : "") + w.delta + " kg");
       var se = (w.start != null && w.end != null) ? (w.start + " → " + w.end + " kg") : "—";
+      var runs = [];
+      ((typeof sessions !== "undefined" && sessions) || []).forEach(function (s) {
+        (s.runs || []).forEach(function (r) { runs.push({ date: s.date, km: Number(r.distanceKm) || 0 }); });
+      });
+      var bestRun = runs.reduce(function (a, b) { return !a || b.km > a.km ? b : a; }, null);
+      var gyms = ((typeof sessions !== "undefined" && sessions) || []).filter(function (s) { return s.finished; });
+      var bestGym = gyms.reduce(function (a, b) {
+        var nb = String(b.after1HourNote || "").length;
+        var na = a ? String(a.after1HourNote || "").length : -1;
+        return nb > na ? b : a;
+      }, null);
       box.innerHTML =
         "<h2>this week</h2>" +
         "<div class=\"week-grid\">" +
         "<div><b>" + w.gymDays + "</b><span>gym days</span></div>" +
-        "<div><b>" + w.runKm + " km</b><span>run + walk</span></div>" +
+        "<div><b>" + w.runKm + " km</b><span>run</span></div>" +
         "<div><b>" + se + "</b><span>start → end</span></div>" +
-        "<div><b>" + dlt + "</b><span>week change</span></div></div>" +
+        "<div><b>" + dlt + "</b><span>week change</span></div>" +
+        "<div><b>" + (bestRun ? bestRun.km.toFixed(2) + " km" : "—") + "</b><span>best run" + (bestRun ? " • " + bestRun.date : "") + "</span></div>" +
+        "<div><b>" + (bestGym ? (bestGym.date || "—") : "—") + "</b><span>best gym" + (bestGym && bestGym.workoutName ? " • " + bestGym.workoutName : "") + "</span></div></div>" +
         "<div class=\"pwa-bar\">" +
         "<button class=\"btn ok\" id=\"tgShare\" type=\"button\">Telegram summary</button>" +
         "<button class=\"btn ghost\" id=\"pwaBtn\" type=\"button\">Add to Home</button></div>";
