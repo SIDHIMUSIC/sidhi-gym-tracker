@@ -77,7 +77,7 @@
 
   function weekReport() {
     var rows = weekRows();
-    var gymDays = rows.filter(function (s) { return s.finished || s.after1HourNote || s.entryWeight; }).length;
+    var gymDays = rows.filter(function (s) { return (s.finished || s.after1HourNote || s.entryWeight) && new Date(s.date + "T12:00:00").getDay() !== 0; }).length;
     var runKm = 0, runMin = 0;
     var weights = [];
     rows.forEach(function (s) {
