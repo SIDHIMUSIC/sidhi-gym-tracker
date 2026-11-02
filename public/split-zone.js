@@ -96,14 +96,20 @@
       (s.runs || []).forEach(function (r) {
         var st = r.startedAt ? new Date(r.startedAt) : null;
         var t = st ? amp(String(st.getHours()).padStart(2, "0") + ":" + String(st.getMinutes()).padStart(2, "0")) : "";
-        cards.push('<div class="hist-item"><div><b>' + (r.mode || "run") + '</b><div class="sub">' + s.date + (t ? " • " + t : "") + '</div><div class="sub">' + (Number(r.distanceKm) || 0).toFixed(2) + " km • " + Math.round((Number(r.durationSec) || 0) / 60) + " min • " + Math.round(Number(r.calories) || 0) + " kcal</div></div></div>");
+        var km = (Number(r.distanceKm) || 0).toFixed(2);
+        var min = Math.round((Number(r.durationSec) || 0) / 60);
+        var cal = Math.round(Number(r.calories) || 0);
+        cards.push('<div class="run-row" data-date="' + s.date + '" style="display:grid;grid-template-columns:72px 1fr auto;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08)">' +
+          '<b style="color:#f0c27a;font-size:13px">' + (r.mode || "run") + '</b>' +
+          '<span style="font-size:12px;color:#9aa7b8">' + s.date + (t ? " • " + t : "") + '</span>' +
+          '<span style="font-size:12px;text-align:right">' + km + ' km<br>' + min + ' min • ' + cal + ' kcal</span></div>');
       });
     });
     return cards.join("") || '<p class="sub">no morning runs yet</p>';
   }
   function paintRunHist() {
     var box = el("runOnlyHist");
-    if (box) box.innerHTML = runListHtml();
+    if (box) box.innerHTML = runListHtml(); if (typeof paintSummary === "function") paintSummary();
   }
   function ensureRunHist() {
     var ov = el("runOv");
