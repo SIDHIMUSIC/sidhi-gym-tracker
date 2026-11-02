@@ -47,7 +47,7 @@
     var to = todayISO();
     var seen = {};
     sessions.forEach(function (s) {
-      if (s && s.date >= from && s.date <= to && s.finished) seen[s.date] = 1;
+      if (s && s.date >= from && s.date <= to && s.finished && new Date(s.date + "T12:00:00").getDay() !== 0) seen[s.date] = 1;
     });
     return Object.keys(seen).length;
   }
