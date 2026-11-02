@@ -172,8 +172,9 @@ function streakCount() {
     const iso = d.toISOString().slice(0, 10);
     const day = d.getDay();
     const row = map[iso];
-    if (day === 0) n++;
-    else if (row && row.finished) n++;
+    if (day === 0) { d.setDate(d.getDate() - 1); continue; }
+    if (row && row.finished) n++;
+    else if (i === 0) { d.setDate(d.getDate() - 1); continue; }
     else break;
     d.setDate(d.getDate() - 1);
   }
@@ -228,7 +229,11 @@ function paintHome() {
   $("homeW").textContent = latest != null ? latest + " kg" : "—";
   $("homeDur").textContent = durationText(row);
   const km = (Number(row && row.beforeTreadmillKm) || 0) + (Number(row && row.afterTreadmillKm) || 0);
-  $("homeTm").textContent = km ? km + " km" : "—";
+  var runKm = ((row && row.runs) || []).reduce(function (a, r) { return a + (Number(r.distanceKm) || 0); }, 0);
+  var showKm = runKm || km;
+  $("homeTm").textContent = showKm ? showKm.toFixed(2) + " km" : "—";
+  var homeRun = $("homeRun");
+  if (homeRun) homeRun.textContent = runKm ? runKm.toFixed(2) + " km" : "—";
   drawChart($("homeChart"), sessions);
 }
 function paintCal() {
