@@ -86,7 +86,7 @@
       } else if (start != null) line = "start " + start + " kg";
       else if (end != null) line = "end " + end + " kg";
       var clock = gymClock(s);
-      var html = '<div class="hist-item"><div><b>' + fancy(s.workoutName || "gym") + '</b>';
+      var html = '<div class="hist-item" data-date="' + s.date + '"><div><b>' + fancy(s.workoutName || "gym") + '</b>';
       html += '<div class="sub">' + s.date;
       if (s.day) html += " • " + s.day;
       if (clock) html += " • " + clock;
@@ -105,7 +105,7 @@
         var km = Number(r.distanceKm) || 0;
         var min = Math.round((Number(r.durationSec) || 0) / 60);
         var cal = Math.round(Number(r.calories) || 0);
-        var html = '<div class="hist-item"><div><b>' + fancy(r.mode || "run") + '</b>';
+        var html = '<div class="hist-item" data-date="' + s.date + '"><div><b>' + fancy(r.mode || "run") + '</b>';
         html += '<div class="sub">' + s.date + '</div>';
         html += '<div class="sub">' + km.toFixed(2) + " km • " + min + " min • " + cal + " kcal</div></div>";
         html += '<div class="hist-acts"><button class="btn ghost" data-open="' + s.date + '">' + fancy("open") + '</button></div></div>';
@@ -118,11 +118,14 @@
     var _paintHist = paintHist;
     paintHist = function () { try { _paintHist(); } catch (e) {} paintSplitHist(); };
   } else window.paintHist = paintSplitHist;
-  if (view) {
-    view.addEventListener("click", async function (e) {
+  document.addEventListener("click", async function (e) {
+      var item = e.target.closest(".hist-item");
       var btn = e.target.closest("button");
+      if (btn && btn.dataset.open) { showDetail(btn.dataset.open); return; }
+      if (item && item.dataset.date) { showDetail(item.dataset.date); return; }
+      if (!view || !view.contains(e.target)) return;
       if (!btn) return;
-      if (btn.dataset.open) showDetail(btn.dataset.open);
+      if (false) {
       if (btn.dataset.del) {
         if (!confirm("Delete " + btn.dataset.del + "?")) return;
         try {
