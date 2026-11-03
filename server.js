@@ -561,14 +561,55 @@ app.post("/api/premium/order", auth, async (req, res) => {
 
 app.post("/api/premium/verify", auth, async (req, res) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body || {};
+  if (!RAZOR_SECRET) return res.status(503).json({ error: "Payment verification is not configured" });
   if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
     return res.status(400).json({ error: "Missing payment data" });
   }
-  const expected = crypto.createHmac("sha256", RAZOR_SECRET).update(razorpay_order_id + "|" + razorpay_payment_id).digest("hex");
-  if (expected !== razorpay_signature) return res.status(400).json({ error: "Invalid signature" });
-  const durationDays = Math.max(1, Number(PREM.durationDays || 30));
-  const until = await grantPremium(req.gymUser, durationDays);
-  res.json({ ok: true, premium: true, until, daysLeft: durationDays });
+  const expected = crypto.createHmac("sha256", RAZOR_SECRET)
+    .update(razorpay_order_id + "|" + razorpay_payment_id).digest();
+  let supplied;
+  try { supplied = Buffer.from(String(razorpay_signature), "hex"); } catch (_) { supplied = Buffer.alloc(0); }
+  if (supplied.length !== expected.length || !crypto.timingSafeEqual(expected, supplied)) {
+    return res.status(400).json({ error: "Invalid signature" });
+  }
+  try {
+    const authHeader = "Basic " + Buffer.from(RAZOR_KEY + ":" + RAZOR_SECRET).toString("base64");
+    const orderResponse = await fetch("https://api.razorpay.com/v1/orders/" + encodeURIComponent(razorpay_order_id), {
+      headers: { Authorization: authHeader }
+    });
+    if (!orderResponse.ok) return res.status(502).json({ error: "Could not verify payment order" });
+    const order = await orderResponse.json();
+    const expectedAmount = Math.max(100, Math.round(Number(PREM.price || 49) * 100));
+    if (order.id !== razorpay_order_id || order.amount !== expectedAmount ||
+        !order.notes || String(order.notes.user || "").toLowerCase() !== String(req.gymUser).toLowerCase()) {
+      return res.status(400).json({ error: "Payment order does not match this account" });
+    }
+    const paymentResponse = await fetch("https://api.razorpay.com/v1/payments/" + encodeURIComponent(razorpay_payment_id), {
+      headers: { Authorization: authHeader }
+    });
+    if (!paymentResponse.ok) return res.status(502).json({ error: "Could not verify payment status" });
+    const payment = await paymentResponse.json();
+    if (payment.order_id !== razorpay_order_id || payment.status !== "captured" || payment.amount !== expectedAmount) {
+      return res.status(400).json({ error: "Payment is not captured for this order" });
+    }
+    const users = mongoose.connection.collection("users");
+    const claimed = await users.updateOne(
+      { username: req.gymUser, verifiedPaymentIds: { $ne: razorpay_payment_id } },
+      { $addToSet: { verifiedPaymentIds: razorpay_payment_id } }
+    );
+    if (!claimed.matchedCount) return res.status(409).json({ error: "This payment has already been used" });
+    try {
+      const durationDays = Math.max(1, Number(PREM.durationDays || 30));
+      const until = await grantPremium(req.gymUser, durationDays);
+      res.json({ ok: true, premium: true, until, daysLeft: durationDays });
+    } catch (err) {
+      await users.updateOne({ username: req.gymUser }, { $pull: { verifiedPaymentIds: razorpay_payment_id } });
+      throw err;
+    }
+  } catch (err) {
+    console.error("Premium payment verification failed:", err);
+    res.status(502).json({ error: "Payment verification failed. Please contact support if money was deducted." });
+  }
 });
 
 
