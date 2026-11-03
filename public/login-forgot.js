@@ -38,6 +38,29 @@
   }
   function sheet(html) {
     closeSheet();
+    if (!document.getElementById("fgSheetCss")) {
+      var st = document.createElement("style");
+      st.id = "fgSheetCss";
+      st.textContent =
+        "#forgotSheet{position:fixed;inset:0;z-index:99999;background:rgba(2,6,14,.64);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);display:flex;align-items:flex-end;justify-content:center;padding:12px 12px calc(12px + env(safe-area-inset-bottom,0px))}" +
+        "#forgotSheet .fg-panel{position:relative;width:min(460px,100%);max-height:min(84dvh,720px);overflow:auto;overscroll-behavior:contain;background:linear-gradient(155deg,#172238,#101827 62%,#0c1421);border:1px solid rgba(148,163,184,.22);border-radius:28px;padding:20px 18px 18px;box-shadow:0 24px 70px #0009,inset 0 1px 0 #ffffff12}" +
+        "#forgotSheet .fg-panel:before{content:'';display:block;width:42px;height:4px;border-radius:9px;background:#64748b88;margin:0 auto 16px}" +
+        "#forgotSheet .fg-panel input{min-height:54px;border-radius:18px;background:#09111d;border:1px solid #ffffff20;padding:14px 16px;color:#f8fafc;width:100%;font:500 15px Comfortaa,sans-serif;outline:none}" +
+        "#forgotSheet .fg-panel input:focus{border-color:#7dd3fc;box-shadow:0 0 0 3px #38bdf822}" +
+        "#forgotSheet .fg-panel .btn{min-height:48px;border-radius:16px;letter-spacing:.04em;font-size:12px;transition:transform .16s ease,filter .16s ease}" +
+        "#forgotSheet .fg-panel .btn:active{transform:scale(.985)}" +
+        "#forgotSheet .fg-mode{background:#202a3c!important;border:1px solid #ffffff18!important;color:#aab6c7!important}" +
+        "#forgotSheet .fg-mode.active{background:linear-gradient(135deg,#dbeafe,#a5b4fc)!important;color:#111827!important;border-color:#bfdbfe!important;box-shadow:0 5px 16px #818cf844!important}" +
+        "#forgotSheet .fg-send{background:linear-gradient(135deg,#f5d79a,#e9ae5a)!important;color:#201607!important;border:0!important;box-shadow:0 7px 18px #e9ae5a30!important}" +
+        "#forgotSheet .fg-verify{background:linear-gradient(135deg,#a8edea,#63e2b3)!important;color:#04140d!important;border:0!important;box-shadow:0 7px 18px #63e2b32b!important}" +
+        "#forgotSheet .fg-cancel{background:transparent!important;border:1px solid #64748b88!important;color:#cbd5e1!important;box-shadow:none!important}" +
+        "#forgotSheet .fg-note{min-height:18px;font-size:12px;line-height:1.5;color:#f4d9a7!important}" +
+        "#forgotSheet .fg-pass-row{display:flex;gap:8px;margin-top:10px;align-items:stretch}" +
+        "#forgotSheet .fg-pass-row input{flex:1;min-width:0}" +
+        "#forgotSheet .fg-eye{min-width:76px!important;flex:none}" +
+        "@media(min-width:560px){#forgotSheet{align-items:center;padding:20px}}";
+      document.head.appendChild(st);
+    }
     var m = document.createElement("div");
     m.id = "forgotSheet";
     m.style.cssText = "position:fixed;inset:0;z-index:99999;background:rgba(2,6,14,.78);display:flex;align-items:center;justify-content:center;padding:18px 14px;backdrop-filter:blur(12px);overflow-y:auto";
@@ -48,28 +71,26 @@
     var p = document.getElementById("fgPass");
     var u = document.getElementById("fgUser");
     if (!p || !u) return;
-    p.style.outline = mode === "pass" ? "2px solid #fff" : "0";
-    u.style.outline = mode === "user" ? "2px solid #fff" : "0";
-    p.style.opacity = mode === "pass" ? "1" : ".55";
-    u.style.opacity = mode === "user" ? "1" : ".55";
+    p.classList.toggle("active", mode === "pass");
+    u.classList.toggle("active", mode === "user");
   }
   function openMenu() {
     sheet(
       '<p class="badge">FORGOT</p>' +
       '<div style="display:flex;gap:8px;margin-top:12px">' +
-      '<button type="button" id="fgAdmin" class="btn ghost" style="flex:1">message admin</button>' +
-      '<button type="button" id="fgMailBtn" class="btn ghost" style="flex:1">email verify</button>' +
+      '<button type="button" id="fgAdmin" class="btn ghost fg-mode" style="flex:1">message admin</button>' +
+      '<button type="button" id="fgMailBtn" class="btn ghost fg-mode active" style="flex:1">recover by email</button>' +
       '</div>' +
-      '<button type="button" id="fgNo" class="btn ghost full" style="margin-top:8px">cancel</button>'
+      '<button type="button" id="fgNo" class="btn ghost fg-cancel full" style="margin-top:10px">cancel</button>'
     );
   }
   function openEmail() {
     sheet(
-      '<p class="badge">EMAIL VERIFY</p>' +
+      '<p class="badge">ACCOUNT RECOVERY</p>' +
       '<input id="fgKey" placeholder="saved email / username / user id" />' +
       '<div style="display:flex;gap:8px;margin-top:8px">' +
-      '<button type="button" id="fgPass" class="btn ghost" style="flex:1">password</button>' +
-      '<button type="button" id="fgUser" class="btn ghost" style="flex:1">username</button>' +
+      '<button type="button" id="fgPass" class="btn ghost fg-mode active" style="flex:1">password</button>' +
+      '<button type="button" id="fgUser" class="btn ghost fg-mode" style="flex:1">username</button>' +
       '</div>' +
       '<button type="button" id="fgSend" class="btn ok full" style="margin-top:8px">send otp</button>' +
       '<input id="fgCode" inputmode="numeric" placeholder="6 digit otp" style="margin-top:8px" />' +
@@ -151,15 +172,10 @@
         .catch(function (err) { note(err.message || "reset fail"); });
     }
   }, true);
-  setInterval(function () {
-    document.querySelectorAll("#gate .forgot, #forgotBtn, .forgot").forEach(function (n) {
-      if (n._forgotBound) return;
-      n._forgotBound = true;
-      n.addEventListener("click", function (ev) {
-        ev.preventDefault();
-        ev.stopPropagation();
-        openMenu();
-      });
-    });
-  }, 1200);
+  var forgotButton = document.getElementById("forgotBtn");
+  if (forgotButton && !forgotButton._forgotBound) {
+    forgotButton._forgotBound = true;
+    forgotButton.addEventListener("click", function (ev) { ev.preventDefault(); ev.stopPropagation(); openMenu(); });
+  }
+  document.addEventListener("keydown", function (ev) { if (ev.key === "Escape") closeSheet(); });
 })();

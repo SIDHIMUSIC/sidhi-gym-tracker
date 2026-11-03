@@ -71,7 +71,7 @@
           try {
             await api("/api/session", { method: "PUT", body: s });
             ok++;
-          } catch (e) {}
+          } catch (e) { failed++; }
         }
         var fresh = await api("/api/sessions");
         if (typeof window.replaceSessions === "function") window.replaceSessions(fresh.sessions || []);

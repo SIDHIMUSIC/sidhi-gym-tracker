@@ -33,6 +33,11 @@
     <div class="list" id="list"></div>
   </form>
   <script>
+    function escHtml(value) {
+      return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) {
+        return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch];
+      });
+    }
     document.getElementById("f").onsubmit = async function (e) {
       e.preventDefault();
       var msg = document.getElementById("msg");

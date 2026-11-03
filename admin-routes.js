@@ -11,18 +11,6 @@ module.exports = function (app, deps) {
   const User = deps.User;
   const Token = deps.Token;
   const hashPass = deps.hashPass;
-  try { require("./otp-routes")(app); } catch (e) {}
-
-  app.post("/api/otp/who", async function (req, res) {
-    const key = String((req.body && req.body.key) || "").trim().toLowerCase();
-    const code = String((req.body && req.body.code) || "").trim();
-    const Otp = mongoose.models.Otp;
-    if (!Otp) return res.status(500).json({ error: "OTP missing" });
-    const row = await Otp.findOne({ code: code, exp: { $gt: new Date() } });
-    if (!row || (row.email !== key && row.username !== key)) return res.status(401).json({ error: "OTP galat ya expire" });
-    res.json({ ok: true, username: row.username });
-  });
-
   app.get("/api/public-config", function (_req, res) {
     const admin = String(process.env.ADMIN_USER || "harryashu").trim().toLowerCase();
     res.json({ ok: true, adminUser: admin });
