@@ -32,7 +32,7 @@
             throw new Error(err.error || "Premium required");
           }
           var blob = await response.blob(), url = URL.createObjectURL(blob), a = document.createElement("a");
-          a.href = url; a.download = "sidhi-gym-export.csv"; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+          a.href = url; a.download = "sidhi-gym-export.csv"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
           exportBtn.textContent = "CSV downloaded ✓";
         } catch (e) { alert(e.message || "Export failed"); exportBtn.textContent = "Download workout CSV"; }
         finally { exportBtn.disabled = false; }
