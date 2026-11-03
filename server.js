@@ -49,6 +49,8 @@ const User = model(
       username: { type: String, unique: true, required: true, lowercase: true, trim: true, index: true },
       salt: { type: String, required: true },
       passHash: { type: String, required: true },
+      email: { type: String, default: "" },
+      emailVerified: { type: Boolean, default: false },
       goalWeight: Number,
       displayName: { type: String, default: "" },
       gender: { type: String, default: "" },
@@ -216,6 +218,7 @@ function publicUser(u) {
     username: u.username,
     displayName: u.displayName || "",
     email: u.email || "",
+    emailVerified: u.emailVerified === true,
     gender: u.gender || "",
     goalWeight: u.goalWeight != null ? u.goalWeight : null,
     schedule: u.schedule && typeof u.schedule === "object" ? u.schedule : {},
@@ -339,9 +342,10 @@ app.post("/api/register", async (req, res) => {
       salt,
       passHash: hashPass(pass, salt),
       displayName,
+      email,
+      emailVerified: true,
       gender: gender === "female" ? "female" : gender === "male" ? "male" : ""
     });
-    await mongoose.connection.collection("users").updateOne({ username }, { $set: { email: email } });
     if (Otp) await Otp.deleteMany({ email: email });
     const token = crypto.randomBytes(24).toString("hex");
     await Token.create({ token, username, exp: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) });
