@@ -28,8 +28,10 @@
     var km = 0, min = 0, kcal = 0;
     if (!row) return { km: 0, min: 0, kcal: 0 };
     (row.runs || []).forEach(function (r) {
-      km += Number(r.distanceKm || r.km || 0);
-      min += Number(r.mins || r.durationMin || 0);
+      if (r.countedInCardio === false) {
+        km += Number(r.distanceKm || r.km || 0);
+        min += Number(r.durationSec != null ? r.durationSec / 60 : (r.mins || r.durationMin || 0));
+      }
       kcal += Number(r.kcal || 0);
     });
     km += Number(row.beforeTreadmillKm || 0);
