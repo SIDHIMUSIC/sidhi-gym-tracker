@@ -3,6 +3,7 @@
   var TOKEN_KEY = "sidhi-gym-token";
   var USER_KEY = "sidhi-gym-username";
   var CACHE = "sidhi-gym-sessions-" + ((localStorage.getItem(USER_KEY) || "guest").toLowerCase());
+  function refreshCacheKey() { CACHE = "sidhi-gym-sessions-" + (String((typeof username !== "undefined" && username) || localStorage.getItem(USER_KEY) || "guest").toLowerCase()); }
 
   if (!document.getElementById("persist-css")) {
     var s = document.createElement("style");
@@ -39,6 +40,7 @@
   if (typeof afterAuth === "function" && !afterAuth._stay) {
     var _aa = afterAuth;
     afterAuth = async function () {
+      refreshCacheKey();
       stayIn();
       try {
         await _aa();
