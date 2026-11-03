@@ -119,23 +119,24 @@
     paintHist = function () { try { _paintHist(); } catch (e) {} paintSplitHist(); };
   } else window.paintHist = paintSplitHist;
   document.addEventListener("click", async function (e) {
-      var item = e.target.closest(".hist-item");
-      var btn = e.target.closest("button");
-      if (btn && btn.dataset.open) { showDetail(btn.dataset.open); return; }
-      if (item && item.dataset.date) { showDetail(item.dataset.date); return; }
-      if (!view || !view.contains(e.target)) return;
-      if (!btn) return;
-      if (false) {
-      if (btn.dataset.del) {
-        if (!confirm("Delete " + btn.dataset.del + "?")) return;
-        try {
-          var data = await api("/api/session/" + btn.dataset.del, { method: "DELETE" });
-          sessions = data.sessions || [];
-          if (typeof paintHist === "function") paintHist();
-          if (typeof paintHome === "function") paintHome();
-        } catch (err) { if (typeof toast === "function") toast(err.message); }
+    var btn = e.target.closest("button");
+    if (btn && btn.dataset.del) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!confirm("Delete " + btn.dataset.del + "?")) return;
+      try {
+        var data = await api("/api/session/" + encodeURIComponent(btn.dataset.del), { method: "DELETE" });
+        sessions = data.sessions || [];
+        if (typeof paintHist === "function") paintHist();
+        if (typeof paintHome === "function") paintHome();
+      } catch (err) {
+        if (typeof toast === "function") toast(err.message || "Could not delete session");
       }
-    });
-  }
+      return;
+    }
+    if (btn && btn.dataset.open) { showDetail(btn.dataset.open); return; }
+    var item = e.target.closest(".hist-item");
+    if (item && item.dataset.date && view && view.contains(item)) showDetail(item.dataset.date);
+  });
   paintSplitHist();
 })();
