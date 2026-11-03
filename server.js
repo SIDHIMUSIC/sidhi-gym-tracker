@@ -537,7 +537,7 @@ app.get("/api/export.csv", auth, async (req, res) => {
   const rows = await GymSession.find({ owner: req.gymUser }).sort({ date: -1 }).lean();
   function csvCell(value) {
     let text = value == null ? "" : String(value);
-    if (/^[=+@\\-\\t\\r]/.test(text)) text = "'" + text;
+    if (/^[=+@\-\t\r]/.test(text)) text = "'" + text;
     return '"' + text.replace(/"/g, '""') + '"';
   }
   const columns = ["date", "day", "workout", "entry_weight_kg", "finished", "notes"];
