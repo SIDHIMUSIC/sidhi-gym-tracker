@@ -452,36 +452,43 @@ app.put("/api/session", auth, async (req, res) => {
   const custom = u && u.schedule && u.schedule[day];
   const prev = await GymSession.findOne({ owner: req.gymUser, date }).lean();
   function keep(key, incoming) {
-    if (incoming !== undefined && incoming !== null && incoming !== "") return incoming;
-    if (prev && prev[key] != null && prev[key] !== "") return prev[key];
-    return incoming;
+    if (Object.prototype.hasOwnProperty.call(req.body, key)) return incoming == null ? "" : incoming;
+    if (prev && prev[key] != null) return prev[key];
+    return "";
+  }
+  function keepNumber(key) {
+    if (Object.prototype.hasOwnProperty.call(req.body, key)) {
+      if (req.body[key] === "" || req.body[key] == null) return null;
+      return num(req.body[key]);
+    }
+    return prev && prev[key] != null ? prev[key] : null;
   }
   const doc = {
     owner: req.gymUser,
     date,
     day,
     workoutName: custom || (prev && prev.workoutName) || SPLIT[day],
-    entryTime: keep("entryTime", req.body.entryTime || ""),
-    entryWeight: num(req.body.entryWeight) != null ? num(req.body.entryWeight) : (prev && prev.entryWeight),
-    after1HourTime: keep("after1HourTime", req.body.after1HourTime || ""),
-    after1HourWeight: num(req.body.after1HourWeight) != null ? num(req.body.after1HourWeight) : (prev && prev.after1HourWeight),
+    entryTime: keep("entryTime", req.body.entryTime),
+    entryWeight: keepNumber("entryWeight"),
+    after1HourTime: keep("after1HourTime", req.body.after1HourTime),
+    after1HourWeight: keepNumber("after1HourWeight"),
     after1HourNote: Object.prototype.hasOwnProperty.call(req.body, "after1HourNote") ? (req.body.after1HourNote || "") : (prev && prev.after1HourNote) || "",
     lifts: Array.isArray(req.body.lifts) ? req.body.lifts : ((prev && prev.lifts) || []),
-    beforeTreadmillTime: keep("beforeTreadmillTime", req.body.beforeTreadmillTime || ""),
+    beforeTreadmillTime: keep("beforeTreadmillTime", req.body.beforeTreadmillTime),
     beforeTreadmillType: req.body.beforeTreadmillType || req.body.cardioType || (prev && prev.beforeTreadmillType) || "walk",
-    beforeTreadmillWeight: num(req.body.beforeTreadmillWeight) != null ? num(req.body.beforeTreadmillWeight) : (prev && prev.beforeTreadmillWeight),
-    beforeTreadmillKm: num(req.body.beforeTreadmillKm) != null ? num(req.body.beforeTreadmillKm) : (prev && prev.beforeTreadmillKm),
-    beforeTreadmillMins: num(req.body.beforeTreadmillMins) != null ? num(req.body.beforeTreadmillMins) : (prev && prev.beforeTreadmillMins),
-    beforeTreadmillSpeed: num(req.body.beforeTreadmillSpeed) != null ? num(req.body.beforeTreadmillSpeed) : (prev && prev.beforeTreadmillSpeed),
-    beforeTreadmillIncline: num(req.body.beforeTreadmillIncline) != null ? num(req.body.beforeTreadmillIncline) : (prev && prev.beforeTreadmillIncline),
+    beforeTreadmillWeight: keepNumber("beforeTreadmillWeight"),
+    beforeTreadmillKm: keepNumber("beforeTreadmillKm"),
+    beforeTreadmillMins: keepNumber("beforeTreadmillMins"),
+    beforeTreadmillSpeed: keepNumber("beforeTreadmillSpeed"),
+    beforeTreadmillIncline: keepNumber("beforeTreadmillIncline"),
     beforeTreadmillNote: Object.prototype.hasOwnProperty.call(req.body, "beforeTreadmillNote") ? (req.body.beforeTreadmillNote || "") : (prev && prev.beforeTreadmillNote) || "",
-    afterTreadmillTime: keep("afterTreadmillTime", req.body.afterTreadmillTime || ""),
+    afterTreadmillTime: keep("afterTreadmillTime", req.body.afterTreadmillTime),
     afterTreadmillType: req.body.afterTreadmillType || (prev && prev.afterTreadmillType) || "",
-    afterTreadmillWeight: num(req.body.afterTreadmillWeight) != null ? num(req.body.afterTreadmillWeight) : (prev && prev.afterTreadmillWeight),
-    afterTreadmillKm: num(req.body.afterTreadmillKm) != null ? num(req.body.afterTreadmillKm) : (prev && prev.afterTreadmillKm),
-    afterTreadmillMins: num(req.body.afterTreadmillMins) != null ? num(req.body.afterTreadmillMins) : (prev && prev.afterTreadmillMins),
-    afterTreadmillSpeed: num(req.body.afterTreadmillSpeed) != null ? num(req.body.afterTreadmillSpeed) : (prev && prev.afterTreadmillSpeed),
-    afterTreadmillIncline: num(req.body.afterTreadmillIncline) != null ? num(req.body.afterTreadmillIncline) : (prev && prev.afterTreadmillIncline),
+    afterTreadmillWeight: keepNumber("afterTreadmillWeight"),
+    afterTreadmillKm: keepNumber("afterTreadmillKm"),
+    afterTreadmillMins: keepNumber("afterTreadmillMins"),
+    afterTreadmillSpeed: keepNumber("afterTreadmillSpeed"),
+    afterTreadmillIncline: keepNumber("afterTreadmillIncline"),
     afterTreadmillNote: Object.prototype.hasOwnProperty.call(req.body, "afterTreadmillNote") ? (req.body.afterTreadmillNote || "") : (prev && prev.afterTreadmillNote) || "",
     cardioType: req.body.cardioType || (prev && prev.cardioType) || "",
     runs: Array.isArray(req.body.runs) ? req.body.runs : ((prev && prev.runs) || []),
