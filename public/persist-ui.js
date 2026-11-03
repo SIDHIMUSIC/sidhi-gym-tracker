@@ -2,7 +2,7 @@
   function el(id) { return document.getElementById(id); }
   var TOKEN_KEY = "sidhi-gym-token";
   var USER_KEY = "sidhi-gym-username";
-  var CACHE = "sidhi-gym-sessions";
+  var CACHE = "sidhi-gym-sessions-" + ((localStorage.getItem(USER_KEY) || "guest").toLowerCase());
 
   if (!document.getElementById("persist-css")) {
     var s = document.createElement("style");
