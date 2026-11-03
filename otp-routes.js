@@ -89,10 +89,16 @@ module.exports = function (app) {
     try {
       const email = String((req.body && req.body.email) || "").trim().toLowerCase();
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ error: "Email sahi likho" });
+      const recent = await Otp().findOne({ email: email, purpose: "register-rate", createdAt: { $gt: new Date(Date.now() - 60 * 1000) } });
+      if (recent) return res.status(429).json({ error: "60 seconds baad naya OTP lo." });
+      const count = await Otp().countDocuments({ email: email, purpose: "register-rate", createdAt: { $gt: new Date(Date.now() - 60 * 60 * 1000) } });
+      if (count >= 5) return res.status(429).json({ error: "Hourly OTP limit reached. 1 hour baad try karo." });
       const code = String(crypto.randomInt(100000, 1000000));
+      await mail(email, code);
+      await Otp().deleteMany({ email: email, purpose: "register-rate", createdAt: { $lt: new Date(Date.now() - 60 * 60 * 1000) } });
+      await Otp().create({ email: email, purpose: "register-rate", code: "sent", exp: new Date(Date.now() + 60 * 60 * 1000) });
       await Otp().deleteMany({ email: email, purpose: "register" });
       await Otp().create({ email: email, purpose: "register", code: code, exp: new Date(Date.now() + 10 * 60 * 1000) });
-      await mail(email, code);
       res.json({ ok: true });
     } catch (err) {
       res.status(err.status || 500).json({ error: err.message || "OTP fail" });
@@ -113,10 +119,16 @@ module.exports = function (app) {
       const u = await findAccount(req.body && (req.body.key || req.body.username || req.body.email));
       if (!u) return res.status(404).json({ error: "User nahi mila" });
       if (!u.email) return res.status(400).json({ error: "Is account pe email save nahi. Profile me email daalo." });
+      const recent = await Otp().findOne({ username: u.username, purpose: "reset-rate", createdAt: { $gt: new Date(Date.now() - 60 * 1000) } });
+      if (recent) return res.status(429).json({ error: "60 seconds baad naya OTP lo." });
+      const count = await Otp().countDocuments({ username: u.username, purpose: "reset-rate", createdAt: { $gt: new Date(Date.now() - 60 * 60 * 1000) } });
+      if (count >= 5) return res.status(429).json({ error: "Hourly OTP limit reached. 1 hour baad try karo." });
       const code = String(crypto.randomInt(100000, 1000000));
+      await mail(u.email, code);
+      await Otp().deleteMany({ username: u.username, purpose: "reset-rate", createdAt: { $lt: new Date(Date.now() - 60 * 60 * 1000) } });
+      await Otp().create({ username: u.username, email: u.email, purpose: "reset-rate", code: "sent", exp: new Date(Date.now() + 60 * 60 * 1000) });
       await Otp().deleteMany({ username: u.username, purpose: "reset" });
       await Otp().create({ email: u.email, username: u.username, purpose: "reset", code: code, exp: new Date(Date.now() + 10 * 60 * 1000) });
-      await mail(u.email, code);
       const hidden = u.email.replace(/(.{2}).+(@.+)/, "$1***$2");
       res.json({ ok: true, hint: hidden, username: u.username });
     } catch (err) {
