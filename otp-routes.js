@@ -149,7 +149,7 @@ module.exports = function (app) {
       const username = await userFrom(req);
       if (!username) return res.status(401).json({ error: "Login chahiye" });
       const email = String((req.body && req.body.email) || "").trim().toLowerCase();
-      if (!/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(email)) return res.status(400).json({ error: "Email sahi likho" });
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ error: "Email sahi likho" });
       const account = await users().findOne({ username: username });
       if (!account) return res.status(404).json({ error: "Account nahi mila" });
       if (account.emailVerified === true) {
@@ -182,7 +182,7 @@ module.exports = function (app) {
       if (!username) return res.status(401).json({ error: "Login chahiye" });
       const email = String((req.body && req.body.email) || "").trim().toLowerCase();
       const code = String((req.body && req.body.code) || "").trim();
-      if (!/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(email) || !/^\\d{6}$/.test(code)) return res.status(400).json({ error: "Email aur 6 digit OTP sahi daalo" });
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || !/^\\d{6}$/.test(code)) return res.status(400).json({ error: "Email aur 6 digit OTP sahi daalo" });
       const account = await users().findOne({ username: username });
       if (!account) return res.status(404).json({ error: "Account nahi mila" });
       if (account.emailVerified === true) return res.status(409).json({ error: "Email pehle se verified aur locked hai." });
