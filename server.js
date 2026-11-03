@@ -535,10 +535,20 @@ app.get("/api/export.csv", auth, async (req, res) => {
   const u = await User.findOne({ username: req.gymUser }).lean();
   if (!hasActivePremium(u)) return res.status(402).json({ error: "Premium chahiye export ke liye" });
   const rows = await GymSession.find({ owner: req.gymUser }).sort({ date: -1 }).lean();
-  let csv = "date,day,workout,entryWeight,finished,note\n";
+  function csvCell(value) {
+    let text = value == null ? "" : String(value);
+    if (/^[=+@\\-\\t\\r]/.test(text)) text = "'" + text;
+    return '"' + text.replace(/"/g, '""') + '"';
+  }
+  const columns = ["date", "day", "workout", "entry_weight_kg", "finished", "notes"];
+  const csvRows = [columns.map(csvCell).join(",")];
   rows.forEach(r => {
-    csv += [r.date, r.day||"", (r.workoutName||"").replace(/,/g," "), r.entryWeight||"", r.finished?"yes":"no", (r.after1HourNote||"").replace(/,/g," ")].join(",") + "\n";
+    csvRows.push([
+      r.date, r.day || "", r.workoutName || "", r.entryWeight == null ? "" : r.entryWeight,
+      r.finished ? "yes" : "no", r.after1HourNote || ""
+    ].map(csvCell).join(","));
   });
+  const csv = "\uFEFF" + csvRows.join("\r\n") + "\r\n";
   res.setHeader("Content-Type", "text/csv");
   res.setHeader("Content-Disposition", "attachment; filename=sidhi-gym-export.csv");
   res.send(csv);
