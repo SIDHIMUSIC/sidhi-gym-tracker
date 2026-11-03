@@ -253,19 +253,24 @@ function withDiff(rows) {
     .map((row) => Object.assign(row, extra[row.date] || {}));
 }
 
+let dbPromise = null;
 async function connectDB() {
   if (mongoose.connection.readyState === 1) return;
+  if (dbPromise) return dbPromise;
   if (!MONGODB_URI) {
     const err = new Error("MONGODB_URI missing");
     err.status = 500;
     throw err;
   }
-  await mongoose.connect(MONGODB_URI, {
+  dbPromise = mongoose.connect(MONGODB_URI, {
     dbName: "sidhi_gym",
-    maxPoolSize: 10,
-    serverSelectionTimeoutMS: 5000,
-    socketTimeoutMS: 45000
-  });
+    maxPoolSize: 1,
+    minPoolSize: 0,
+    maxIdleTimeMS: 10000,
+    serverSelectionTimeoutMS: 4000,
+    socketTimeoutMS: 20000
+  }).catch(function (err) { dbPromise = null; throw err; });
+  return dbPromise;
 }
 
 const app = express();
