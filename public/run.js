@@ -1,5 +1,5 @@
 (function () {
-  const RUN_KEY = "sidhi-gym-run-" + ((localStorage.getItem("sidhi-gym-username") || "guest").toLowerCase());
+  function runStorageKey() { return "sidhi-gym-run-" + (String((typeof username !== "undefined" && username) || localStorage.getItem("sidhi-gym-username") || "guest").toLowerCase()); }
   const MODE_MIN = { walk: 0.6, jog: 1.5, run: 2.2, sprint: 4, auto: 0.5 };
   const MAX_ACC_M = 180;
   const MIN_DT = 0.5;
@@ -174,8 +174,8 @@
   drawGraph();
   }
   function persistRun() {
-    if (run.state === "idle") { localStorage.removeItem(RUN_KEY); return; }
-    localStorage.setItem(RUN_KEY, JSON.stringify({
+    if (run.state === "idle") { localStorage.removeItem(runStorageKey()); return; }
+    localStorage.setItem(runStorageKey(), JSON.stringify({
       state: run.state, mode: run.mode, speed: run.speed,
       startedAt: run.startedAt, elapsedMs: run.elapsedMs, distanceKm: run.distanceKm,
       maxSpeed: run.maxSpeed, points: run.points.slice(-80)
@@ -322,7 +322,7 @@
   }
   function restoreRun() {
     try {
-      const raw = localStorage.getItem(RUN_KEY); if (!raw) return;
+      const raw = localStorage.getItem(runStorageKey()); if (!raw) return;
       const s = JSON.parse(raw);
       run.mode = s.mode || "auto"; run.speed = Number(s.speed) || 0;
       run.elapsedMs = Number(s.elapsedMs) || 0; run.distanceKm = Number(s.distanceKm) || 0; run.maxSpeed = Number(s.maxSpeed) || 0;
