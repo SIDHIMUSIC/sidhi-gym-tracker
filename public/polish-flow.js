@@ -16,17 +16,17 @@
   }
 
   var FIELDS = ["date","entryWeight","afterTreadmillWeight","entryTime","after1HourTime","after1HourNote","beforeTreadmillTime","beforeTreadmillKm","beforeTreadmillMins","beforeTreadmillSpeed","beforeTreadmillNote","afterTreadmillTime","afterTreadmillKm","afterTreadmillMins","afterTreadmillSpeed","afterTreadmillIncline","afterTreadmillNote"];
-  var DRAFT = "sidhi-gym-draft-" + ((localStorage.getItem("sidhi-gym-username") || "guest").toLowerCase());
+  function draftKey() { return "sidhi-gym-draft-" + (String((typeof username !== "undefined" && username) || localStorage.getItem("sidhi-gym-username") || "guest").toLowerCase()); }
 
   function readDraft() {
-    try { return JSON.parse(localStorage.getItem(DRAFT) || "null"); } catch (e) { return null; }
+    try { return JSON.parse(localStorage.getItem(draftKey()) || "null"); } catch (e) { return null; }
   }
   function writeDraft() {
     var o = { savedAt: Date.now() };
     FIELDS.forEach(function (id) { var n = el(id); if (n) o[id] = n.value; });
-    localStorage.setItem(DRAFT, JSON.stringify(o));
+    localStorage.setItem(draftKey(), JSON.stringify(o));
   }
-  function clearDraft() { localStorage.removeItem(DRAFT); }
+  function clearDraft() { localStorage.removeItem(draftKey()); }
   function applyDraft() {
     var o = readDraft();
     if (!o) return;
