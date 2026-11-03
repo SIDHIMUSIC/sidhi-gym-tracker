@@ -79,14 +79,14 @@
       '<p class="badge">FORGOT</p>' +
       '<div style="display:flex;gap:8px;margin-top:12px">' +
       '<button type="button" id="fgAdmin" class="btn ghost fg-mode" style="flex:1">message admin</button>' +
-      '<button type="button" id="fgMailBtn" class="btn ghost fg-mode active" style="flex:1">email verify</button>' +
+      '<button type="button" id="fgMailBtn" class="btn ghost fg-mode active" style="flex:1">recover by email</button>' +
       '</div>' +
       '<button type="button" id="fgNo" class="btn ghost fg-cancel full" style="margin-top:10px">cancel</button>'
     );
   }
   function openEmail() {
     sheet(
-      '<p class="badge">EMAIL VERIFY</p>' +
+      '<p class="badge">ACCOUNT RECOVERY</p>' +
       '<input id="fgKey" placeholder="saved email / username / user id" />' +
       '<div style="display:flex;gap:8px;margin-top:8px">' +
       '<button type="button" id="fgPass" class="btn ghost fg-mode active" style="flex:1">password</button>' +
