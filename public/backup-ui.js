@@ -61,23 +61,23 @@
       try {
         var text = await f.text();
         var data = JSON.parse(text);
-        var sessions = Array.isArray(data.sessions) ? data.sessions : (Array.isArray(data) ? data : []);
-        if (!sessions.length) { toast("No sessions in file"); return; }
-        if (!confirm("Restore " + sessions.length + " sessions? Existing dates will be updated.")) return;
-        var ok = 0;
-        for (var i = 0; i < sessions.length; i++) {
-          var s = sessions[i];
-          if (!s || !s.date) continue;
+        var importedSessions = Array.isArray(data.sessions) ? data.sessions : (Array.isArray(data) ? data : []);
+        if (!importedSessions.length) { toast("No sessions in file"); return; }
+        if (!confirm("Restore " + importedSessions.length + " sessions? Existing dates will be updated.")) return;
+        var ok = 0, failed = 0, skipped = 0;
+        for (var i = 0; i < importedSessions.length; i++) {
+          var s = importedSessions[i];
+          if (!s || !/^\\d{4}-\\d{2}-\\d{2}$/.test(String(s.date || ""))) { skipped++; continue; }
           try {
             await api("/api/session", { method: "PUT", body: s });
             ok++;
-          } catch (e) {}
+          } catch (e) { failed++; }
         }
         var fresh = await api("/api/sessions");
-        if (typeof sessions !== "undefined") window.sessions = fresh.sessions || [];
+        if (typeof sessions !== "undefined") sessions = fresh.sessions || [];
         if (typeof paintHome === "function") paintHome();
         if (typeof paintHist === "function") paintHist();
-        toast("Restored " + ok + " sessions");
+        toast("Restored " + ok + " / " + importedSessions.length + (failed ? " · failed " + failed : "") + (skipped ? " · skipped " + skipped : ""));
       } catch (e) { toast("Import fail: " + (e.message || "bad file")); }
       ev.target.value = "";
     };
