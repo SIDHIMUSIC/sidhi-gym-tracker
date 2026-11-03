@@ -338,7 +338,11 @@ async function save(finished) {
         toast(sign + d + " kg");
       } else toast("Workout done");
     } else toast("Saved");
-  } catch (err) { toast(err.message); }
+    return true;
+  } catch (err) {
+    toast(err.message || "Save failed");
+    return false;
+  }
 }
 function hideSplash() {
   var s = document.getElementById("bootSplash");
