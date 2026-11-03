@@ -33,6 +33,11 @@
     <div class="list" id="list"></div>
   </form>
   <script>
+    function escHtml(value) {
+      return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) {
+        return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch];
+      });
+    }
     document.getElementById("f").onsubmit = async function (e) {
       e.preventDefault();
       var msg = document.getElementById("msg");
@@ -68,7 +73,7 @@
         if (!res.ok) throw new Error(data.error || "fail");
         msg.textContent = (data.users || []).length + " members";
         box.innerHTML = (data.users || []).map(function (u) {
-          return "<div><b>@" + u.username + "</b> — " + (u.displayName || "") + "<br>id: " + (u.memberId || "-") + "</div>";
+          return "<div><b>@" + escHtml(u.username) + "</b> — " + escHtml(u.displayName || "") + "<br>id: " + escHtml(u.memberId || "-") + "</div>";
         }).join("");
       } catch (err) {
         msg.textContent = err.message || "fail";
