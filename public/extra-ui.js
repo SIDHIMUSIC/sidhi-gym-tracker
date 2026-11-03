@@ -1,5 +1,5 @@
 (function () {
-  var profile = { displayName: "", email: "", gender: "", schedule: {}, createdAt: null };
+  var profile = { displayName: "", email: "", emailVerified: false, gender: "", schedule: {}, createdAt: null };
   var todaySwap = localStorage.getItem("sidhi-today-swap") || "";
   var OPTIONS = window.SIDHI_DAY_OPTIONS || [
     "Day 1 — Chest + Triceps + Abs A",
@@ -48,7 +48,7 @@
   if (!document.getElementById("extra-ui-css")) {
     var st = document.createElement("style");
     st.id = "extra-ui-css";
-    st.textContent = ".tabbar{padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))}.tab[data-tab=profile]{background:none !important;color:var(--muted,#9aa7b8);box-shadow:none}.tab[data-tab=profile].on{color:#120d06 !important;background:linear-gradient(135deg,#ff9a9e,#f0c27a,#63e2b3) !important}.wrap{padding-top:calc(10px + env(safe-area-inset-top,0px));padding-bottom:calc(118px + env(safe-area-inset-bottom,0px))}.modal{position:fixed;inset:0;z-index:40;background:#02040ccc;display:grid;place-items:end center;padding:12px}.modal .sheet{width:min(460px,100%);max-height:92dvh;overflow:auto;background:#0b1220;border-radius:24px;padding:16px}.tip{position:absolute;background:#0b1220;border:1px solid #38bdf8;color:#e0f2fe;border-radius:14px;padding:8px 10px;font-size:12px;pointer-events:none;transform:translate(-50%,-120%)}.foot{text-align:center;margin:22px 0 10px;color:#9aa7b8;font-size:12px}.foot .brand{letter-spacing:.22em;font:800 11px Syne,sans-serif;color:#f0c27a}.foot .by{margin:6px 0 10px;color:#f6f1e8}.foot .links{display:flex;justify-content:center;gap:10px;margin:8px 0}.foot .links a{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#fff;text-decoration:none}.foot .copy{opacity:.7;font-size:11px}.seg{display:flex;gap:8px}.seg button{flex:1;min-height:44px;border-radius:999px;border:1px solid rgba(56,189,248,.3);background:transparent;color:#fff}.seg button.on{background:linear-gradient(135deg,#38bdf8,#818cf8);color:#041018}.avatar-wrap{text-align:center;margin:6px 0 10px}.avatar-ring{width:128px;height:128px;margin:0 auto;border-radius:50%;padding:3px;background:linear-gradient(135deg,#ff8bd4,#f0c27a,#63e2b3);box-shadow:0 0 24px rgba(255,139,212,.25)}.avatar-ring svg{width:122px;height:122px;border-radius:50%;display:block;background:#0b1220}";
+    st.textContent = ".tabbar{padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))}.tab[data-tab=profile]{background:none !important;color:var(--muted,#9aa7b8);box-shadow:none}.tab[data-tab=profile].on{color:#120d06 !important;background:linear-gradient(135deg,#ff9a9e,#f0c27a,#63e2b3) !important}.wrap{padding-top:calc(10px + env(safe-area-inset-top,0px));padding-bottom:calc(118px + env(safe-area-inset-bottom,0px))}.modal{position:fixed;inset:0;z-index:40;background:#02040ccc;display:grid;place-items:end center;padding:12px}.modal .sheet{width:min(460px,100%);max-height:92dvh;overflow:auto;background:#0b1220;border-radius:24px;padding:16px}.tip{position:absolute;background:#0b1220;border:1px solid #38bdf8;color:#e0f2fe;border-radius:14px;padding:8px 10px;font-size:12px;pointer-events:none;transform:translate(-50%,-120%)}.foot{text-align:center;margin:22px 0 10px;color:#9aa7b8;font-size:12px}.foot .brand{letter-spacing:.22em;font:800 11px Syne,sans-serif;color:#f0c27a}.foot .by{margin:6px 0 10px;color:#f6f1e8}.foot .links{display:flex;justify-content:center;gap:10px;margin:8px 0}.foot .links a{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#fff;text-decoration:none}.foot .copy{opacity:.7;font-size:11px}.seg{display:flex;gap:8px}.seg button{flex:1;min-height:44px;border-radius:999px;border:1px solid rgba(56,189,248,.3);background:transparent;color:#fff}.seg button.on{background:linear-gradient(135deg,#38bdf8,#818cf8);color:#041018}.avatar-wrap{text-align:center;margin:6px 0 10px}.avatar-ring{width:128px;height:128px;margin:0 auto;border-radius:50%;padding:3px;background:linear-gradient(135deg,#ff8bd4,#f0c27a,#63e2b3);box-shadow:0 0 24px rgba(255,139,212,.25)}.avatar-ring svg{width:122px;height:122px;border-radius:50%;display:block;background:#0b1220}.email-verify{margin-top:14px;padding:13px;border:1px solid rgba(99,226,179,.2);border-radius:18px;background:rgba(7,15,25,.55)}.email-status{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:#9aa7b8;margin:6px 0 10px}.email-status b{color:#63e2b3}.email-verify input{min-width:0}.email-actions{display:flex;gap:8px;margin-top:10px}.email-actions .btn{flex:1;min-height:44px;padding:10px 12px;font-size:12px}.email-verify .email-send{background:linear-gradient(135deg,#f0c27a,#d99b45);color:#17110a;box-shadow:0 5px 16px #f0c27a2b}.email-verify .email-confirm{background:linear-gradient(135deg,#a8edea,#63e2b3);color:#04140d;box-shadow:0 5px 16px #63e2b32b}.email-verify .email-code{margin-top:10px;letter-spacing:.25em;text-align:center}";
     document.head.appendChild(st);
   }
 
@@ -106,12 +106,17 @@
     el("view-profile").innerHTML =
       '<div class="glass card" style="text-align:center">' + avatarHtml() +
       '<p class="badge">PROFILE</p><h2>' + escHtml(firstName()) + '</h2><p class="sub">@' + escHtml(username || "") + ' • ' + escHtml(profile.gender || "") + '</p>' +
-      '<div class="kv"><span>email</span><b>' + (profile.email ? escHtml(profile.email) : '—') + '</b></div>' +
+      '<div class="kv"><span>email</span><b>' + (profile.email ? escHtml(profile.email) : '—') + (profile.emailVerified ? ' ✓' : '') + '</b></div>' +
       '<div class="kv"><span>member since</span><b>' + since + '</b></div>' +
       '<div class="kv"><span>workouts</span><b>' + ((typeof sessions !== "undefined" ? sessions.filter(function (s) { return s.finished; }).length : 0)) + '</b></div>' +
       '<div class="kv"><span>weight</span><b>' + (w != null ? w + " kg" : "—") + '</b></div>' +
       '<div class="kv"><span>goal weight</span><b>' + (typeof goalWeight !== "undefined" && goalWeight != null ? goalWeight + " kg" : "—") + '</b></div></div>' +
-      '<div class="glass card"><h2>edit profile</h2><label>full name</label><input id="pfName" value="' + (profile.displayName || "") + '" /><label>gender</label><div class="seg" id="pfGen"><button type="button" data-g="male" class="' + (profile.gender === "male" ? "on" : "") + '">Male</button><button type="button" data-g="female" class="' + (profile.gender === "female" ? "on" : "") + '">Female</button></div><button class="btn ok full" id="pfSave" style="margin-top:12px">save changes</button></div>' +
+      '<div class="glass card"><h2>edit profile</h2><label>full name</label><input id="pfName" value="' + escHtml(profile.displayName || "") + '" />' +
+      '<section class="email-verify"><label for="pfEmail">email address</label><input id="pfEmail" type="email" autocomplete="email" value="' + escHtml(profile.email || "") + '" placeholder="you@gmail.com" ' + (profile.emailVerified ? 'readonly aria-readonly="true"' : '') + ' />' +
+      '<div class="email-status"><span>' + (profile.emailVerified ? 'Verified email · permanently locked' : 'Email verification required') + '</span><b>' + (profile.emailVerified ? '✓ VERIFIED' : 'NOT VERIFIED') + '</b></div>' +
+      (profile.emailVerified ? '<p class="sub">This email is locked to your account and cannot be changed.</p>' :
+      '<button type="button" class="btn email-send full" id="pfEmailSend">send verification code</button><div id="pfEmailCodeWrap" class="hidden"><input class="email-code" id="pfEmailCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-digit OTP" /><div class="email-actions"><button type="button" class="btn email-confirm" id="pfEmailVerify">verify email</button><button type="button" class="btn ghost" id="pfEmailCancel">cancel</button></div></div>') +
+      '</section><label>gender</label><div class="seg" id="pfGen"><button type="button" data-g="male" class="' + (profile.gender === "male" ? "on" : "") + '">Male</button><button type="button" data-g="female" class="' + (profile.gender === "female" ? "on" : "") + '">Female</button></div><button class="btn ok full" id="pfSave" style="margin-top:12px">save changes</button></div>' +
       '<div class="glass card"><h2>choose official plan day</h2>' + sched + '<button class="btn full" id="pfSched" style="margin-top:12px">save schedule</button></div>' +
       '<div class="glass card"><h2>account</h2><p class="sub">Sign out of your SIDHI GYM account on this device.</p><button class="btn danger full" id="logoutBtn" type="button">↪ logout</button></div>';
     document.querySelectorAll("#pfGen button").forEach(function (b) {
@@ -123,6 +128,39 @@
         if (ring) ring.outerHTML = avatarHtml();
       };
     });
+    var emailSend = el("pfEmailSend");
+    if (emailSend) emailSend.onclick = async function () {
+      var email = (el("pfEmail").value || "").trim().toLowerCase();
+      emailSend.disabled = true;
+      emailSend.textContent = "sending…";
+      try {
+        var sent = await api("/api/profile-email/send", { method: "POST", body: { email: email } });
+        if (sent.alreadyVerified) {
+          profile.email = sent.email || email; profile.emailVerified = true; showProfile(); return;
+        }
+        el("pfEmailCodeWrap").classList.remove("hidden");
+        el("pfEmailCode").focus();
+        toast("Verification code sent to " + (sent.hint || "your email"));
+      } catch (e) { toast(e.message || "OTP send failed"); }
+      finally { if (emailSend.isConnected) { emailSend.disabled = false; emailSend.textContent = "send verification code"; } }
+    };
+    var emailVerify = el("pfEmailVerify");
+    if (emailVerify) emailVerify.onclick = async function () {
+      var email = (el("pfEmail").value || "").trim().toLowerCase();
+      var code = (el("pfEmailCode").value || "").trim();
+      emailVerify.disabled = true;
+      try {
+        var verified = await api("/api/profile-email/verify", { method: "POST", body: { email: email, code: code } });
+        profile.email = verified.email || email; profile.emailVerified = true;
+        toast("Email verified and locked"); showProfile();
+      } catch (e) { toast(e.message || "Email verification failed"); }
+      finally { if (emailVerify.isConnected) emailVerify.disabled = false; }
+    };
+    var emailCancel = el("pfEmailCancel");
+    if (emailCancel) emailCancel.onclick = function () {
+      el("pfEmailCode").value = "";
+      el("pfEmailCodeWrap").classList.add("hidden");
+    };
     var sv = el("pfSave");
     if (sv) sv.onclick = async function () {
       var gbtn = document.querySelector("#pfGen button.on");
@@ -193,6 +231,7 @@
         var me = await api("/api/me");
         profile.displayName = me.displayName || "";
         profile.email = me.email || "";
+        profile.emailVerified = me.emailVerified === true;
         profile.gender = me.gender || "";
         profile.schedule = me.schedule || {};
         profile.createdAt = me.createdAt;
