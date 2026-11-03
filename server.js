@@ -330,8 +330,11 @@ app.post("/api/register", async (req, res) => {
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ error: "Email sahi likho" });
     if (!/^\d{6}$/.test(otp)) return res.status(400).json({ error: "6 digit OTP daalo" });
     const Otp = mongoose.models.Otp;
-    const otpRow = Otp && await Otp.findOne({ email: email, code: otp, exp: { $gt: new Date() } });
-    if (!otpRow) return res.status(401).json({ error: "OTP galat ya expire. Pehle email pe code lo." });
+    const otpRow = Otp && await Otp.findOne({ email: email, purpose: "register", code: otp, attempts: { $lt: 5 }, exp: { $gt: new Date() } });
+    if (!otpRow) {
+      if (Otp) await Otp.updateOne({ email: email, purpose: "register", exp: { $gt: new Date() } }, { $inc: { attempts: 1 } });
+      return res.status(401).json({ error: "OTP galat, expire ya 5 attempts complete. Naya code lo." });
+    }
     const exists = await User.findOne({ username });
     if (exists) return res.status(409).json({ error: "Ye username pehle se hai. Login karo." });
     const mailTaken = await mongoose.connection.collection("users").findOne({ email: email });
