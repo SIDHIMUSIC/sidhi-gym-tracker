@@ -199,7 +199,7 @@
   }
 
   boot();
-  setInterval(function () { if (me && me.isAdmin) profileAdmin(); }, 1200);
+  setInterval(function () { if (me && me.isAdmin) profileAdmin(); }, 3000);
   checkExpiryReminders();
   window.addEventListener("focus", checkExpiryReminders);
   setInterval(checkExpiryReminders, 30 * 60 * 1000);
