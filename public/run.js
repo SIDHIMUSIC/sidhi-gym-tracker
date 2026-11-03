@@ -276,7 +276,7 @@
   async function endRun(silent) {
     if (run.state === "idle") return;
     if (run.state === "running") run.elapsedMs = Date.now() - run.startedAt;
-    const startedAt = new Date(Date.now() - run.elapsedMs).toISOString();
+    const startedAt = new Date(run.startedAt || (Date.now() - run.elapsedMs)).toISOString();
     const snap = runSnap();
     const rec = {
       id: startedAt,
@@ -325,7 +325,7 @@
       const raw = localStorage.getItem(runStorageKey()); if (!raw) return;
       const s = JSON.parse(raw);
       run.mode = s.mode || "auto"; run.speed = Number(s.speed) || 0;
-      run.elapsedMs = Number(s.elapsedMs) || 0; run.distanceKm = Number(s.distanceKm) || 0; run.maxSpeed = Number(s.maxSpeed) || 0;
+      run.elapsedMs = Number(s.elapsedMs) || 0; run.startedAt = Number(s.startedAt) || 0; run.distanceKm = Number(s.distanceKm) || 0; run.maxSpeed = Number(s.maxSpeed) || 0;
       run.points = Array.isArray(s.points) ? s.points : [];
       document.querySelectorAll("#runModes button").forEach(function (b) { b.classList.toggle("on", b.dataset.mode === run.mode); });
       if (s.state === "running") { run.state = "running"; run.startedAt = Date.now() - run.elapsedMs; startTicker(); lockScreen(); startGps(); }
