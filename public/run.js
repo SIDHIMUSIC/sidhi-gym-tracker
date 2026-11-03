@@ -1,5 +1,5 @@
 (function () {
-  const RUN_KEY = "sidhi-gym-run";
+  function runStorageKey() { return "sidhi-gym-run-" + (String((typeof username !== "undefined" && username) || localStorage.getItem("sidhi-gym-username") || "guest").toLowerCase()); }
   const MODE_MIN = { walk: 0.6, jog: 1.5, run: 2.2, sprint: 4, auto: 0.5 };
   const MAX_ACC_M = 180;
   const MIN_DT = 0.5;
@@ -116,7 +116,7 @@
     runs.forEach(function (r) {
       if (!bestRun || (Number(r.distanceKm) || 0) > (Number(bestRun.distanceKm) || 0)) bestRun = r;
     });
-    const gymDays = ((typeof sessions !== "undefined" && sessions) || []).filter(function (s) { return s.finished || s.after1HourNote; });
+    const gymDays = ((typeof sessions !== "undefined" && sessions) || []).filter(function (s) { return s.finished === true; });
     let bestGym = gymDays[0] || null;
     gymDays.forEach(function (s) {
       const noteLen = String(s.after1HourNote || "").length;
@@ -174,8 +174,8 @@
   drawGraph();
   }
   function persistRun() {
-    if (run.state === "idle") { localStorage.removeItem(RUN_KEY); return; }
-    localStorage.setItem(RUN_KEY, JSON.stringify({
+    if (run.state === "idle") { localStorage.removeItem(runStorageKey()); return; }
+    localStorage.setItem(runStorageKey(), JSON.stringify({
       state: run.state, mode: run.mode, speed: run.speed,
       startedAt: run.startedAt, elapsedMs: run.elapsedMs, distanceKm: run.distanceKm,
       maxSpeed: run.maxSpeed, points: run.points.slice(-80)
@@ -276,48 +276,56 @@
   async function endRun(silent) {
     if (run.state === "idle") return;
     if (run.state === "running") run.elapsedMs = Date.now() - run.startedAt;
+    const startedAt = new Date(run.startedAt || (Date.now() - run.elapsedMs)).toISOString();
     const snap = runSnap();
     const rec = {
+      id: startedAt,
       mode: run.mode, source: "gps",
-      startedAt: new Date(Date.now() - run.elapsedMs).toISOString(),
+      startedAt: startedAt,
       endedAt: new Date().toISOString(),
       durationSec: Math.round(run.elapsedMs / 1000),
       distanceKm: snap.km,
       avgSpeed: snap.km && run.elapsedMs ? Math.round((snap.km / (run.elapsedMs / 3600000)) * 10) / 10 : snap.spd,
       maxSpeed: run.maxSpeed || snap.spd, calories: snap.cal,
-      points: run.points.slice(-80)
+      points: run.points.slice(-80), countedInCardio: false
     };
     clearInterval(run.tick); stopGps(); unlockScreen();
-    run.state = "idle"; run.elapsedMs = 0; run.startedAt = 0; run.distanceKm = 0; run.maxSpeed = 0; run.points = []; run.moving = 0; run.lastFix = null;
-    var box = el("runActs"); if (box) box.dataset.state = "";
-    renderActs(); persistRun(); paintRun();
-    if (el("runOv")) el("runOv").classList.remove("on");
-    if (typeof token === "undefined" || !token) return;
+    if (typeof token === "undefined" || !token) {
+      run.state = "paused";
+      persistRun(); renderActs(); paintRun();
+      if (!silent && typeof toast === "function") toast("Login required — run kept safely");
+      return;
+    }
     try {
       if (el("date") && !el("date").value && typeof todayISO === "function") el("date").value = todayISO();
       const old = (typeof currentRow === "function" && currentRow()) || (typeof todayRow === "function" && todayRow()) || {};
       const body = formBody(false);
       body.date = typeof todayISO === "function" ? todayISO() : body.date;
-      body.runs = (old.runs || []).concat([rec]);
-      body.beforeTreadmillKm = Math.round(((Number(old.beforeTreadmillKm) || 0) + rec.distanceKm) * 1000) / 1000;
-      body.beforeTreadmillMins = Math.round((Number(old.beforeTreadmillMins) || 0) + rec.durationSec / 60);
-      body.beforeTreadmillSpeed = rec.avgSpeed;
-      body.beforeTreadmillTime = typeof nowTime === "function" ? nowTime() : body.beforeTreadmillTime;
+      const oldRuns = Array.isArray(old.runs) ? old.runs : [];
+      body.runs = oldRuns.filter(function (r) { return r.id !== rec.id; }).concat([rec]);
       const data = await api("/api/session", { method: "PUT", body: body });
       sessions = data.sessions || [];
+      run.state = "idle"; run.elapsedMs = 0; run.startedAt = 0; run.distanceKm = 0; run.maxSpeed = 0; run.points = []; run.moving = 0; run.lastFix = null;
+      var box = el("runActs"); if (box) box.dataset.state = "";
+      renderActs(); persistRun(); paintRun();
+      if (el("runOv")) el("runOv").classList.remove("on");
       if (typeof fillForm === "function") fillForm();
       if (typeof paintHome === "function") paintHome();
       if (typeof paintHist === "function") paintHist();
       paintSummary();
       if (!silent && typeof toast === "function") toast(fancy("run saved") + " " + rec.distanceKm.toFixed(2) + " km");
-    } catch (err) { if (!silent && typeof toast === "function") toast(err.message); }
+    } catch (err) {
+      run.state = "paused";
+      persistRun(); renderActs(); paintRun();
+      if (!silent && typeof toast === "function") toast((err && err.message) || "Run save failed — run kept safely");
+    }
   }
   function restoreRun() {
     try {
-      const raw = localStorage.getItem(RUN_KEY); if (!raw) return;
+      const raw = localStorage.getItem(runStorageKey()); if (!raw) return;
       const s = JSON.parse(raw);
       run.mode = s.mode || "auto"; run.speed = Number(s.speed) || 0;
-      run.elapsedMs = Number(s.elapsedMs) || 0; run.distanceKm = Number(s.distanceKm) || 0; run.maxSpeed = Number(s.maxSpeed) || 0;
+      run.elapsedMs = Number(s.elapsedMs) || 0; run.startedAt = Number(s.startedAt) || 0; run.distanceKm = Number(s.distanceKm) || 0; run.maxSpeed = Number(s.maxSpeed) || 0;
       run.points = Array.isArray(s.points) ? s.points : [];
       document.querySelectorAll("#runModes button").forEach(function (b) { b.classList.toggle("on", b.dataset.mode === run.mode); });
       if (s.state === "running") { run.state = "running"; run.startedAt = Date.now() - run.elapsedMs; startTicker(); lockScreen(); startGps(); }

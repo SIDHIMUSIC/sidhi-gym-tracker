@@ -168,7 +168,7 @@
       var otp = el("regOtp").value.trim();
       var g = (document.querySelector("#regGen button.on") || {}).dataset.g || "male";
       if (user.length < 2) { el("regErr").textContent = "Username too short"; return; }
-      if (pass.length < 4) { el("regErr").textContent = "Password min 4"; return; }
+      if (pass.length < 6) { el("regErr").textContent = "Password min 6"; return; }
       if (!email || otp.length !== 6) { el("regErr").textContent = "Email aur 6 digit OTP daalo"; return; }
       try {
         await api("/api/register", { method: "POST", body: { username: user, password: pass, displayName: name, gender: g, email: email, otp: otp } });

@@ -1,4 +1,4 @@
-var CACHE = "sidhi-v4";
+var CACHE = "sidhi-v5";
 var SHELL = ["/", "/index.html", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 self.addEventListener("install", function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(SHELL); }).then(function () { return self.skipWaiting(); }));
@@ -13,7 +13,7 @@ self.addEventListener("fetch", function (e) {
   var url = new URL(e.request.url);
   if (url.origin !== self.location.origin || url.pathname.indexOf("/api/") === 0) return;
   var refresh = e.request.mode === "navigate" ||
-    /\\.(js|css|html|json)$/.test(url.pathname) ||
+    /\.(js|css|html|json)$/.test(url.pathname) ||
     url.pathname === "/sw.js";
   e.respondWith(
     fetch(refresh ? new Request(e.request, { cache: "no-store" }) : e.request).then(function (res) {

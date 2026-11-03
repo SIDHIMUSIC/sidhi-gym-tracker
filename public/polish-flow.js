@@ -15,18 +15,18 @@
     document.head.appendChild(st);
   }
 
-  var FIELDS = ["date","entryTime","after1HourTime","after1HourNote","beforeTreadmillTime","beforeTreadmillKm","beforeTreadmillMins","beforeTreadmillSpeed","beforeTreadmillNote","afterTreadmillTime","afterTreadmillKm","afterTreadmillMins","afterTreadmillSpeed","afterTreadmillIncline","afterTreadmillNote"];
-  var DRAFT = "sidhi-gym-draft";
+  var FIELDS = ["date","entryWeight","afterTreadmillWeight","entryTime","after1HourTime","after1HourNote","beforeTreadmillTime","beforeTreadmillKm","beforeTreadmillMins","beforeTreadmillSpeed","beforeTreadmillNote","afterTreadmillTime","afterTreadmillKm","afterTreadmillMins","afterTreadmillSpeed","afterTreadmillIncline","afterTreadmillNote"];
+  function draftKey() { return "sidhi-gym-draft-" + (String((typeof username !== "undefined" && username) || localStorage.getItem("sidhi-gym-username") || "guest").toLowerCase()); }
 
   function readDraft() {
-    try { return JSON.parse(localStorage.getItem(DRAFT) || "null"); } catch (e) { return null; }
+    try { return JSON.parse(localStorage.getItem(draftKey()) || "null"); } catch (e) { return null; }
   }
   function writeDraft() {
     var o = { savedAt: Date.now() };
     FIELDS.forEach(function (id) { var n = el(id); if (n) o[id] = n.value; });
-    localStorage.setItem(DRAFT, JSON.stringify(o));
+    localStorage.setItem(draftKey(), JSON.stringify(o));
   }
-  function clearDraft() { localStorage.removeItem(DRAFT); }
+  function clearDraft() { localStorage.removeItem(draftKey()); }
   function applyDraft() {
     var o = readDraft();
     if (!o) return;
@@ -49,7 +49,7 @@
   async function syncDraft() {
     if (!navigator.onLine || !readDraft()) return;
     if (typeof save === "function") {
-      try { await save(false); clearDraft(); } catch (e) {}
+      try { var saved = await save(false); if (saved !== false) clearDraft(); } catch (e) {}
     }
   }
   window.addEventListener("online", syncDraft);
@@ -93,12 +93,15 @@
     var _sv = save;
     save = async function (finished) {
       try {
-        await _sv(finished);
+        var saved = await _sv(finished);
+        if (saved === false) return false;
         clearDraft();
         if (finished) showDelta();
+        return true;
       } catch (err) {
         writeDraft();
         if (typeof toast === "function") toast(navigator.onLine ? err.message : "Offline \u2014 draft saved");
+        return false;
       }
     };
     save._delta = true;

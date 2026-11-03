@@ -126,6 +126,6 @@
     if (b && /profile|account/i.test((b.textContent || "") + " " + (b.getAttribute("data-tab") || ""))) setTimeout(sync, 150);
   });
   window.addEventListener("focus", sync);
-  setInterval(sync, 5000);
+  setInterval(sync, 30000);
   sync();
 })();

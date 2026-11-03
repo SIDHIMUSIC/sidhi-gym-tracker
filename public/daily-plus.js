@@ -10,7 +10,7 @@
     var d = document.getElementById("date");
     return (d && d.value) || (typeof todayISO === "function" ? todayISO() : new Date().toISOString().slice(0, 10));
   }
-  function storeKey() { return "sidhi-daily-" + dateKey(); }
+  function storeKey() { return "sidhi-daily-" + ((localStorage.getItem("sidhi-gym-username") || "guest").toLowerCase()) + "-" + dateKey(); }
   function readLog() {
     try { return JSON.parse(localStorage.getItem(storeKey()) || "{}"); } catch (e) { return {}; }
   }
@@ -118,7 +118,6 @@
     };
     fillForm._log = true;
   }
-  setInterval(function () { mountLog(); hookForgot(); }, 800);
+  setInterval(mountLog, 2000);
   mountLog();
-  hookForgot();
 })();

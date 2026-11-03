@@ -76,7 +76,7 @@
       if (typeof paintHome === "function") paintHome();
       if (typeof toast === "function") toast("Plan preview updated");
     };
-  }, 800);
+  }, 2000);
   setTimeout(tagCards, 400);
   setInterval(tagCards, 2000);
 })();

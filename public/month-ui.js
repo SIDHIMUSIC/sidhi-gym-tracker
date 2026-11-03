@@ -54,7 +54,7 @@
       var iso = y + "-" + String(mo + 1).padStart(2, "0") + "-" + String(d).padStart(2, "0");
       var row = map[iso];
       var cls = "c";
-      if (row && (row.finished || row.entryWeight || row.after1HourNote)) cls += " done";
+      if (row && row.finished === true) cls += " done";
       if (iso === today) cls += " today";
       html += '<div class="' + cls + '" data-day="' + iso + '">' + d + "</div>";
     }
