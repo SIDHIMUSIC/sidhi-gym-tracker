@@ -118,6 +118,6 @@
     };
     fillForm._log = true;
   }
-  setInterval(mountLog, 800);
+  setInterval(mountLog, 2000);
   mountLog();
 })();
