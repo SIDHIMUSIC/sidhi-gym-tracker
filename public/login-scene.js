@@ -160,13 +160,6 @@
       ripple(loginBtn, e);
     });
     loginBtn.addEventListener("pointerup", function () { loginBtn.classList.remove("press"); });
-    loginBtn.addEventListener("click", function () {
-      loginBtn.classList.add("loading");
-      setTimeout(function () {
-        loginBtn.classList.remove("loading");
-        loginBtn.classList.add("ok");
-      }, 520);
-    });
   }
   if (setupBtn && !setupBtn.dataset.ui) {
     setupBtn.dataset.ui = "1";
