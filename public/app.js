@@ -238,6 +238,7 @@ function paintHome() {
   $("homeWeek").textContent = "this week";
   var sc = streakCount();
   $("stStreak").textContent = sc >= 7 ? sc + " 🔥" : sc;
+  $("stStreak").classList.toggle("golden-streak", sc >= 7);
   $("stWorkouts").textContent = (sessions || []).filter(isGymDay).length;
   if (goalWeight != null && latest != null) {
     $("stGoal").textContent = String(Number(goalWeight)) + " kg";
