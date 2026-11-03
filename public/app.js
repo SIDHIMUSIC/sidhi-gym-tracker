@@ -163,9 +163,14 @@ function durationText(row) {
   if (mins < 0) mins += 24 * 60;
   return Math.floor(mins / 60) + "h " + (mins % 60) + "m";
 }
+function isGymDay(s) {
+  if (!s) return false;
+  if (new Date(s.date + "T12:00:00").getDay() === 0) return false;
+  return !!(s.finished || s.entryWeight || s.afterTreadmillWeight || (s.after1HourNote && String(s.after1HourNote).trim()));
+}
 function streakCount() {
   const map = {};
-  sessions.forEach(function (s) { map[s.date] = s; });
+  (sessions || []).forEach(function (s) { map[s.date] = s; });
   let n = 0;
   const d = new Date(todayISO() + "T12:00:00");
   for (let i = 0; i < 400; i++) {
@@ -173,7 +178,7 @@ function streakCount() {
     const day = d.getDay();
     const row = map[iso];
     if (day === 0) { d.setDate(d.getDate() - 1); continue; }
-    if (row && row.finished) n++;
+    if (isGymDay(row)) n++;
     else if (i === 0) { d.setDate(d.getDate() - 1); continue; }
     else break;
     d.setDate(d.getDate() - 1);
@@ -214,13 +219,15 @@ function drawChart(canvas, rows) {
 function paintHome() {
   const row = todayRow();
   const wd = weekDelta();
-  const latest = kg(row && (row.afterTreadmillWeight || row.entryWeight)) || (wd && wd.last);
+  var withW = (sessions || []).filter(function (s) { return kg(s.entryWeight) != null || kg(s.afterTreadmillWeight) != null; }).sort(function (a, b) { return a.date.localeCompare(b.date); });
+  var lastW = withW.length ? kg(withW[withW.length - 1].afterTreadmillWeight || withW[withW.length - 1].entryWeight) : null;
+  const latest = kg(row && (row.afterTreadmillWeight || row.entryWeight)) || lastW || (wd && wd.last);
   $("hello").textContent = greet() + ", " + username + "!";
   $("homeKg").textContent = latest != null ? latest + " kg" : "— kg";
   $("homeWeek").textContent = "this week";
   var sc = streakCount();
   $("stStreak").textContent = sc >= 7 ? sc + " 🔥" : sc;
-  $("stWorkouts").textContent = sessions.filter(function (s) { return s.finished; }).length;
+  $("stWorkouts").textContent = (sessions || []).filter(isGymDay).length;
   if (goalWeight != null && latest != null) {
     var left = Math.round((latest - Number(goalWeight)) * 100) / 100;
     $("stGoal").textContent = (left > 0 ? left : 0) + " kg";
