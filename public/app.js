@@ -172,15 +172,26 @@ function streakCount() {
   const map = {};
   (sessions || []).forEach(function (s) { map[s.date] = s; });
   let n = 0;
+  let checkingToday = true;
   const d = new Date(todayISO() + "T12:00:00");
-  for (let i = 0; i < 400; i++) {
+  for (let checked = 0; checked < 400; checked++) {
     const iso = d.toISOString().slice(0, 10);
     const day = d.getDay();
-    const row = map[iso];
-    if (day === 0) { d.setDate(d.getDate() - 1); continue; }
-    if (isGymDay(row)) n++;
-    else if (i === 0) { d.setDate(d.getDate() - 1); continue; }
-    else break;
+    if (day === 0) {
+      // Sunday is a scheduled rest day: it neither adds nor breaks the streak.
+      checkingToday = false;
+      d.setDate(d.getDate() - 1);
+      continue;
+    }
+    if (isGymDay(map[iso])) {
+      n++;
+    } else if (checkingToday) {
+      // Today's workout may still be ahead; only skip today, never a past absence.
+    } else {
+      // Any missed Monday-Saturday gym day breaks the consecutive streak.
+      break;
+    }
+    checkingToday = false;
     d.setDate(d.getDate() - 1);
   }
   return n;
@@ -230,7 +241,7 @@ function paintHome() {
   $("stWorkouts").textContent = (sessions || []).filter(isGymDay).length;
   if (goalWeight != null && latest != null) {
     var left = Math.round((latest - Number(goalWeight)) * 100) / 100;
-    $("stGoal").textContent = (left > 0 ? left : 0) + " kg";
+    $("stGoal").textContent = Number(goalWeight).toFixed(2).replace(/\\.?0+$/, "") + " kg";
   } else if (goalWeight != null) {
     $("stGoal").textContent = goalWeight + " kg";
   } else $("stGoal").textContent = "—";
@@ -248,7 +259,7 @@ function paintHome() {
     card.className = "glass card";
     card.style.marginTop = "14px";
     var kgBox = $("homeKg");
-    if (kgBox && kgBox.parentNode && kg.parentNode.parentNode) kgBox.parentNode.parentNode.insertBefore(card, kgBox.parentNode.nextSibling);
+    if (kgBox && kgBox.parentNode && kgBox.parentNode.parentNode) kgBox.parentNode.parentNode.insertBefore(card, kgBox.parentNode.nextSibling);
     else $("view-home").insertBefore(card, $("view-home").firstChild);
   }
   var runs = [];
