@@ -180,6 +180,11 @@ function num(v) {
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
 }
+function isValidISODate(value) {
+  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(String(value || ""))) return false;
+  const parsed = new Date(String(value) + "T00:00:00.000Z");
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
 function dayFromDate(dateStr) {
   return DAYS[new Date(dateStr + "T12:00:00").getDay()];
 }
