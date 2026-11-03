@@ -192,6 +192,7 @@
       try {
         var me = await api("/api/me");
         profile.displayName = me.displayName || "";
+        profile.email = me.email || "";
         profile.gender = me.gender || "";
         profile.schedule = me.schedule || {};
         profile.createdAt = me.createdAt;
