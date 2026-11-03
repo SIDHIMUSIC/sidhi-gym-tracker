@@ -98,6 +98,10 @@
     }
   }
 
+  function escapeHtml(value) {
+    return String(value == null ? "" : value).replace(/[&<>"\']/g, function (ch) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "\'": "&#39;" })[ch]; });
+  }
+
   function profileAdmin() {
     if (!me || !me.isAdmin) return;
     var prof = document.getElementById("view-profile");
@@ -116,7 +120,7 @@
           else d.users.forEach(function (u) {
             var status = u.isAdmin ? "ADMIN • LIFETIME" : (u.active ? (u.daysLeft != null ? u.daysLeft + " days left" : "PREMIUM ACTIVE") : "EXPIRED");
             var statusStyle = u.isAdmin ? "background:linear-gradient(90deg,#ff6b6b,#feca57,#48dbfb,#ff9ff3);color:#111" : (u.active ? "background:linear-gradient(90deg,#f0c27a,#63e2b3);color:#111" : "background:#7f1d1d;color:#fecaca");
-            html += "<div style='padding:8px 0;border-bottom:1px solid #333;display:flex;justify-content:space-between;gap:8px;align-items:center'><span>" + (u.name || u.username) + "</span><span style='padding:4px 7px;border-radius:8px;font-size:10px;font-weight:800;" + statusStyle + "'>" + status + "</span></div>";
+            html += "<div style='padding:8px 0;border-bottom:1px solid #333;display:flex;justify-content:space-between;gap:8px;align-items:center'><span>" + escapeHtml(u.name || u.username) + "</span><span style='padding:4px 7px;border-radius:8px;font-size:10px;font-weight:800;" + statusStyle + "'>" + status + "</span></div>";
           });
           html += "</div>";
           var modal = document.createElement("div");
