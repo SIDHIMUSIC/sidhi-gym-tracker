@@ -116,7 +116,7 @@
     runs.forEach(function (r) {
       if (!bestRun || (Number(r.distanceKm) || 0) > (Number(bestRun.distanceKm) || 0)) bestRun = r;
     });
-    const gymDays = ((typeof sessions !== "undefined" && sessions) || []).filter(function (s) { return s.finished || s.after1HourNote; });
+    const gymDays = ((typeof sessions !== "undefined" && sessions) || []).filter(function (s) { return s.finished === true; });
     let bestGym = gymDays[0] || null;
     gymDays.forEach(function (s) {
       const noteLen = String(s.after1HourNote || "").length;
