@@ -916,7 +916,7 @@ app.post("/api/premium/food-summary", auth, async (req, res) => {
   const user = await User.findOne({ username: req.gymUser }).lean();
   if (!hasActivePremium(user)) return res.status(402).json({ error: "AI food summary ke liye Premium chahiye." });
   const date = String((req.body && req.body.date) || "");
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: "Date galat hai." });
+  if (!isValidISODate(date)) return res.status(400).json({ error: "Date galat hai." });
   const quota = foodQuota(req.gymUser);
   if (!quota.allowed) return res.status(429).json({ error: "Aaj ka food AI limit use ho gaya. Kal summary dobara try karna." });
   const meals = await FoodLog.find({ owner: req.gymUser, date }).sort({ time: 1 }).lean();
