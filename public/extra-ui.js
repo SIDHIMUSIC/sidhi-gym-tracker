@@ -139,7 +139,7 @@
     if (emailVerify) emailVerify.onclick = async function () {
       var address = (el("pfEmailInput").value || "").trim().toLowerCase();
       var code = (el("pfEmailCode").value || "").trim();
-      if (!/^\\d{6}$/.test(code)) { toast("6 digit OTP daalo"); return; }
+      if (!/^\d{6}$/.test(code)) { toast("6 digit OTP daalo"); return; }
       emailVerify.disabled = true;
       try {
         var verified = await api("/api/profile-email/verify", { method: "POST", body: { email: address, code: code } });
