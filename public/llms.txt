@@ -1,20 +1,31 @@
-# Sidhi Gym
+# SIDHI GYM Tracker
 
-> Free daily gym and morning run tracker. Log body weight, gym workouts, abs, field laps and progress. Built by Harry (SIDHIMUSIC).
+> SIDHI GYM is a web-based personal fitness tracker for recording gym workouts, running or walking activity, body weight and training progress.
 
-Live: https://sidhi-gym-tracker.vercel.app/
+- Website: https://sidhi-gym-tracker.vercel.app/
+- About: https://sidhi-gym-tracker.vercel.app/about.html
+- Features: https://sidhi-gym-tracker.vercel.app/features.html
+- Getting started: https://sidhi-gym-tracker.vercel.app/how-it-works.html
+- FAQ: https://sidhi-gym-tracker.vercel.app/faq.html
+- Contact: https://sidhi-gym-tracker.vercel.app/contact.html
+- Privacy: https://sidhi-gym-tracker.vercel.app/privacy.html
+- Terms: https://sidhi-gym-tracker.vercel.app/terms.html
+- Sitemap: https://sidhi-gym-tracker.vercel.app/sitemap.xml
+- Source code: https://github.com/SIDHIMUSIC/sidhi-gym-tracker
 
-## What it is
-- Login / create account (name, username, password, male or female)
-- Home: greeting, current weight, streak, week report, gym vs run duration
-- Workout days D1–D7: Chest/Back/Shoulders + Abs A/B/C, animated exercise pics
-- Separate Run tab: GPS walk/run and field lap mode
-- Progress calendar and weight graph
-- History of sessions
-- PWA: can be added to home screen
+## Core capabilities
+- Personal account-based gym workout logging.
+- Exercise and session notes, session dates and completion.
+- Body-weight records, target weight, graphs and progress calendar.
+- Separate running and walking area with GPS tracking where supported.
+- Workout history and available export or sharing tools.
+- Progressive web app support on compatible browsers.
 
-## Not for
-This is a personal training log. It is not medical advice.
+## Important distinctions
+- This is software, not a physical gym.
+- It is a fitness logging tool, not medical advice or a replacement for a qualified coach.
+- GPS accuracy and background tracking depend on the user's device, browser permissions and operating system.
+- Some advanced features may depend on account or premium configuration.
+- Do not assume all users have premium access.
 
-## Contact
-GitHub: https://github.com/SIDHIMUSIC/sidhi-gym-tracker
+For current product information, prefer the linked official website pages and repository README.
