@@ -106,17 +106,12 @@
     el("view-profile").innerHTML =
       '<div class="glass card" style="text-align:center">' + avatarHtml() +
       '<p class="badge">PROFILE</p><h2>' + escHtml(firstName()) + '</h2><p class="sub">@' + escHtml(username || "") + ' • ' + escHtml(profile.gender || "") + '</p>' +
-      '<div class="kv"><span>email</span><b>' + (profile.email ? escHtml(profile.email) : '—') + (profile.emailVerified ? ' ✓' : '') + '</b></div>' +
+      '<div class="kv"><span>email</span><b>' + (profile.email ? escHtml(profile.email) : '—') + (profile.emailVerified ? ' · ✓ verified' : ' · not verified') + '</b></div>' +
       '<div class="kv"><span>member since</span><b>' + since + '</b></div>' +
       '<div class="kv"><span>workouts</span><b>' + ((typeof sessions !== "undefined" ? sessions.filter(function (s) { return s.finished; }).length : 0)) + '</b></div>' +
       '<div class="kv"><span>weight</span><b>' + (w != null ? w + " kg" : "—") + '</b></div>' +
       '<div class="kv"><span>goal weight</span><b>' + (typeof goalWeight !== "undefined" && goalWeight != null ? goalWeight + " kg" : "—") + '</b></div></div>' +
-      '<div class="glass card"><h2>edit profile</h2><label>full name</label><input id="pfName" value="' + escHtml(profile.displayName || "") + '" />' +
-      '<section class="email-verify"><label for="pfEmail">email address</label><input id="pfEmail" type="email" autocomplete="email" value="' + escHtml(profile.email || "") + '" placeholder="you@gmail.com" ' + (profile.emailVerified ? 'readonly aria-readonly="true"' : '') + ' />' +
-      '<div class="email-status"><span>' + (profile.emailVerified ? 'Verified email · permanently locked' : 'Email verification required') + '</span><b>' + (profile.emailVerified ? '✓ VERIFIED' : 'NOT VERIFIED') + '</b></div>' +
-      (profile.emailVerified ? '<p class="sub">This email is locked to your account and cannot be changed.</p>' :
-      '<button type="button" class="btn email-send full" id="pfEmailSend">send verification code</button><div id="pfEmailCodeWrap" class="hidden"><input class="email-code" id="pfEmailCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-digit OTP" /><div class="email-actions"><button type="button" class="btn email-confirm" id="pfEmailVerify">verify email</button><button type="button" class="btn ghost" id="pfEmailCancel">cancel</button></div></div>') +
-      '</section><label>gender</label><div class="seg" id="pfGen"><button type="button" data-g="male" class="' + (profile.gender === "male" ? "on" : "") + '">Male</button><button type="button" data-g="female" class="' + (profile.gender === "female" ? "on" : "") + '">Female</button></div><button class="btn ok full" id="pfSave" style="margin-top:12px">save changes</button></div>' +
+      '<div class="glass card" id="pfEmailCard"><h2>email verification</h2>' + (profile.emailVerified ? '<p class="sub">✓ Email verified and locked. It cannot be changed.</p><div class="kv"><span>verified email</span><b>' + escHtml(profile.email) + '</b></div>' : '<label>email address</label><input id="pfEmailInput" type="email" autocomplete="email" value="' + escHtml(profile.email) + '" placeholder="you@example.com" /><button type="button" class="btn ghost full" id="pfEmailSend" style="margin-top:10px">send verification code</button><label>6-digit code</label><input id="pfEmailCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="Enter OTP" /><button type="button" class="btn ok full" id="pfEmailVerify" style="margin-top:10px">verify & lock email</button><p class="sub" id="pfEmailNote">Your email becomes permanent after verification.</p>') + '</div>' + '<div class="glass card"><h2>edit profile</h2><label>full name</label><input id="pfName" value="' + (profile.displayName || "") + '" /><label>gender</label><div class="seg" id="pfGen"><button type="button" data-g="male" class="' + (profile.gender === "male" ? "on" : "") + '">Male</button><button type="button" data-g="female" class="' + (profile.gender === "female" ? "on" : "") + '">Female</button></div><button class="btn ok full" id="pfSave" style="margin-top:12px">save changes</button></div>' +
       '<div class="glass card"><h2>choose official plan day</h2>' + sched + '<button class="btn full" id="pfSched" style="margin-top:12px">save schedule</button></div>' +
       '<div class="glass card"><h2>account</h2><p class="sub">Sign out of your SIDHI GYM account on this device.</p><button class="btn danger full" id="logoutBtn" type="button">↪ logout</button></div>';
     document.querySelectorAll("#pfGen button").forEach(function (b) {
@@ -130,36 +125,29 @@
     });
     var emailSend = el("pfEmailSend");
     if (emailSend) emailSend.onclick = async function () {
-      var email = (el("pfEmail").value || "").trim().toLowerCase();
+      var address = (el("pfEmailInput").value || "").trim().toLowerCase();
+      if (!address) { toast("Email address daalo"); return; }
       emailSend.disabled = true;
-      emailSend.textContent = "sending…";
       try {
-        var sent = await api("/api/profile-email/send", { method: "POST", body: { email: email } });
-        if (sent.alreadyVerified) {
-          profile.email = sent.email || email; profile.emailVerified = true; showProfile(); return;
-        }
-        el("pfEmailCodeWrap").classList.remove("hidden");
-        el("pfEmailCode").focus();
-        toast("Verification code sent to " + (sent.hint || "your email"));
-      } catch (e) { toast(e.message || "OTP send failed"); }
-      finally { if (emailSend.isConnected) { emailSend.disabled = false; emailSend.textContent = "send verification code"; } }
+        var sent = await api("/api/profile-email/send-otp", { method: "POST", body: { email: address } });
+        var note = el("pfEmailNote"); if (note) note.textContent = "Code sent to " + (sent.hint || address) + ". It expires in 10 minutes.";
+        toast("Verification code sent");
+      } catch (e) { toast(e.message || "OTP send fail"); }
+      finally { emailSend.disabled = false; }
     };
     var emailVerify = el("pfEmailVerify");
     if (emailVerify) emailVerify.onclick = async function () {
-      var email = (el("pfEmail").value || "").trim().toLowerCase();
+      var address = (el("pfEmailInput").value || "").trim().toLowerCase();
       var code = (el("pfEmailCode").value || "").trim();
+      if (!/^\d{6}$/.test(code)) { toast("6 digit OTP daalo"); return; }
       emailVerify.disabled = true;
       try {
-        var verified = await api("/api/profile-email/verify", { method: "POST", body: { email: email, code: code } });
-        profile.email = verified.email || email; profile.emailVerified = true;
-        toast("Email verified and locked"); showProfile();
-      } catch (e) { toast(e.message || "Email verification failed"); }
-      finally { if (emailVerify.isConnected) emailVerify.disabled = false; }
-    };
-    var emailCancel = el("pfEmailCancel");
-    if (emailCancel) emailCancel.onclick = function () {
-      el("pfEmailCode").value = "";
-      el("pfEmailCodeWrap").classList.add("hidden");
+        var verified = await api("/api/profile-email/verify", { method: "POST", body: { email: address, code: code } });
+        profile.email = verified.email; profile.emailVerified = true;
+        toast("Email verified and locked");
+        showProfile();
+      } catch (e) { toast(e.message || "Verification fail"); }
+      finally { emailVerify.disabled = false; }
     };
     var sv = el("pfSave");
     if (sv) sv.onclick = async function () {
