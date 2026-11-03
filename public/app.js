@@ -369,12 +369,27 @@ async function afterAuth() {
 async function login() {
   const user = $("loginUser").value.trim().toLowerCase();
   const pass = $("loginPass").value;
+  const button = $("loginBtn");
   if (!user || !pass) return toast("Enter username and password");
+  if (button && button.disabled) return;
+  if (button) { button.disabled = true; button.classList.remove("ok"); button.classList.add("loading"); }
   try {
-    setAuth(await api("/api/login", { method: "POST", body: { username: user, password: pass } }));
+    const authData = await api("/api/login", { method: "POST", body: { username: user, password: pass } });
+    setAuth(authData);
     var sp = document.getElementById("bootSplash"); if (sp) sp.classList.remove("off");
-    await afterAuth();
-  } catch (err) { toast(err.message); }
+    try {
+      await afterAuth();
+      if (button) button.classList.add("ok");
+    } catch (loadErr) {
+      token = ""; username = "";
+      localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY);
+      throw loadErr;
+    }
+  } catch (err) {
+    toast(err.message || "Login fail");
+  } finally {
+    if (button) { button.disabled = false; button.classList.remove("loading"); }
+  }
 }
 $("loginBtn").onclick = login;
 $("setupBtn").onclick = function () {};
