@@ -1,5 +1,5 @@
 (function () {
-  var profile = { displayName: "", gender: "", schedule: {}, createdAt: null };
+  var profile = { displayName: "", email: "", gender: "", schedule: {}, createdAt: null };
   var todaySwap = localStorage.getItem("sidhi-today-swap") || "";
   var OPTIONS = window.SIDHI_DAY_OPTIONS || [
     "Day 1 — Chest + Triceps + Abs A",
@@ -12,6 +12,7 @@
   ];
   var DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
   function el(id) { return document.getElementById(id); }
+  function escHtml(value) { return String(value == null ? "" : value).replace(/[&<>"]/g, function (ch) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"' : "&quot;" })[ch]; }); }
   function firstName() {
     var n = (profile.displayName || username || "").trim();
     return n.split(/\s+/)[0] || username || "Athlete";
@@ -104,7 +105,8 @@
     }).join("");
     el("view-profile").innerHTML =
       '<div class="glass card" style="text-align:center">' + avatarHtml() +
-      '<p class="badge">PROFILE</p><h2>' + firstName() + '</h2><p class="sub">@' + (username || "") + ' • ' + (profile.gender || "") + '</p>' +
+      '<p class="badge">PROFILE</p><h2>' + escHtml(firstName()) + '</h2><p class="sub">@' + escHtml(username || "") + ' • ' + escHtml(profile.gender || "") + '</p>' +
+      '<div class="kv"><span>email</span><b>' + (profile.email ? escHtml(profile.email) : '—') + '</b></div>' +
       '<div class="kv"><span>member since</span><b>' + since + '</b></div>' +
       '<div class="kv"><span>workouts</span><b>' + ((typeof sessions !== "undefined" ? sessions.filter(function (s) { return s.finished; }).length : 0)) + '</b></div>' +
       '<div class="kv"><span>weight</span><b>' + (w != null ? w + " kg" : "—") + '</b></div>' +
@@ -190,6 +192,7 @@
       try {
         var me = await api("/api/me");
         profile.displayName = me.displayName || "";
+        profile.email = me.email || "";
         profile.gender = me.gender || "";
         profile.schedule = me.schedule || {};
         profile.createdAt = me.createdAt;
