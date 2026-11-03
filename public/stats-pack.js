@@ -56,10 +56,15 @@
     var weekChange = last7.length > 1 ? Math.round((last7[last7.length - 1].kg - last7[0].kg) * 100) / 100 : 0;
     var days = Math.round((new Date(pts[pts.length - 1].date) - new Date(pts[0].date)) / 86400000) + 1;
     var goal = typeof goalWeight !== "undefined" && goalWeight != null ? Number(goalWeight) : null;
-    var left = goal != null ? Math.round((last - goal) * 100) / 100 : null;
+    var left = goal != null ? Math.round(Math.abs(last - goal) * 100) / 100 : null;
     var start = pts[0].kg;
+    var goalIsGain = goal != null && goal > start;
+    var goalReached = goal != null && (goalIsGain ? last >= goal : last <= goal);
     var pct = 0;
-    if (goal != null && start !== goal) pct = Math.max(0, Math.min(100, Math.round(((start - last) / (start - goal)) * 100)));
+    if (goal != null && start !== goal) {
+      var progress = goalIsGain ? (last - start) / (goal - start) : (start - last) / (start - goal);
+      pct = Math.max(0, Math.min(100, Math.round(progress * 100)));
+    } else if (goal != null) { pct = 100; }
     var status = "On track";
     if (last7.length >= 4) {
       var older = avg(last7.slice(0, Math.floor(last7.length / 2)).map(function (p) { return p.kg; }));
@@ -72,9 +77,9 @@
     }
     card.innerHTML =
       "<h2>progress</h2>" +
-      (left != null ? "<p class=\"status\">" + (left > 0 ? left + " kg bacha hai" : "goal hit") + "</p><div class=\"bar-track\"><div class=\"bar-fill\" style=\"width:" + pct + "%\"></div></div>" : "<p class=\"sub\">Set goal weight</p>") +
+      (left != null ? "<p class=\"status\">" + (goalReached ? "goal hit" : left + " kg to goal") + "</p><div class=\"bar-track\"><div class=\"bar-fill\" style=\"width:" + pct + "%\"></div></div>" : "<p class=\"sub\">Set goal weight</p>") +
       "<div class=\"kv\"><span>status</span><b>" + status + "</b></div>" +
-      "<div class=\"kv\"><span>7-day avg</span><b>" + (ma != null ? ma.toFixed(1) + " kg" : "—") + "</b></div>" +
+      "<div class=\"kv\"><span>last 7 entries avg</span><b>" + (ma != null ? ma.toFixed(1) + " kg" : "—") + "</b></div>" +
       "<div class=\"kv\"><span>last 7 change</span><b>" + (weekChange > 0 ? "+" : "") + weekChange + " kg</b></div>" +
       "<div class=\"kv\"><span>highest</span><b>" + hi.kg + " · " + hi.date + "</b></div>" +
       "<div class=\"kv\"><span>lowest</span><b>" + lo.kg + " · " + lo.date + "</b></div>" +
