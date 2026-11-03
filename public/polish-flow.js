@@ -16,7 +16,7 @@
   }
 
   var FIELDS = ["date","entryTime","after1HourTime","after1HourNote","beforeTreadmillTime","beforeTreadmillKm","beforeTreadmillMins","beforeTreadmillSpeed","beforeTreadmillNote","afterTreadmillTime","afterTreadmillKm","afterTreadmillMins","afterTreadmillSpeed","afterTreadmillIncline","afterTreadmillNote"];
-  var DRAFT = "sidhi-gym-draft";
+  var DRAFT = "sidhi-gym-draft-" + ((localStorage.getItem("sidhi-gym-username") || "guest").toLowerCase());
 
   function readDraft() {
     try { return JSON.parse(localStorage.getItem(DRAFT) || "null"); } catch (e) { return null; }
