@@ -155,7 +155,7 @@ module.exports = function (app) {
     const passHash = crypto.scryptSync(pass, salt, 32).toString("hex");
     await users().updateOne({ username: u.username }, { $set: { salt: salt, passHash: passHash } });
     if (mongoose.models.Token) await mongoose.models.Token.deleteMany({ username: u.username });
-    await Otp().deleteMany({ username: u.username });
+    await Otp().deleteMany({ username: u.username, purpose: "reset" });
     res.json({ ok: true, username: u.username });
   });
 
@@ -217,7 +217,7 @@ module.exports = function (app) {
       if (!username) return res.status(401).json({ error: "Login chahiye" });
       const email = String((req.body && req.body.email) || "").trim().toLowerCase();
       const code = String((req.body && req.body.code) || "").trim();
-      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || !/^\\d{6}$/.test(code)) return res.status(400).json({ error: "Email aur 6 digit OTP sahi daalo" });
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || !/^\d{6}$/.test(code)) return res.status(400).json({ error: "Email aur 6 digit OTP sahi daalo" });
       const account = await users().findOne({ username: username });
       if (!account) return res.status(404).json({ error: "Account nahi mila" });
       if (account.emailVerified === true) return res.status(409).json({ error: "Email pehle se verified aur locked hai." });
