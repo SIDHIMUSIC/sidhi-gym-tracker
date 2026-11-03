@@ -121,7 +121,7 @@ module.exports = function (app) {
     try {
       const u = await findAccount(req.body && (req.body.key || req.body.username || req.body.email));
       if (!u) return res.status(404).json({ error: "User nahi mila" });
-      if (!u.email) return res.status(400).json({ error: "Is account pe email save nahi. Profile me email daalo." });
+      if (!u.email || u.emailVerified !== true) return res.status(400).json({ error: "Is account ka email verified nahi hai. Account recovery ke liye verified email zaroori hai." });
       const recent = await Otp().findOne({ username: u.username, purpose: "reset-rate", createdAt: { $gt: new Date(Date.now() - 60 * 1000) } });
       if (recent) return res.status(429).json({ error: "60 seconds baad naya OTP lo." });
       const count = await Otp().countDocuments({ username: u.username, purpose: "reset-rate", createdAt: { $gt: new Date(Date.now() - 60 * 60 * 1000) } });
