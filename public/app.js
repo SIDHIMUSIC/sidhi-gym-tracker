@@ -166,7 +166,7 @@ function durationText(row) {
 function isGymDay(s) {
   if (!s) return false;
   if (new Date(s.date + "T12:00:00").getDay() === 0) return false;
-  return !!(s.finished || s.entryWeight || s.afterTreadmillWeight || (s.after1HourNote && String(s.after1HourNote).trim()));
+  return s.finished === true;
 }
 function streakCount() {
   const map = {};
