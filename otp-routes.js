@@ -89,6 +89,8 @@ module.exports = function (app) {
     try {
       const email = String((req.body && req.body.email) || "").trim().toLowerCase();
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ error: "Email sahi likho" });
+      const existingEmail = await users().findOne({ email: email });
+      if (existingEmail) return res.status(409).json({ error: "Ye email pehle se account se linked hai. Login karo." });
       const recent = await Otp().findOne({ email: email, purpose: "register-rate", createdAt: { $gt: new Date(Date.now() - 60 * 1000) } });
       if (recent) return res.status(429).json({ error: "60 seconds baad naya OTP lo." });
       const count = await Otp().countDocuments({ email: email, purpose: "register-rate", createdAt: { $gt: new Date(Date.now() - 60 * 60 * 1000) } });
