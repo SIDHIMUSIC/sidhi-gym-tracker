@@ -5,7 +5,8 @@
   st.textContent = ".plus-card{margin-top:12px}.plus-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0}.plus-row b{font-size:18px}.plus-btn{min-height:36px;padding:6px 12px;border-radius:999px;border:0;background:rgba(240,194,122,.15);color:#f0c27a;font:700 14px Comfortaa,sans-serif}";
   document.head.appendChild(st);
 
-  var KEY = "sidhi-plus-" + (localStorage.getItem("sidhi-user") || "me");
+  var ACTIVE_USER = (localStorage.getItem("sidhi-gym-username") || "").toLowerCase();
+  var KEY = "sidhi-plus-" + (ACTIVE_USER || "guest");
   function load() { try { return JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { return {}; } }
   function saveP(p) { localStorage.setItem(KEY, JSON.stringify(p)); }
 
@@ -133,7 +134,7 @@
     bar.appendChild(b);
   }
 
-  var DRAFT = "sidhi-offline-draft";
+  var DRAFT = "sidhi-offline-draft-" + (ACTIVE_USER || "guest");
   function queueDraft(body) {
     var q = [];
     try { q = JSON.parse(localStorage.getItem(DRAFT) || "[]"); } catch (e) {}
