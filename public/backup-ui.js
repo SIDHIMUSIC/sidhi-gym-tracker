@@ -64,7 +64,7 @@
         var sessions = Array.isArray(data.sessions) ? data.sessions : (Array.isArray(data) ? data : []);
         if (!sessions.length) { toast("No sessions in file"); return; }
         if (!confirm("Restore " + sessions.length + " sessions? Existing dates will be updated.")) return;
-        var ok = 0;
+        var ok = 0, failed = 0;
         for (var i = 0; i < sessions.length; i++) {
           var s = sessions[i];
           if (!s || !s.date) continue;
@@ -74,10 +74,10 @@
           } catch (e) {}
         }
         var fresh = await api("/api/sessions");
-        if (typeof sessions !== "undefined") window.sessions = fresh.sessions || [];
+        if (typeof window.replaceSessions === "function") window.replaceSessions(fresh.sessions || []);
         if (typeof paintHome === "function") paintHome();
         if (typeof paintHist === "function") paintHist();
-        toast("Restored " + ok + " sessions");
+        toast("Restored " + ok + " / " + sessions.length + (failed ? " · " + failed + " failed" : ""));
       } catch (e) { toast("Import fail: " + (e.message || "bad file")); }
       ev.target.value = "";
     };

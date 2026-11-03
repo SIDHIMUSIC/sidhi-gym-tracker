@@ -40,8 +40,8 @@
     closeSheet();
     var m = document.createElement("div");
     m.id = "forgotSheet";
-    m.style.cssText = "position:fixed;inset:0;z-index:99999;background:rgba(2,6,14,.78);display:flex;align-items:flex-end;justify-content:center;padding:16px";
-    m.innerHTML = '<div style="width:min(420px,100%);background:#121a2b;border-radius:24px;padding:18px;border:1px solid rgba(255,255,255,.12)">' + html + '<p id="fgNote" class="sub" style="margin-top:10px;color:#ffe4b5"></p></div>';
+    m.style.cssText = "position:fixed;inset:0;z-index:99999;background:rgba(2,6,14,.78);display:flex;align-items:center;justify-content:center;padding:18px 14px;backdrop-filter:blur(12px);overflow-y:auto";
+    m.innerHTML = '<div style="width:min(430px,100%);max-height:calc(100dvh - 36px);overflow:auto;background:linear-gradient(155deg,#172238,#0b1220 72%);border-radius:28px;padding:22px 18px 18px;border:1px solid rgba(148,163,184,.28);box-shadow:0 24px 70px #000a,0 0 34px #38bdf822">' + html + '<p id="fgNote" class="sub" style="margin-top:10px;color:#ffe4b5"></p></div>';
     document.body.appendChild(m);
   }
   function mark() {
@@ -71,10 +71,10 @@
       '<button type="button" id="fgPass" class="btn ghost" style="flex:1">password</button>' +
       '<button type="button" id="fgUser" class="btn ghost" style="flex:1">username</button>' +
       '</div>' +
-      '<button type="button" id="fgSend" class="btn ghost full" style="margin-top:8px">send otp</button>' +
+      '<button type="button" id="fgSend" class="btn ok full" style="margin-top:8px">send otp</button>' +
       '<input id="fgCode" inputmode="numeric" placeholder="6 digit otp" style="margin-top:8px" />' +
       '<div id="fgPassBox" style="display:flex;gap:8px;margin-top:8px"><input id="fgNew" type="password" placeholder="new password" style="flex:1" /><button type="button" id="fgEye" class="btn ghost">show</button></div>' +
-      '<button type="button" id="fgReset" class="btn ghost full" style="margin-top:8px">verify</button>' +
+      '<button type="button" id="fgReset" class="btn full" style="margin-top:8px">verify</button>' +
       '<button type="button" id="fgBack" class="btn ghost full" style="margin-top:8px">cancel</button>'
     );
     mark();

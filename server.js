@@ -208,7 +208,7 @@ async function grantPremium(username, days) {
 function publicUser(u) {
   if (!u) {
     return {
-      username: "", displayName: "", email: "", gender: "", goalWeight: null, schedule: {}, createdAt: null,
+      username: "", displayName: "", email: "", emailVerified: false, gender: "", goalWeight: null, schedule: {}, createdAt: null,
       age: null, heightCm: null, currentWeight: null, fitnessGoal: "", trainingLevel: "", photoUrl: "", preferredDays: []
     };
   }
@@ -216,6 +216,7 @@ function publicUser(u) {
     username: u.username,
     displayName: u.displayName || "",
     email: u.email || "",
+    emailVerified: !!u.emailVerified,
     gender: u.gender || "",
     goalWeight: u.goalWeight != null ? u.goalWeight : null,
     schedule: u.schedule && typeof u.schedule === "object" ? u.schedule : {},
@@ -327,7 +328,7 @@ app.post("/api/register", async (req, res) => {
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ error: "Email sahi likho" });
     if (!/^\d{6}$/.test(otp)) return res.status(400).json({ error: "6 digit OTP daalo" });
     const Otp = mongoose.models.Otp;
-    const otpRow = Otp && await Otp.findOne({ email: email, code: otp, exp: { $gt: new Date() } });
+    const otpRow = Otp && await Otp.findOne({ email: email, purpose: "signup", code: otp, exp: { $gt: new Date() } });
     if (!otpRow) return res.status(401).json({ error: "OTP galat ya expire. Pehle email pe code lo." });
     const exists = await User.findOne({ username });
     if (exists) return res.status(409).json({ error: "Ye username pehle se hai. Login karo." });
@@ -341,7 +342,7 @@ app.post("/api/register", async (req, res) => {
       displayName,
       gender: gender === "female" ? "female" : gender === "male" ? "male" : ""
     });
-    await mongoose.connection.collection("users").updateOne({ username }, { $set: { email: email } });
+    await mongoose.connection.collection("users").updateOne({ username }, { $set: { email: email, emailVerified: true } });
     if (Otp) await Otp.deleteMany({ email: email });
     const token = crypto.randomBytes(24).toString("hex");
     await Token.create({ token, username, exp: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) });

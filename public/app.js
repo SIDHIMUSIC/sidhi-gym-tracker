@@ -15,6 +15,7 @@ const USER_KEY = "sidhi-gym-username";
 let token = localStorage.getItem(TOKEN_KEY) || "";
 let username = localStorage.getItem(USER_KEY) || "";
 let sessions = [];
+window.replaceSessions = function (rows) { sessions = Array.isArray(rows) ? rows : []; };
 let goalWeight = null;
 let calCursor = new Date();
 

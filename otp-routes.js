@@ -11,11 +11,12 @@ function Otp() {
   return mongoose.models.Otp || mongoose.model("Otp", new mongoose.Schema({
     email: { type: String, index: true },
     username: String,
+    purpose: { type: String, default: "signup" },
     code: String,
     exp: Date
   }, { timestamps: true }));
 }
-function users() { return mongoose.connection.collection("users"); }
+function users() { return mongoose.connection.collection("users"); }\nconst otpLimits = new Map();\nfunction otpAllowed(req, action, max) {\n  const key = action + ":" + String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown").split(",")[0].trim();\n  const now = Date.now(); const row = otpLimits.get(key) || { start: now, count: 0 };\n  if (now - row.start > 10 * 60 * 1000) { row.start = now; row.count = 0; }\n  row.count++; otpLimits.set(key, row);\n  if (otpLimits.size > 5000) for (const [k,v] of otpLimits) if (now - v.start > 10 * 60 * 1000) otpLimits.delete(k);\n  return row.count <= max;\n}
 async function userFrom(req) {
   const token = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "").trim();
   const Token = mongoose.models.Token;
@@ -89,7 +90,7 @@ module.exports = function (app) {
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ error: "Email sahi likho" });
       const code = String(crypto.randomInt(100000, 1000000));
       await Otp().deleteMany({ email: email });
-      await Otp().create({ email: email, code: code, exp: new Date(Date.now() + 10 * 60 * 1000) });
+      await Otp().create({ email: email, purpose: "signup", code: code, exp: new Date(Date.now() + 10 * 60 * 1000) });
       await mail(email, code);
       res.json({ ok: true });
     } catch (err) {
@@ -100,7 +101,7 @@ module.exports = function (app) {
   app.post("/api/otp/check", async function (req, res) {
     const email = String((req.body && req.body.email) || "").trim().toLowerCase();
     const code = String((req.body && req.body.code) || "").trim();
-    const row = await Otp().findOne({ email: email, code: code, exp: { $gt: new Date() } });
+    const row = await Otp().findOne({ email: email, purpose: "signup", code: code, exp: { $gt: new Date() } });
     if (!row) return res.status(401).json({ error: "OTP galat ya expire" });
     await Otp().deleteMany({ email: email });
     res.json({ ok: true, email: email });
@@ -113,7 +114,7 @@ module.exports = function (app) {
       if (!u.email) return res.status(400).json({ error: "Is account pe email save nahi. Profile me email daalo." });
       const code = String(crypto.randomInt(100000, 1000000));
       await Otp().deleteMany({ username: u.username });
-      await Otp().create({ email: u.email, username: u.username, code: code, exp: new Date(Date.now() + 10 * 60 * 1000) });
+      await Otp().create({ email: u.email, username: u.username, purpose: "password-reset", code: code, exp: new Date(Date.now() + 10 * 60 * 1000) });
       await mail(u.email, code);
       const hidden = u.email.replace(/(.{2}).+(@.+)/, "$1***$2");
       res.json({ ok: true, hint: hidden, username: u.username });
@@ -129,7 +130,7 @@ module.exports = function (app) {
     if (pass.length < 6) return res.status(400).json({ error: "Password kam se kam 6" });
     const u = await findAccount(key);
     if (!u) return res.status(404).json({ error: "User nahi mila" });
-    const row = await Otp().findOne({ username: u.username, code: code, exp: { $gt: new Date() } });
+    const row = await Otp().findOne({ username: u.username, purpose: "password-reset", code: code, exp: { $gt: new Date() } });
     if (!row) return res.status(401).json({ error: "OTP galat ya expire" });
     const salt = crypto.randomBytes(16).toString("hex");
     const passHash = crypto.scryptSync(pass, salt, 32).toString("hex");
@@ -139,19 +140,53 @@ module.exports = function (app) {
     res.json({ ok: true, username: u.username });
   });
 
-  app.post("/api/profile-email", async function (req, res) {
+  app.post("/api/profile-email/send-otp", async function (req, res) {
     const username = await userFrom(req);
     if (!username) return res.status(401).json({ error: "Login chahiye" });
     const email = String((req.body && req.body.email) || "").trim().toLowerCase();
-    if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ error: "Email sahi likho" });
-    await users().updateOne({ username: username }, { $set: { email: email } });
-    res.json({ ok: true, email: email });
+    if (!/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(email)) return res.status(400).json({ error: "Email sahi likho" });
+    const account = await users().findOne({ username: username });
+    if (account && account.emailVerified) return res.status(409).json({ error: "Verified email lock hai. Ise change nahi kar sakte." });
+    const taken = await users().findOne({ email: email, username: { $ne: username } });
+    if (taken) return res.status(409).json({ error: "Ye email kisi doosre account par use ho raha hai." });
+    const code = String(crypto.randomInt(100000, 1000000));
+    await Otp().deleteMany({ username: username, purpose: "profile-email" });
+    await Otp().create({ email: email, username: username, purpose: "profile-email", code: code, exp: new Date(Date.now() + 10 * 60 * 1000) });
+    try { await mail(email, code); }
+    catch (err) { await Otp().deleteMany({ username: username, purpose: "profile-email" }); return res.status(err.status || 502).json({ error: err.message || "OTP email nahi gaya" }); }
+    res.json({ ok: true, hint: email.replace(/(.{2}).+(@.+)/, "$1***$2") });
+  });
+
+  app.post("/api/profile-email/verify", async function (req, res) {
+    const username = await userFrom(req);
+    if (!username) return res.status(401).json({ error: "Login chahiye" });
+    const email = String((req.body && req.body.email) || "").trim().toLowerCase();
+    const code = String((req.body && req.body.code) || "").trim();
+    if (!/^[0-9]{6}$/.test(code)) return res.status(400).json({ error: "6 digit OTP daalo" });
+    const account = await users().findOne({ username: username });
+    if (account && account.emailVerified) return res.status(409).json({ error: "Verified email lock hai." });
+    const taken = await users().findOne({ email: email, username: { $ne: username } });
+    if (taken) return res.status(409).json({ error: "Ye email kisi doosre account par use ho raha hai." });
+    const otp = await Otp().findOne({ username: username, email: email, purpose: "profile-email", code: code, exp: { $gt: new Date() } });
+    if (!otp) return res.status(401).json({ error: "OTP galat ya expire ho gaya." });
+    const result = await users().updateOne({ username: username, emailVerified: { $ne: true } }, { $set: { email: email, emailVerified: true } });
+    if (!result.modifiedCount) return res.status(409).json({ error: "Email pehle se verify/lock hai." });
+    await Otp().deleteMany({ username: username, purpose: "profile-email" });
+    res.json({ ok: true, email: email, emailVerified: true });
+  });
+
+  app.post("/api/profile-email", async function (req, res) {
+    const username = await userFrom(req);
+    if (!username) return res.status(401).json({ error: "Login chahiye" });
+    const account = await users().findOne({ username: username });
+    if (account && account.emailVerified) return res.status(409).json({ error: "Verified email lock hai." });
+    return res.status(403).json({ error: "Email ko OTP se verify karo." });
   });
 
   app.get("/api/profile-email", async function (req, res) {
     const username = await userFrom(req);
     if (!username) return res.status(401).json({ error: "Login chahiye" });
     const u = await users().findOne({ username: username });
-    res.json({ ok: true, email: (u && u.email) || "" });
+    res.json({ ok: true, email: (u && u.email) || "", emailVerified: !!(u && u.emailVerified) });
   });
 };

@@ -70,7 +70,7 @@
   }
   async function doDelete() {
     var pass = (document.getElementById("delPass") || {}).value || "";
-    if (pass.length < 4) {
+    if (pass.length < 6) {
       if (typeof toast === "function") toast("Password likho");
       return;
     }
