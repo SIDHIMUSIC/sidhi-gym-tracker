@@ -19,7 +19,7 @@ Daily gym + morning run log. Username / password MongoDB me. Token phone pe reht
 - PWA: Add to Home Screen (`manifest.json` + `sw.js`)
 - Profile avatar, join weight, goal kg
 
-## Project navigation
+## Public information and discoverability\n\n- [About SIDHI GYM](https://sidhi-gym-tracker.vercel.app/about.html)\n- [Features](https://sidhi-gym-tracker.vercel.app/features.html)\n- [How it works](https://sidhi-gym-tracker.vercel.app/how-it-works.html)\n- [FAQ](https://sidhi-gym-tracker.vercel.app/faq.html)\n- [Crawler guidance](public/llms.txt)\n- [Sitemap](https://sidhi-gym-tracker.vercel.app/sitemap.xml)\n\n## Project navigation
 
 New contributors / future edits ke liye:
 - [Project file map](docs/PROJECT-STRUCTURE.md) — important files aur unka purpose
@@ -56,7 +56,7 @@ Open http://localhost:3000
 ## How to use
 
 1. Open https://sidhi-gym-tracker.vercel.app
-2. **Create account** — name + username + password (min 4) + gender
+2. **Create account** — name + username + password (min 6) + gender
 3. Roz site kholo — login save rehta hai (Logout alag button)
 4. Subah **Run** tab — start / pause / end (GPS)
 5. Shaam **Workout** — entry time + start kg → exercises → treadmill → end kg + end time
