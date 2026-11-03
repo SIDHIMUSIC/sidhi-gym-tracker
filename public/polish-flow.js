@@ -101,6 +101,7 @@
       } catch (err) {
         writeDraft();
         if (typeof toast === "function") toast(navigator.onLine ? err.message : "Offline \u2014 draft saved");
+        return false;
       }
     };
     save._delta = true;
