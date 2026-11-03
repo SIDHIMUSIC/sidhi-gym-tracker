@@ -54,7 +54,7 @@
         msg.textContent = err.message || "fail";
       }
     };
-    document.getElementById("listBtn").onclick = async function () {
+    function esc(v) { return String(v == null ? "" : v).replace(/[&<>"]/g, function(c){ return ({"&":"&amp;","<":"&lt;",">":"&gt;","\\"":"&quot;"})[c]; }); }\n    document.getElementById("listBtn").onclick = async function () {
       var msg = document.getElementById("msg");
       var box = document.getElementById("list");
       msg.textContent = "wait...";
@@ -68,7 +68,7 @@
         if (!res.ok) throw new Error(data.error || "fail");
         msg.textContent = (data.users || []).length + " members";
         box.innerHTML = (data.users || []).map(function (u) {
-          return "<div><b>@" + u.username + "</b> — " + (u.displayName || "") + "<br>id: " + (u.memberId || "-") + "</div>";
+          return "<div><b>@" + esc(u.username) + "</b> — " + esc(u.displayName || "") + "<br>id: " + esc(u.memberId || "-") + "</div>";
         }).join("");
       } catch (err) {
         msg.textContent = err.message || "fail";
