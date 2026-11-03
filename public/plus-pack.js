@@ -157,12 +157,14 @@
   if (typeof save === "function" && !save._plus) {
     var old = save;
     save = async function (finished) {
-      try { await old(finished); }
+      try { var saved = await old(finished); if (saved === false) { if (typeof formBody === "function") queueDraft(formBody(finished)); return false; } return saved; }
       catch (e) {
         if (typeof formBody === "function") {
           queueDraft(formBody(finished));
           if (typeof toast === "function") toast("Saved offline");
+          return false;
         } else if (typeof toast === "function") toast(e.message);
+        return false;
       }
     };
     save._plus = true;
