@@ -5,10 +5,10 @@
   st.textContent = ".plus-card{margin-top:12px}.plus-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0}.plus-row b{font-size:18px}.plus-btn{min-height:36px;padding:6px 12px;border-radius:999px;border:0;background:rgba(240,194,122,.15);color:#f0c27a;font:700 14px Comfortaa,sans-serif}";
   document.head.appendChild(st);
 
-  var ACTIVE_USER = (localStorage.getItem("sidhi-gym-username") || "").toLowerCase();
-  var KEY = "sidhi-plus-" + (ACTIVE_USER || "guest");
-  function load() { try { return JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { return {}; } }
-  function saveP(p) { localStorage.setItem(KEY, JSON.stringify(p)); }
+  function activeUserKey() { return String((typeof username !== "undefined" && username) || localStorage.getItem("sidhi-gym-username") || "guest").toLowerCase(); }
+  function plusKey() { return "sidhi-plus-" + activeUserKey(); }
+  function load() { try { return JSON.parse(localStorage.getItem(plusKey()) || "{}"); } catch (e) { return {}; } }
+  function saveP(p) { localStorage.setItem(plusKey(), JSON.stringify(p)); }
 
   function today() { return typeof todayISO === "function" ? todayISO() : new Date().toISOString().slice(0,10); }
   function day() {
@@ -134,24 +134,24 @@
     bar.appendChild(b);
   }
 
-  var DRAFT = "sidhi-offline-draft-" + (ACTIVE_USER || "guest");
+  function draftKey() { return "sidhi-offline-draft-" + activeUserKey(); }
   function queueDraft(body) {
     var q = [];
-    try { q = JSON.parse(localStorage.getItem(DRAFT) || "[]"); } catch (e) {}
+    try { q = JSON.parse(localStorage.getItem(draftKey()) || "[]"); } catch (e) {}
     q.push(body);
-    localStorage.setItem(DRAFT, JSON.stringify(q));
+    localStorage.setItem(draftKey(), JSON.stringify(q));
   }
   async function flushDraft() {
     if (!navigator.onLine || typeof api !== "function") return;
     var q = [];
-    try { q = JSON.parse(localStorage.getItem(DRAFT) || "[]"); } catch (e) {}
+    try { q = JSON.parse(localStorage.getItem(draftKey()) || "[]"); } catch (e) {}
     if (!q.length) return;
     var left = [];
     for (var i = 0; i < q.length; i++) {
       try { await api("/api/session", { method: "PUT", body: q[i] }); }
       catch (e) { left.push(q[i]); }
     }
-    localStorage.setItem(DRAFT, JSON.stringify(left));
+    localStorage.setItem(draftKey(), JSON.stringify(left));
     if (!left.length && typeof toast === "function") toast("Offline logs synced");
   }
   if (typeof save === "function" && !save._plus) {
