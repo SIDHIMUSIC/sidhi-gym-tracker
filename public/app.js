@@ -241,7 +241,8 @@ function paintHome() {
   $("stStreak").classList.toggle("golden-streak", sc >= 7);
   $("stWorkouts").textContent = (sessions || []).filter(isGymDay).length;
   if (goalWeight != null && latest != null) {
-    $("stGoal").textContent = String(Number(goalWeight)) + " kg";
+    var left = Math.round((latest - Number(goalWeight)) * 100) / 100;
+    $("stGoal").textContent = (left > 0 ? left : 0) + " kg";
   } else if (goalWeight != null) {
     $("stGoal").textContent = goalWeight + " kg";
   } else $("stGoal").textContent = "—";
