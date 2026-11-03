@@ -153,7 +153,7 @@
       var dlt = w.delta == null ? "—" : ((w.delta > 0 ? "+" : "") + w.delta + " kg");
       var se = (w.start != null && w.end != null) ? (w.start + " → " + w.end + " kg") : "—";
       var runs = [];
-      ((typeof sessions !== "undefined" && sessions) || []).forEach(function (s) {
+      weekRows().forEach(function (s) {
         (s.runs || []).forEach(function (r) { runs.push({ date: s.date, km: Number(r.distanceKm) || 0 }); });
       });
       var bestRun = runs.reduce(function (a, b) { return !a || b.km > a.km ? b : a; }, null);
@@ -176,7 +176,7 @@
         "<div><b>" + se + "</b><span>start → end</span></div>" +
         "<div><b>" + dlt + "</b><span>week change</span></div>" +
         "<div><b>" + (bestRun ? bestRun.km.toFixed(2) + " km" : "—") + "</b><span>best run" + (bestRun ? " • " + bestRun.date : "") + "</span></div>" +
-        "<div><b>" + (bestDrop && drop(bestDrop) > 0 ? "-" + drop(bestDrop) + " kg" : "—") + "</b><span>best drop" + (bestDrop ? " • " + bestDrop.date : "") + "</span></div>" +"<div><b>" + (bestEx && exCount(bestEx) ? exCount(bestEx) + " ex" : "—") + "</b><span>most exercises" + (bestEx ? " • " + bestEx.date : "") + "</span></div></div>" +
+        "<div><b>" + (bestDrop && drop(bestDrop) > 0 ? "-" + drop(bestDrop) + " kg" : "—") + "</b><span>largest session scale drop" + (bestDrop ? " • " + bestDrop.date : "") + "</span></div>" +"<div><b>" + (bestEx && exCount(bestEx) ? exCount(bestEx) + " ex" : "—") + "</b><span>most exercises" + (bestEx ? " • " + bestEx.date : "") + "</span></div></div>" +
         "<div class=\"pwa-bar\">" +
         "<button class=\"btn ok\" id=\"tgShare\" type=\"button\">Telegram summary</button>" +
         "<button class=\"btn ghost\" id=\"pwaBtn\" type=\"button\">Add to Home</button></div>";
