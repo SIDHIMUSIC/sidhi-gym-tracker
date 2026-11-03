@@ -231,6 +231,8 @@ function paintHome() {
   if (goalWeight != null && latest != null) {
     var left = Math.round((latest - Number(goalWeight)) * 100) / 100;
     $("stGoal").textContent = (left > 0 ? left : 0) + " kg";
+  } else if (goalWeight != null) {
+    $("stGoal").textContent = goalWeight + " kg";
   } else $("stGoal").textContent = "—";
   $("homeSplit").textContent = SPLIT[dayFromDate(todayISO())];
   $("homeW").textContent = latest != null ? latest + " kg" : "—";
