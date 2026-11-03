@@ -108,9 +108,12 @@ module.exports = function (app) {
   app.post("/api/otp/check", async function (req, res) {
     const email = String((req.body && req.body.email) || "").trim().toLowerCase();
     const code = String((req.body && req.body.code) || "").trim();
-    const row = await Otp().findOne({ email: email, purpose: "register", code: code, exp: { $gt: new Date() } });
-    if (!row) return res.status(401).json({ error: "OTP galat ya expire" });
-    await Otp().deleteMany({ email: email });
+    const row = await Otp().findOne({ email: email, purpose: "register", code: code, attempts: { $lt: 5 }, exp: { $gt: new Date() } });
+    if (!row) {
+      await Otp().updateOne({ email: email, purpose: "register", exp: { $gt: new Date() } }, { $inc: { attempts: 1 } });
+      return res.status(401).json({ error: "OTP galat ya expire. Maximum 5 attempts." });
+    }
+    await Otp().deleteMany({ email: email, purpose: "register" });
     res.json({ ok: true, email: email });
   });
 
