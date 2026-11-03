@@ -287,7 +287,7 @@
       distanceKm: snap.km,
       avgSpeed: snap.km && run.elapsedMs ? Math.round((snap.km / (run.elapsedMs / 3600000)) * 10) / 10 : snap.spd,
       maxSpeed: run.maxSpeed || snap.spd, calories: snap.cal,
-      points: run.points.slice(-80)
+      points: run.points.slice(-80), countedInCardio: false
     };
     clearInterval(run.tick); stopGps(); unlockScreen();
     if (typeof token === "undefined" || !token) {
@@ -303,10 +303,6 @@
       body.date = typeof todayISO === "function" ? todayISO() : body.date;
       const oldRuns = Array.isArray(old.runs) ? old.runs : [];
       body.runs = oldRuns.filter(function (r) { return r.id !== rec.id; }).concat([rec]);
-      body.beforeTreadmillKm = Math.round(((Number(old.beforeTreadmillKm) || 0) + rec.distanceKm) * 1000) / 1000;
-      body.beforeTreadmillMins = Math.round((Number(old.beforeTreadmillMins) || 0) + rec.durationSec / 60);
-      body.beforeTreadmillSpeed = rec.avgSpeed;
-      body.beforeTreadmillTime = typeof nowTime === "function" ? nowTime() : body.beforeTreadmillTime;
       const data = await api("/api/session", { method: "PUT", body: body });
       sessions = data.sessions || [];
       run.state = "idle"; run.elapsedMs = 0; run.startedAt = 0; run.distanceKm = 0; run.maxSpeed = 0; run.points = []; run.moving = 0; run.lastFix = null;
