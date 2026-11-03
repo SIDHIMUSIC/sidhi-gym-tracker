@@ -119,23 +119,20 @@
     paintHist = function () { try { _paintHist(); } catch (e) {} paintSplitHist(); };
   } else window.paintHist = paintSplitHist;
   document.addEventListener("click", async function (e) {
-      var item = e.target.closest(".hist-item");
-      var btn = e.target.closest("button");
-      if (btn && btn.dataset.open) { showDetail(btn.dataset.open); return; }
-      if (item && item.dataset.date) { showDetail(item.dataset.date); return; }
-      if (!view || !view.contains(e.target)) return;
-      if (!btn) return;
-      if (false) {
-      if (btn.dataset.del) {
-        if (!confirm("Delete " + btn.dataset.del + "?")) return;
-        try {
-          var data = await api("/api/session/" + btn.dataset.del, { method: "DELETE" });
-          sessions = data.sessions || [];
-          if (typeof paintHist === "function") paintHist();
-          if (typeof paintHome === "function") paintHome();
-        } catch (err) { if (typeof toast === "function") toast(err.message); }
-      }
-    });
-  }
+    var item = e.target.closest(".hist-item, .run-row");
+    var btn = e.target.closest("button");
+    if (btn && btn.dataset.open) { showDetail(btn.dataset.open); return; }
+    if (item && item.dataset.date) { showDetail(item.dataset.date); return; }
+    if (!view || !view.contains(e.target) || !btn) return;
+    if (btn.dataset.del) {
+      if (!confirm("Delete " + btn.dataset.del + "?")) return;
+      try {
+        var data = await api("/api/session/" + btn.dataset.del, { method: "DELETE" });
+        sessions = data.sessions || [];
+        if (typeof paintHist === "function") paintHist();
+        if (typeof paintHome === "function") paintHome();
+      } catch (err) { if (typeof toast === "function") toast(err.message); }
+    }
+  });
   paintSplitHist();
 })();
