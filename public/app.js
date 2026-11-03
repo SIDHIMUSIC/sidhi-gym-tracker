@@ -247,8 +247,8 @@ function paintHome() {
     card.id = "homeRunCard";
     card.className = "glass card";
     card.style.marginTop = "14px";
-    var kg = $("homeKg");
-    if (kg && kg.parentNode && kg.parentNode.parentNode) kg.parentNode.parentNode.insertBefore(card, kg.parentNode.nextSibling);
+    var kgBox = $("homeKg");
+    if (kgBox && kgBox.parentNode && kg.parentNode.parentNode) kgBox.parentNode.parentNode.insertBefore(card, kgBox.parentNode.nextSibling);
     else $("view-home").insertBefore(card, $("view-home").firstChild);
   }
   var runs = [];
