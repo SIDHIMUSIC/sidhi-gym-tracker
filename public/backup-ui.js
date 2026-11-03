@@ -67,7 +67,7 @@
         var ok = 0, failed = 0, skipped = 0;
         for (var i = 0; i < importedSessions.length; i++) {
           var s = importedSessions[i];
-          if (!s || !/^\\d{4}-\\d{2}-\\d{2}$/.test(String(s.date || ""))) { skipped++; continue; }
+          if (!s || !/^\d{4}-\d{2}-\d{2}$/.test(String(s.date || ""))) { skipped++; continue; }
           try {
             await api("/api/session", { method: "PUT", body: s });
             ok++;
