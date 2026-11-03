@@ -1,5 +1,5 @@
 (function () {
-  const RUN_KEY = "sidhi-gym-run";
+  const RUN_KEY = "sidhi-gym-run-" + ((localStorage.getItem("sidhi-gym-username") || "guest").toLowerCase());
   const MODE_MIN = { walk: 0.6, jog: 1.5, run: 2.2, sprint: 4, auto: 0.5 };
   const MAX_ACC_M = 180;
   const MIN_DT = 0.5;
