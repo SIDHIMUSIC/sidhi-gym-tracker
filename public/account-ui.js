@@ -99,6 +99,6 @@
     };
     showProfile._del = true;
   }
-  setInterval(injectBtn, 800);
+  setInterval(injectBtn, 2000);
   injectBtn();
 })();
