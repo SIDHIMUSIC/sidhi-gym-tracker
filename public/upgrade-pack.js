@@ -59,6 +59,7 @@
     card.insertBefore(lab, sel);
   }
 
+  function safeExerciseText(value) { return String(value == null ? "" : value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/\x27/g, "&#39;"); }
   function selectedLifts() {
     return Array.prototype.map.call(document.querySelectorAll(".ex-chip.on"), function (c) {
       return { name: c.dataset.name, group: c.dataset.group, done: true };
@@ -87,9 +88,17 @@
     groupsFor(split).forEach(function (g) {
       html += "<p class=\"sub\" style=\"margin:10px 0 6px\">" + g + "</p>";
       (CATALOG[g] || []).forEach(function (n) {
-        html += '<button type="button" class="ex-chip' + (saved[n] ? " on" : "") + '" data-name="' + n + '" data-group="' + g + '">' + n + "</button>";
+        html += '<button type="button" class="ex-chip' + (saved[n] ? " on" : "") + '" data-name="' + safeExerciseText(n) + '" data-group="' + safeExerciseText(g) + '">' + safeExerciseText(n) + "</button>";
       });
     });
+    var customSaved = ((row && row.lifts) || []).filter(function (x) { return x && x.group === "Custom" && String(x.name || "").trim(); });
+    if (customSaved.length) {
+      html += '<p class="sub" style="margin:10px 0 6px">Custom</p>';
+      customSaved.forEach(function (x) {
+        var name = String(x.name).trim();
+        html += '<button type="button" class="ex-chip' + (saved[name] ? " on" : "") + '" data-name="' + safeExerciseText(name) + '" data-group="Custom">' + safeExerciseText(name) + "</button>";
+      });
+    }
     html += '<div class="row" style="margin-top:8px"><input id="customEx" placeholder="custom exercise" style="flex:1" /><button class="btn ghost" id="addEx" type="button" style="min-height:44px">add</button></div>';
     host.innerHTML = html;
     host.querySelectorAll(".ex-chip").forEach(function (b) {
