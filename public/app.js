@@ -240,8 +240,7 @@ function paintHome() {
   $("stStreak").textContent = sc >= 7 ? sc + " 🔥" : sc;
   $("stWorkouts").textContent = (sessions || []).filter(isGymDay).length;
   if (goalWeight != null && latest != null) {
-    var left = Math.round((latest - Number(goalWeight)) * 100) / 100;
-    $("stGoal").textContent = Number(goalWeight).toFixed(2).replace(/\\.?0+$/, "") + " kg";
+    $("stGoal").textContent = String(Number(goalWeight)) + " kg";
   } else if (goalWeight != null) {
     $("stGoal").textContent = goalWeight + " kg";
   } else $("stGoal").textContent = "—";
