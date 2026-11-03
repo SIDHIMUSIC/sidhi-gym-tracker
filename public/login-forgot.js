@@ -153,11 +153,13 @@
   }, true);
   setInterval(function () {
     document.querySelectorAll("#gate .forgot, #forgotBtn, .forgot").forEach(function (n) {
-      n.onclick = function (ev) { if (ev) { ev.preventDefault(); ev.stopPropagation(); } openMenu(); };
-    });
-    document.querySelectorAll("body *").forEach(function (n) {
-      if (n.id === "forgotSheet") return;
-      if ((n.innerText || "").indexOf("chala jayega") >= 0 && n.querySelector && n.querySelector("button")) openMenu();
+      if (n._forgotBound) return;
+      n._forgotBound = true;
+      n.addEventListener("click", function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        openMenu();
+      });
     });
   }, 600);
 })();
