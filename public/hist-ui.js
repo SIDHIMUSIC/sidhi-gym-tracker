@@ -1,5 +1,8 @@
 (function () {
   function el(id) { return document.getElementById(id); }
+  function escapeHtml(value) {
+    return String(value == null ? "" : value).replace(/[&<>"\']/g, function (ch) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "\'": "&#39;" })[ch]; });
+  }
   function fancy(s) {
     const m = {a:"ᴀ",b:"ʙ",c:"ᴄ",d:"ᴅ",e:"ᴇ",f:"ꜰ",g:"ɢ",h:"ʜ",i:"ɪ",j:"ᴊ",k:"ᴋ",l:"ʟ",m:"ᴍ",n:"ɴ",o:"ᴏ",p:"ᴘ",q:"ǫ",r:"ʀ",s:"s",t:"ᴛ",u:"ᴜ",v:"ᴠ",w:"ᴡ",x:"x",y:"ʏ",z:"ᴢ"};
     return String(s).replace(/[A-Za-z]/g, function (ch) { return m[ch.toLowerCase()] || ch; });
@@ -43,16 +46,16 @@
     var s = list.find(function (x) { return x.date === date; });
     if (!s) return;
     var runs = (s.runs || []).map(function (r) {
-      return (r.mode || "run") + " • " + (Number(r.distanceKm) || 0).toFixed(2) + " km • " + Math.round((Number(r.durationSec) || 0) / 60) + " min";
+      return escapeHtml(r.mode || "run") + " • " + (Number(r.distanceKm) || 0).toFixed(2) + " km • " + Math.round((Number(r.durationSec) || 0) / 60) + " min";
     }).join("<br>");
     var html = '<div class="glass card" style="position:fixed;inset:16px;z-index:120;overflow:auto;background:#0c121c;padding:18px;border-radius:20px">' +
-      '<b style="font-size:18px">' + (s.date || "") + " • " + (s.workoutName || "gym") + '</b>' +
-      '<p class="sub">' + (s.day || "") + '</p>' +
-      '<p>Start ' + (s.entryWeight || "—") + ' kg at ' + (s.entryTime || "—") + '</p>' +
-      '<p>End ' + (s.afterTreadmillWeight || "—") + ' kg at ' + (s.exitTime || s.afterTreadmillTime || "—") + '</p>' +
+      '<b style="font-size:18px">' + escapeHtml(s.date || "") + " • " + escapeHtml(s.workoutName || "gym") + '</b>' +
+      '<p class="sub">' + escapeHtml(s.day || "") + '</p>' +
+      '<p>Start ' + escapeHtml(s.entryWeight || "—") + ' kg at ' + escapeHtml(s.entryTime || "—") + '</p>' +
+      '<p>End ' + escapeHtml(s.afterTreadmillWeight || "—") + ' kg at ' + escapeHtml(s.exitTime || s.afterTreadmillTime || "—") + '</p>' +
       '<p>Finished: ' + (s.finished ? "yes" : "no") + '</p>' +
       (runs ? '<p>Runs<br>' + runs + '</p>' : '') +
-      (s.after1HourNote ? '<p>' + s.after1HourNote + '</p>' : '') +
+      (s.after1HourNote ? '<p>' + escapeHtml(s.after1HourNote) + '</p>' : '') +
       '<button class="btn ok full" id="closeDetail" type="button" style="margin-top:12px">CLOSE</button></div>';
     var old = document.getElementById("sessionDetail");
     if (old) old.remove();
@@ -86,7 +89,7 @@
       } else if (start != null) line = "start " + start + " kg";
       else if (end != null) line = "end " + end + " kg";
       var clock = gymClock(s);
-      var html = '<div class="hist-item" data-date="' + s.date + '"><div><b>' + fancy(s.workoutName || "gym") + '</b>';
+      var html = '<div class="hist-item" data-date="' + escapeHtml(s.date) + '"><div><b>' + fancy(escapeHtml(s.workoutName || "gym")) + '</b>';
       html += '<div class="sub">' + s.date;
       if (s.day) html += " • " + s.day;
       if (clock) html += " • " + clock;
@@ -105,7 +108,7 @@
         var km = Number(r.distanceKm) || 0;
         var min = Math.round((Number(r.durationSec) || 0) / 60);
         var cal = Math.round(Number(r.calories) || 0);
-        var html = '<div class="hist-item" data-date="' + s.date + '"><div><b>' + fancy(r.mode || "run") + '</b>';
+        var html = '<div class="hist-item" data-date="' + s.date + '"><div><b>' + fancy(escapeHtml(r.mode || "run")) + '</b>';
         html += '<div class="sub">' + s.date + '</div>';
         html += '<div class="sub">' + km.toFixed(2) + " km • " + min + " min • " + cal + " kcal</div></div>";
         html += '<div class="hist-acts"><button class="btn ghost" data-open="' + s.date + '">' + fancy("open") + '</button></div></div>';
