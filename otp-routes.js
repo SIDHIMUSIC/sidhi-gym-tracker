@@ -16,7 +16,7 @@ function Otp() {
     exp: Date
   }, { timestamps: true }));
 }
-function users() { return mongoose.connection.collection("users"); }
+function users() { return mongoose.connection.collection("users"); }\nconst otpLimits = new Map();\nfunction otpAllowed(req, action, max) {\n  const key = action + ":" + String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown").split(",")[0].trim();\n  const now = Date.now(); const row = otpLimits.get(key) || { start: now, count: 0 };\n  if (now - row.start > 10 * 60 * 1000) { row.start = now; row.count = 0; }\n  row.count++; otpLimits.set(key, row);\n  if (otpLimits.size > 5000) for (const [k,v] of otpLimits) if (now - v.start > 10 * 60 * 1000) otpLimits.delete(k);\n  return row.count <= max;\n}
 async function userFrom(req) {
   const token = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "").trim();
   const Token = mongoose.models.Token;
