@@ -866,8 +866,8 @@ app.get("/api/premium/food-log", auth, async (req, res) => {
   if (!(await premiumFeatureIsEnabled("foodDiary"))) return res.status(403).json({ error: "Food Diary admin ne off ki hai." });
   const user = await User.findOne({ username: req.gymUser }).lean();
   if (!hasActivePremium(user)) return res.status(402).json({ error: "Food diary ke liye Premium chahiye." });
-  const date = String(req.query.date || new Date().toISOString().slice(0, 10));
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: "Date galat hai." });
+  const date = String(req.query.date || new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }));
+  if (!isValidISODate(date)) return res.status(400).json({ error: "Date galat hai." });
   const meals = await FoodLog.find({ owner: req.gymUser, date }).sort({ time: 1, createdAt: 1 }).lean();
   const totals = meals.reduce((a, m) => {
     a.calories += Number(m.calories) || 0; a.proteinG += Number(m.proteinG) || 0;
@@ -886,7 +886,7 @@ app.post("/api/premium/food-log", auth, async (req, res) => {
   const food = String((req.body && req.body.food) || "").trim().slice(0, 180);
   const quantity = String((req.body && req.body.quantity) || "").trim().slice(0, 120);
   const notes = String((req.body && req.body.notes) || "").trim().slice(0, 500);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return res.status(400).json({ error: "Date ya time sahi bharo." });
+  if (!isValidISODate(date) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return res.status(400).json({ error: "Date ya time sahi bharo." });
   if (food.length < 2 || quantity.length < 1) return res.status(400).json({ error: "Kya khaya aur kitna khaya, dono bharo." });
   const quota = foodQuota(req.gymUser);
   if (!quota.allowed) return res.status(429).json({ error: "Aaj ka food AI limit (15 requests) use ho gaya. Meals ko kal continue kar sakte ho." });
