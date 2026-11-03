@@ -208,13 +208,14 @@ async function grantPremium(username, days) {
 function publicUser(u) {
   if (!u) {
     return {
-      username: "", displayName: "", gender: "", goalWeight: null, schedule: {}, createdAt: null,
+      username: "", displayName: "", email: "", gender: "", goalWeight: null, schedule: {}, createdAt: null,
       age: null, heightCm: null, currentWeight: null, fitnessGoal: "", trainingLevel: "", photoUrl: "", preferredDays: []
     };
   }
   return {
     username: u.username,
     displayName: u.displayName || "",
+    email: u.email || "",
     gender: u.gender || "",
     goalWeight: u.goalWeight != null ? u.goalWeight : null,
     schedule: u.schedule && typeof u.schedule === "object" ? u.schedule : {},
