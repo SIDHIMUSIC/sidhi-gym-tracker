@@ -179,7 +179,7 @@ module.exports = function (app) {
     const username = await userFrom(req);
     if (!username) return res.status(401).json({ error: "Login chahiye" });
     const email = String((req.body && req.body.email) || "").trim().toLowerCase();
-    if (!/^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$/.test(email)) return res.status(400).json({ error: "Email sahi likho" });
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ error: "Email sahi likho" });
     const account = await users().findOne({ username: username });
     if (account && account.emailVerified) return res.status(409).json({ error: "Verified email lock hai. Ise change nahi kar sakte." });
     const taken = await users().findOne({ email: email, username: { $ne: username } });
