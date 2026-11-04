@@ -120,7 +120,7 @@
       '<div class="kv"><span>change since start</span><b>' + (weightDelta != null ? (weightDelta > 0 ? "+" : "") + weightDelta + " kg" : "—") + '</b></div>' +
       '<div class="kv"><span>goal weight</span><b>' + (typeof goalWeight !== "undefined" && goalWeight != null ? goalWeight + " kg" : "—") + '</b></div>' +
       '<div class="profile-quick-actions"><button type="button" class="profile-logout" id="logoutBtn"><span>↗</span> Sign out</button><span>Quick account action</span></div></div>' +
-      '<div class="glass card" id="pfEmailCard"><h2>email verification</h2>' + (profile.emailVerified ? '<div class="email-verified-panel"><div class="email-verified-icon">✓</div><div><b>Email verified successfully</b><p>@' + escHtml(username || "") + ' · Your email is now locked to this account.</p></div></div><div class="kv"><span>verified email</span><b>' + escHtml(profile.email) + '</b></div>' : '<div class="email-verify"><label>email address</label><input id="pfEmailInput" type="email" autocomplete="email" value="' + escHtml(profile.email) + '" placeholder="you@example.com" /><button type="button" class="btn email-send full" id="pfEmailSend" style="margin-top:10px">✉ Send verification code</button><div class="email-instructions"><b>Check your inbox</b><span>We will send a 6-digit code. Also check Spam or Promotions. Code expires in 10 minutes.</span></div><label>6-digit verification code</label><div class="otp-entry"><input id="pfEmailCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6-digit code" /><button type="button" id="pfEmailCopy" class="otp-copy">Copy code</button></div><button type="button" class="btn ok full" id="pfEmailVerify" style="margin-top:12px">✓ Verify & lock email</button><p class="sub" id="pfEmailNote">Your email becomes permanent after successful verification.</p></div>') + '</div>' + '<div class="glass card"><h2>edit profile</h2><label>full name</label><input id="pfName" value="' + (profile.displayName || "") + '" /><label>gender</label><div class="seg" id="pfGen"><button type="button" data-g="male" class="' + (profile.gender === "male" ? "on" : "") + '">Male</button><button type="button" data-g="female" class="' + (profile.gender === "female" ? "on" : "") + '">Female</button></div><button class="btn ok full" id="pfSave" style="margin-top:12px">save changes</button></div>' +
+      '<div class="glass card" id="pfEmailCard"><h2>email verification</h2>' + (profile.emailVerified ? '<div class="email-verified-panel"><div class="email-verified-icon">✓</div><div><b>Email verified successfully</b><p>@' + escHtml(username || "") + ' · Your email is now locked to this account.</p></div></div><div class="kv"><span>verified email</span><b>' + escHtml(profile.email) + '</b></div><button type="button" class="btn email-send full" id="pfEmailConfirmResend" style="margin-top:12px">✉ Send verification confirmation email</button><p class="sub">A confirmation receipt will be sent to this verified address.</p>' : '<div class="email-verify"><label>email address</label><input id="pfEmailInput" type="email" autocomplete="email" value="' + escHtml(profile.email) + '" placeholder="you@example.com" /><button type="button" class="btn email-send full" id="pfEmailSend" style="margin-top:10px">✉ Send verification code</button><div class="email-instructions"><b>Check your inbox</b><span>We will send a 6-digit code. Also check Spam or Promotions. Code expires in 10 minutes.</span></div><label>6-digit verification code</label><div class="otp-entry"><input id="pfEmailCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6-digit code" /><button type="button" id="pfEmailCopy" class="otp-copy">Copy code</button></div><button type="button" class="btn ok full" id="pfEmailVerify" style="margin-top:12px">✓ Verify & lock email</button><p class="sub" id="pfEmailNote">Your email becomes permanent after successful verification.</p></div>') + '</div>' + '<div class="glass card"><h2>edit profile</h2><label>full name</label><input id="pfName" value="' + (profile.displayName || "") + '" /><label>gender</label><div class="seg" id="pfGen"><button type="button" data-g="male" class="' + (profile.gender === "male" ? "on" : "") + '">Male</button><button type="button" data-g="female" class="' + (profile.gender === "female" ? "on" : "") + '">Female</button></div><button class="btn ok full" id="pfSave" style="margin-top:12px">save changes</button></div>' +
       '<div class="glass card"><h2>choose official plan day</h2>' + sched + '<button class="btn full" id="pfSched" style="margin-top:12px">save schedule</button></div>' +
       '';
     var emailCodeMatch = (window.location.hash || "").match(/^#email-code=(\d{6})$/);
@@ -180,10 +180,23 @@
         profile.email = verified.email; profile.emailVerified = true;
         showProfile();
         toast(verified.confirmationEmailSent
-          ? "Email verified! Confirmation email sent to your inbox."
-          : "Email verified! Confirmation email could not be sent; your account is verified.");
+          ? "Email verified! Confirmation email accepted by mail provider."
+          : "Email verified, but confirmation email failed. Use Send confirmation email below.");
       } catch (e) { toast(e.message || "Verification fail"); }
       finally { emailVerify.disabled = false; }
+    };
+    var resendConfirmation = el("pfEmailConfirmResend");
+    if (resendConfirmation) resendConfirmation.onclick = async function () {
+      resendConfirmation.disabled = true;
+      resendConfirmation.textContent = "Sending confirmation…";
+      try {
+        var result = await api("/api/profile-email/confirmation-resend", { method: "POST", body: {} });
+        toast("Confirmation email accepted for " + (result.email || profile.email) + ". Check Inbox / Spam.");
+        resendConfirmation.textContent = "✓ Confirmation email sent";
+      } catch (e) {
+        toast(e.message || "Confirmation email failed");
+        resendConfirmation.textContent = "↻ Try sending confirmation again";
+      } finally { resendConfirmation.disabled = false; }
     };
     var sv = el("pfSave");
     if (sv) sv.onclick = async function () {
