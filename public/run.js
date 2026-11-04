@@ -123,12 +123,45 @@
       const prev = String((bestGym && bestGym.after1HourNote) || "").length;
       if (noteLen > prev) bestGym = s;
     });
+    const daily = {};
+    runs.forEach(function (r) {
+      const date = String(r.date || (r.endedAt || r.startedAt || "").slice(0, 10));
+      if (!date) return;
+      if (!daily[date]) daily[date] = { date: date, runs: [], km: 0, sec: 0, cal: 0 };
+      const d = daily[date];
+      d.runs.push(r);
+      d.km += Number(r.distanceKm) || 0;
+      d.sec += Number(r.durationSec) || 0;
+      d.cal += Number(r.calories) || 0;
+    });
+    function durationLabel(seconds) {
+      const total = Math.max(0, Math.round(Number(seconds) || 0));
+      const mins = Math.floor(total / 60);
+      const secs = total % 60;
+      if (!mins) return secs + " sec";
+      return mins + " min" + (secs ? " " + secs + " sec" : "");
+    }
+    const dailyCards = Object.keys(daily).sort(function (a, b) { return b.localeCompare(a); }).map(function (date) {
+      const d = daily[date];
+      d.runs.sort(function (a, b) {
+        return String(a.startedAt || a.id || "").localeCompare(String(b.startedAt || b.id || ""));
+      });
+      const dateLabel = new Date(date + "T00:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+      const rows = d.runs.map(function (r, i) {
+        const ordinal = i === 0 ? "1st run" : i === 1 ? "2nd run" : i === 2 ? "3rd run" : (i + 1) + "th run";
+        const mode = String(r.mode || "run").replace(/[&<>"]/g, "");
+        return '<div class="run-day-line"><span class="run-day-index">' + ordinal + '</span><span class="run-day-detail">' + mode + ' · ' + (Number(r.distanceKm) || 0).toFixed(2) + ' km · ' + durationLabel(r.durationSec) + ' · ' + Math.round(Number(r.calories) || 0) + ' kcal</span></div>';
+      }).join("");
+      return '<article class="run-day-card"><div class="run-day-head"><b>' + dateLabel + '</b><span>' + d.runs.length + (d.runs.length === 1 ? ' run' : ' runs') + '</span></div>' +
+        rows + '<div class="run-day-total"><span>DAILY TOTAL</span><b>' + d.km.toFixed(2) + ' km</b><b>' + durationLabel(d.sec) + '</b><b>' + Math.round(d.cal) + ' kcal</b></div></article>';
+    }).join("");
     box.innerHTML = '<div class="sum-grid">' +
       '<div class="glass run-stat"><b>' + w.km.toFixed(1) + '</b><span>' + fancy("week km") + '</span></div>' +
       '<div class="glass run-stat"><b>' + mo.km.toFixed(1) + '</b><span>' + fancy("month km") + '</span></div>' +
       '<div class="glass run-stat"><b>' + (bestRun ? Number(bestRun.distanceKm).toFixed(2) : "—") + '</b><span>' + fancy("best run km") + (bestRun && bestRun.date ? " • " + bestRun.date : "") + '</span></div>' +
       '<div class="glass run-stat"><b>' + (bestGym ? (bestGym.date || "—") : "—") + '</b><span>' + fancy("top gym day") + '</span></div></div>' +
-      '<p class="sub" style="text-align:center;margin-top:8px">' + fancy("pace = min per km") + " • " + fancy("go outside + allow location") + '</p>';
+      '<p class="sub" style="text-align:center;margin-top:8px">' + fancy("pace = min per km") + " • " + fancy("go outside + allow location") + '</p>' +
+      '<section class="run-history-wrap"><h3>morning run history</h3>' + (dailyCards || '<p class="sub">No runs yet</p>') + '</section>';
   }
   function paintRunEmpty() {
     var box = el("runEmpty");
@@ -369,7 +402,7 @@
     }
   });
   (function ensureUI() {
-    var css = ".head-actions{display:flex;flex-direction:column;align-items:flex-end;gap:8px}.head-btns{display:flex;gap:8px;align-items:center}.btn.run{min-height:42px;border-radius:999px;padding:8px 16px;background:linear-gradient(135deg,#63e2b3,#7ab8ff);border:0;color:#04140d;font:700 13px Comfortaa,sans-serif}.livebar{display:none;gap:6px;flex-wrap:wrap;justify-content:flex-end}.livebar.on{display:flex}.chip{padding:6px 10px;border-radius:999px;background:rgba(99,226,179,.14);font:800 11px Comfortaa,sans-serif;color:#c8ffe8}.run-ov{position:fixed;inset:0;z-index:80;display:none;overflow:auto;background:#070b12;padding:14px 14px 36px}.run-ov.on{display:block}.run-clock{font:800 64px Comfortaa,sans-serif;text-align:center;margin:8px 0 4px;color:#f0c27a}.modes{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:14px 0}.modes button{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#fff;border-radius:999px;padding:12px 14px;min-height:46px;font:700 13px Comfortaa,sans-serif}.modes button.on{color:#04140d;background:linear-gradient(135deg,#a8edea,#63e2b3)}.run-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.run-stat{text-align:center;padding:16px 8px}.run-stat b{display:block;font:800 24px Comfortaa,sans-serif;color:#f0c27a}.run-stat span{font-size:12px}.run-acts{display:flex;flex-direction:column;gap:10px;margin-top:16px}.run-acts .row{display:flex;gap:10px}.run-ov .btn{min-height:58px;font-size:16px}.run-fig{width:72px;height:72px;margin:8px auto 4px;border-radius:50%;display:grid;place-items:center;font-size:34px;background:rgba(255,255,255,.06)}.run-fig.zone-slow{animation:bounce 1.1s ease-in-out infinite}.run-fig.zone-medium{animation:bounce .7s ease-in-out infinite}.run-fig.zone-fast{animation:bounce .38s ease-in-out infinite}@keyframes bounce{50%{transform:translateY(-10px)}}.sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}#runGraph{width:100%;height:120px;border-radius:16px;background:rgba(255,255,255,.04);margin-top:12px}";
+    var css = ".run-history-wrap{margin-top:18px}.run-history-wrap h3{font:800 17px Comfortaa,sans-serif;color:#ffe4b5;margin:0 0 12px;text-transform:lowercase}.run-day-card{padding:14px;margin:0 0 10px;border-radius:18px;background:rgba(10,17,28,.92);border:1px solid rgba(255,255,255,.1)}.run-day-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;color:#f4d6a1}.run-day-head span{font-size:11px;color:#9aa7b8}.run-day-line{display:grid;grid-template-columns:64px minmax(0,1fr);gap:8px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:12px;line-height:1.5}.run-day-index{color:#f0c27a;font-weight:800}.run-day-detail{color:#dbe4f0;text-align:right}.run-day-total{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid rgba(240,194,122,.28);color:#a8edea;font-size:12px}.run-day-total span{width:100%;font-size:10px;letter-spacing:.12em;color:#f0c27a;font-weight:800}.run-day-total b{font-size:13px}" +display:flex;flex-direction:column;align-items:flex-end;gap:8px}.head-btns{display:flex;gap:8px;align-items:center}.btn.run{min-height:42px;border-radius:999px;padding:8px 16px;background:linear-gradient(135deg,#63e2b3,#7ab8ff);border:0;color:#04140d;font:700 13px Comfortaa,sans-serif}.livebar{display:none;gap:6px;flex-wrap:wrap;justify-content:flex-end}.livebar.on{display:flex}.chip{padding:6px 10px;border-radius:999px;background:rgba(99,226,179,.14);font:800 11px Comfortaa,sans-serif;color:#c8ffe8}.run-ov{position:fixed;inset:0;z-index:80;display:none;overflow:auto;background:#070b12;padding:14px 14px 36px}.run-ov.on{display:block}.run-clock{font:800 64px Comfortaa,sans-serif;text-align:center;margin:8px 0 4px;color:#f0c27a}.modes{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:14px 0}.modes button{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#fff;border-radius:999px;padding:12px 14px;min-height:46px;font:700 13px Comfortaa,sans-serif}.modes button.on{color:#04140d;background:linear-gradient(135deg,#a8edea,#63e2b3)}.run-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.run-stat{text-align:center;padding:16px 8px}.run-stat b{display:block;font:800 24px Comfortaa,sans-serif;color:#f0c27a}.run-stat span{font-size:12px}.run-acts{display:flex;flex-direction:column;gap:10px;margin-top:16px}.run-acts .row{display:flex;gap:10px}.run-ov .btn{min-height:58px;font-size:16px}.run-fig{width:72px;height:72px;margin:8px auto 4px;border-radius:50%;display:grid;place-items:center;font-size:34px;background:rgba(255,255,255,.06)}.run-fig.zone-slow{animation:bounce 1.1s ease-in-out infinite}.run-fig.zone-medium{animation:bounce .7s ease-in-out infinite}.run-fig.zone-fast{animation:bounce .38s ease-in-out infinite}@keyframes bounce{50%{transform:translateY(-10px)}}.sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}#runGraph{width:100%;height:120px;border-radius:16px;background:rgba(255,255,255,.04);margin-top:12px}";
     var st = document.getElementById("run-css");
     if (!st) { st = document.createElement("style"); st.id = "run-css"; document.head.appendChild(st); }
     st.textContent = css;
