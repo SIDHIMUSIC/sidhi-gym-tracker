@@ -107,7 +107,16 @@ async function sendProfileVerifiedEmail(email, username) {
       htmlContent: html
     })
   });
-  if (!response.ok) throw new Error("Brevo confirmation email request failed");
+  const responseText = await response.text();
+  let responseData = {};
+  try { responseData = responseText ? JSON.parse(responseText) : {}; } catch (_) {}
+  if (!response.ok) {
+    console.error("SIDHI GYM Brevo confirmation rejected:", response.status, responseText.slice(0, 500));
+    const err = new Error("Confirmation email provider rejected the message (HTTP " + response.status + ")");
+    err.status = 502;
+    throw err;
+  }
+  return { messageId: responseData.messageId || (responseData.messageIds && responseData.messageIds[0]) || "" };
 }
 
 module.exports = function (app) {
@@ -224,13 +233,48 @@ module.exports = function (app) {
     if (!result.modifiedCount) return res.status(409).json({ error: "Email pehle se verify/lock hai." });
     await Otp().deleteMany({ username: username, purpose: "profile-email" });
     let confirmationEmailSent = false;
+    let confirmationMessageId = "";
+    let confirmationEmailError = "";
     try {
-      await sendProfileVerifiedEmail(email, username);
+      const sent = await sendProfileVerifiedEmail(email, username);
       confirmationEmailSent = true;
+      confirmationMessageId = sent.messageId || "";
     } catch (mailErr) {
-      console.error("SIDHI GYM verification confirmation email failed:", mailErr && mailErr.message);
+      confirmationEmailError = mailErr && mailErr.message ? mailErr.message : "Email send failed";
+      console.error("SIDHI GYM verification confirmation email failed:", confirmationEmailError);
     }
-    res.json({ ok: true, email: email, emailVerified: true, confirmationEmailSent: confirmationEmailSent });
+    res.json({
+      ok: true, email: email, emailVerified: true,
+      confirmationEmailSent: confirmationEmailSent,
+      confirmationMessageId: confirmationMessageId,
+      confirmationEmailError: confirmationEmailError
+    });
+  });
+
+  app.post("/api/profile-email/confirmation-resend", async function (req, res) {
+    try {
+      const username = await userFrom(req);
+      if (!username) return res.status(401).json({ error: "Login chahiye" });
+      const account = await users().findOne({ username: username });
+      if (!account || account.emailVerified !== true || !account.email) {
+        return res.status(400).json({ error: "Pehle email verify karo." });
+      }
+      const recent = await Otp().findOne({
+        username: username, purpose: "profile-confirm-rate",
+        createdAt: { $gt: new Date(Date.now() - 5 * 60 * 1000) }
+      });
+      if (recent) return res.status(429).json({ error: "Confirmation email abhi bheja gaya hai. 5 minute baad dobara try karo." });
+      const sent = await sendProfileVerifiedEmail(account.email, username);
+      await Otp().deleteMany({ username: username, purpose: "profile-confirm-rate" });
+      await Otp().create({
+        username: username, email: account.email, purpose: "profile-confirm-rate",
+        code: "sent", exp: new Date(Date.now() + 5 * 60 * 1000)
+      });
+      res.json({ ok: true, email: account.email, messageId: sent.messageId || "" });
+    } catch (err) {
+      console.error("SIDHI GYM confirmation resend failed:", err && err.message);
+      res.status(err.status || 500).json({ error: err.message || "Confirmation email send failed" });
+    }
   });
 
   app.post("/api/profile-email", async function (req, res) {
