@@ -273,7 +273,7 @@
           "<h2>body + goal</h2>" +
           '<label>age</label><input id="pfAge" inputmode="numeric" />' +
           '<label>height (cm)</label><input id="pfHt" inputmode="decimal" />' +
-          '<label>current weight</label><input id="pfCw" inputmode="decimal" />' +
+
           '<label>fitness goal</label><select id="pfFg"><option value="">select</option><option>fat loss</option><option>muscle</option><option>recomp</option><option>endurance</option></select>' +
           '<label>training level</label><select id="pfLv"><option value="">select</option><option>beginner</option><option>intermediate</option><option>advanced</option></select>' +
           '<button class="btn ok full" id="pfBodySave" type="button" style="margin-top:12px">save body</button>' +
@@ -283,7 +283,7 @@
           var m = window.__sidhiMe;
           if (el("pfAge") && m.age) el("pfAge").value = m.age;
           if (el("pfHt") && m.heightCm) el("pfHt").value = m.heightCm;
-          if (el("pfCw") && m.currentWeight) el("pfCw").value = m.currentWeight;
+
           if (el("pfFg") && m.fitnessGoal) el("pfFg").value = m.fitnessGoal;
           if (el("pfLv") && m.trainingLevel) el("pfLv").value = m.trainingLevel;
         }
@@ -294,7 +294,7 @@
               body: {
                 age: el("pfAge").value,
                 heightCm: el("pfHt").value,
-                currentWeight: el("pfCw").value,
+
                 fitnessGoal: el("pfFg").value,
                 trainingLevel: el("pfLv").value
               }
