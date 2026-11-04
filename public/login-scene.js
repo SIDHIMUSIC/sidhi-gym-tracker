@@ -58,7 +58,27 @@
     "@keyframes rip{to{transform:scale(18);opacity:0}}",
     "@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}",
     "@keyframes borderFlow{to{background-position:220% 0}}",
-    "@keyframes dot{to{transform:translate(var(--x),var(--y));opacity:0}}"
+    "@keyframes dot{to{transform:translate(var(--x),var(--y));opacity:0}}",
+    "#gate.gate{padding:28px 16px 42px;background:radial-gradient(ellipse at 50% 0%,#10263b 0%,#050b16 48%,#02040c 100%)}",
+    "#gate .glass.card{width:min(460px,100%);padding:30px 25px 24px;border-radius:32px;background:linear-gradient(155deg,rgba(12,25,43,.94),rgba(5,11,23,.96) 68%,rgba(14,22,39,.94));border:1px solid rgba(125,211,252,.22);box-shadow:0 32px 90px #000c,0 0 0 1px #ffffff08 inset,0 0 55px rgba(56,189,248,.13)}",
+    "#gate .g-top{margin-bottom:18px}",
+    "#gate .badge{font-size:10px;letter-spacing:.32em;color:#a8edea;text-shadow:0 0 18px #38bdf855}",
+    "#gate h1.brand{font-size:clamp(38px,10vw,48px);letter-spacing:-.045em;margin:10px 0 8px;text-shadow:0 8px 32px #0008}",
+    "#gate .public-info{font-size:13px;line-height:1.65;color:#a9b9cc;margin:12px 0 8px}",
+    "#gate .public-info a{color:#8bd8f5!important;text-decoration:none!important;border-bottom:1px solid #8bd8f566;padding-bottom:2px}",
+    "#gate .public-info a:hover{color:#f0c27a!important;border-color:#f0c27a}",
+    "#gate #gateHint{display:table;margin:14px auto 20px;padding:8px 13px;border:1px solid #7dd3fc30;border-radius:999px;background:#38bdf80d;color:#a8edea;font-size:11px;letter-spacing:.08em}",
+    "#gate label{margin:14px 0 7px;color:#b9c9e1;font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}",
+    "#gate input{min-height:58px;padding:16px 17px;border-radius:18px;background:rgba(2,8,19,.82);border:1px solid rgba(125,211,252,.2);color:#f8fafc;font-size:15px;box-shadow:inset 0 2px 10px #0005}",
+    "#gate input::placeholder{color:#71849b}",
+    "#gate .forgot{margin:13px 0 0;color:#9ddcf5;font-size:12px;letter-spacing:.03em}",
+    "#gate .row{gap:12px;margin-top:20px}",
+    "#gate #loginBtn{min-height:62px;border-radius:20px;background:linear-gradient(135deg,#b8f1f7 0%,#4ac6ef 48%,#168bd1 100%);box-shadow:0 14px 30px #168bd14a,0 1px 0 #fff8 inset;font-size:14px;letter-spacing:.22em}",
+    "#gate #setupBtn{min-height:58px;border-radius:20px;background:linear-gradient(135deg,#101d32,#0a1323);border:1px solid #75bdf477;color:#dceeff;font-size:12px;letter-spacing:.12em}",
+    "#gate .creator{margin-top:24px;padding-top:16px;border-color:#ffffff14;color:#8195aa}",
+    "#gate .back-btn{border-color:#7dd3fc44;background:#0c1a2b;color:#a8edea}",
+    "@media(max-width:390px){#gate .glass.card{padding:24px 18px 20px}#gate .public-info{font-size:12px}#gate h1.brand{font-size:38px}}",
+    "@media(prefers-reduced-motion:reduce){#gate .glass.card{animation:none}}"
   ].join("");
   document.head.appendChild(st);
 
