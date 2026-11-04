@@ -102,18 +102,31 @@
       html += '</div></div>';
       return html;
     }).join("");
-    var runCards = [];
+    var dailyRuns = {};
     list.forEach(function (s) {
       (Array.isArray(s.runs) ? s.runs : []).forEach(function (r) {
-        var km = Number(r.distanceKm) || 0;
-        var min = Math.round((Number(r.durationSec) || 0) / 60);
-        var cal = Math.round(Number(r.calories) || 0);
-        var html = '<div class="hist-item" data-date="' + s.date + '"><div><b>' + fancy(escapeHtml(r.mode || "run")) + '</b>';
-        html += '<div class="sub">' + s.date + '</div>';
-        html += '<div class="sub">' + km.toFixed(2) + " km • " + min + " min • " + cal + " kcal</div></div>";
-        html += '<div class="hist-acts"><button class="btn ghost" data-open="' + s.date + '">' + fancy("open") + '</button></div></div>';
-        runCards.push(html);
+        var date = String(s.date || r.date || "");
+        if (!date) return;
+        if (!dailyRuns[date]) dailyRuns[date] = { date: date, runs: [], km: 0, seconds: 0, calories: 0, modes: [] };
+        var day = dailyRuns[date];
+        day.runs.push(r);
+        day.km += Number(r.distanceKm) || 0;
+        day.seconds += Number(r.durationSec) || 0;
+        day.calories += Number(r.calories) || 0;
+        var mode = String(r.mode || "run");
+        if (day.modes.indexOf(mode) === -1) day.modes.push(mode);
       });
+    });
+    var runCards = Object.keys(dailyRuns).sort(function (a, b) { return b.localeCompare(a); }).map(function (date) {
+      var day = dailyRuns[date];
+      var min = Math.round(day.seconds / 60);
+      var modeLabel = day.modes.map(function (mode) { return fancy(escapeHtml(mode)); }).join(" + ");
+      var countLabel = day.runs.length > 1 ? " • " + day.runs.length + " runs combined" : "";
+      var html = '<div class="hist-item" data-date="' + escapeHtml(date) + '"><div><b>' + modeLabel + '</b>';
+      html += '<div class="sub">' + escapeHtml(date) + countLabel + '</div>';
+      html += '<div class="sub">' + day.km.toFixed(2) + " km • " + min + " min • " + Math.round(day.calories) + " kcal</div></div>";
+      html += '<div class="hist-acts"><button class="btn ghost" data-open="' + escapeHtml(date) + '">' + fancy("open") + '</button></div></div>';
+      return html;
     });
     runBox.innerHTML = runCards.join("") || '<p class="sub">' + fancy("no runs yet") + "</p>";
   }
