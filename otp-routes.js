@@ -53,28 +53,16 @@ async function mail(email, code) {
     throw err;
   }
   const appUrl = "https://sidhi-gym-tracker.vercel.app/";
-  const html = "<!doctype html><html><body style='margin:0;padding:0;background:#e8edf3'>"
-    + "<table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='background:#e8edf3;padding:28px 12px'><tr><td align='center'>"
-    + "<table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='max-width:480px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0'>"
-    + "<tr><td style='background:#0b1220;padding:22px 28px'>"
-    + "<p style='margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;letter-spacing:3px;color:#e8c98a'>SIDHI GYM</p>"
-    + "<p style='margin:6px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#9fb0c3'>Training log</p>"
-    + "</td></tr>"
-    + "<tr><td style='padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif'>"
-    + "<h1 style='margin:0;font-size:24px;line-height:1.3;color:#0f172a;font-weight:700'>Verify your email</h1>"
-    + "<p style='margin:12px 0 0;font-size:15px;line-height:1.55;color:#475569'>Enter this code in Sidhi Gym to finish. It expires in 10 minutes.</p>"
-    + "</td></tr>"
-    + "<tr><td align='center' style='padding:20px 28px 8px'>"
-    + "<div style='font-family:Arial,Helvetica,sans-serif;font-size:32px;letter-spacing:10px;font-weight:700;color:#0f172a;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 12px'>" + code + "</div>"
-    + "</td></tr>"
-    + "<tr><td align='center' style='padding:18px 28px 8px'>"
-    + "<a href='" + appUrl + "' style='display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;padding:14px 28px;border-radius:999px'>Open Sidhi Gym</a>"
-    + "</td></tr>"
-    + "<tr><td align='center' style='padding:8px 28px 22px;font-family:Arial,Helvetica,sans-serif;font-size:12px'>"
-    + "<a href='" + appUrl + "' style='color:#64748b;text-decoration:underline'>sidhi-gym-tracker.vercel.app</a>"
-    + "</td></tr>"
-    + "<tr><td style='padding:0 28px 24px;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#64748b'>Do not share this code. Sidhi Gym will never ask for it on a call or chat.</td></tr>"
-    + "<tr><td style='padding:16px 28px;background:#f8fafc;border-top:1px solid #e2e8f0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#94a3b8'>Sidhi Gym · daily training log</td></tr>"
+  const appCodeUrl = appUrl + "#email-code=" + encodeURIComponent(code);
+  const html = "<!doctype html><html><body style='margin:0;padding:0;background:#07111f'>"
+    + "<table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='background:#07111f;padding:30px 12px'><tr><td align='center'>"
+    + "<table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='max-width:500px;background:#101b2c;border:1px solid #293a50;border-radius:26px;overflow:hidden'>"
+    + "<tr><td style='padding:28px;background:linear-gradient(135deg,#172b43,#101827 65%,#20233a)'><p style='margin:0;color:#f0c27a;font:800 12px Arial,sans-serif;letter-spacing:5px'>SIDHI GYM</p><p style='margin:9px 0 0;color:#a9bfd4;font:13px Arial,sans-serif;letter-spacing:2px'>YOUR TRAINING JOURNEY</p><div style='margin-top:20px;width:48px;height:4px;border-radius:9px;background:linear-gradient(90deg,#ff9a9e,#f0c27a,#63e2b3)'></div></td></tr>"
+    + "<tr><td style='padding:30px 28px 8px;font-family:Arial,Helvetica,sans-serif'><p style='margin:0 0 9px;color:#a8edea;font-size:11px;font-weight:700;letter-spacing:2px'>ACCOUNT SECURITY</p><h1 style='margin:0;color:#f8fafc;font-size:27px;line-height:1.25'>Verify your email</h1><p style='margin:13px 0 0;color:#b8c5d5;font-size:15px;line-height:1.7'>Use this one-time code to verify your email address and secure your SIDHI GYM account.</p></td></tr>"
+    + "<tr><td align='center' style='padding:22px 28px 8px'><div style='display:inline-block;min-width:245px;padding:20px 18px;border:1px solid #3a5268;border-radius:18px;background:#091321;color:#f8fafc;font:800 35px Arial,sans-serif;letter-spacing:12px;text-align:center'>" + code + "</div><p style='margin:10px 0 0;color:#8fa4b9;font:12px Arial,sans-serif'>EXPIRES IN 10 MINUTES</p></td></tr>"
+    + "<tr><td align='center' style='padding:22px 28px 8px'><a href='" + appCodeUrl + "' style='display:inline-block;padding:15px 25px;border-radius:999px;background:linear-gradient(135deg,#a8edea,#63e2b3);color:#062019;text-decoration:none;font:800 14px Arial,sans-serif;letter-spacing:.5px'>OPEN SIDHI GYM WITH CODE&nbsp; →</a><p style='margin:12px 0 0;color:#91a4b8;font:12px Arial,sans-serif;line-height:1.5'>Tap to open the app. Your code will be filled in the verification box, where you can copy it if needed.</p></td></tr>"
+    + "<tr><td style='padding:18px 28px 26px;color:#8fa0b4;font:12px Arial,sans-serif;line-height:1.7'>If you did not request this code, you can safely ignore this email. Never share your code with anyone.</td></tr>"
+    + "<tr><td style='padding:18px 28px;background:#0b1422;border-top:1px solid #293a50;color:#71849a;font:11px Arial,sans-serif;letter-spacing:.5px'>SIDHI GYM · TRAIN HARD · LOG EASY</td></tr>"
     + "</table></td></tr></table></body></html>";
   const r = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
@@ -92,6 +80,34 @@ async function mail(email, code) {
     err.status = 502;
     throw err;
   }
+}
+
+async function sendProfileVerifiedEmail(email, username) {
+  const key = process.env.BREVO_API_KEY || "";
+  const from = process.env.BREVO_SENDER || "";
+  if (!key || !from) throw new Error("Brevo sender is not configured");
+  const appUrl = "https://sidhi-gym-tracker.vercel.app/";
+  const safeName = String(username || "athlete").replace(/[&<>"]/g, "");
+  const html = "<!doctype html><html><body style='margin:0;padding:0;background:#07111f'>"
+    + "<table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='background:#07111f;padding:30px 12px'><tr><td align='center'>"
+    + "<table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='max-width:500px;background:#101b2c;border:1px solid #293a50;border-radius:26px;overflow:hidden'>"
+    + "<tr><td style='padding:28px;background:linear-gradient(135deg,#172b43,#101827 65%,#20233a)'><p style='margin:0;color:#f0c27a;font:800 12px Arial,sans-serif;letter-spacing:5px'>SIDHI GYM</p><p style='margin:9px 0 0;color:#a9bfd4;font:13px Arial,sans-serif;letter-spacing:2px'>ACCOUNT CONFIRMATION</p></td></tr>"
+    + "<tr><td align='center' style='padding:30px 28px 8px'><div style='width:62px;height:62px;line-height:62px;border-radius:50%;background:#63e2b3;color:#062019;font:800 34px Arial,sans-serif'>✓</div><h1 style='margin:20px 0 8px;color:#f8fafc;font:800 26px Arial,sans-serif'>Email verified!</h1><p style='margin:0;color:#b8c5d5;font:15px/1.7 Arial,sans-serif'>Your email address has been successfully verified and securely linked to your SIDHI GYM account.</p></td></tr>"
+    + "<tr><td style='padding:20px 28px'><div style='padding:16px;border:1px solid #315b56;border-radius:16px;background:#0c211f;color:#c7f9e8;font:14px/1.7 Arial,sans-serif'><b>Account</b><br>@" + safeName + "<br><b>Status</b><br>Verified and locked</div></td></tr>"
+    + "<tr><td align='center' style='padding:4px 28px 28px'><a href='" + appUrl + "' style='display:inline-block;padding:15px 28px;border-radius:999px;background:linear-gradient(135deg,#f0c27a,#e2a64e);color:#1b160b;text-decoration:none;font:800 14px Arial,sans-serif'>CONTINUE TO SIDHI GYM →</a></td></tr>"
+    + "<tr><td style='padding:18px 28px;background:#0b1422;border-top:1px solid #293a50;color:#71849a;font:11px Arial,sans-serif'>If you did not make this change, contact SIDHI GYM support.</td></tr></table></td></tr></table></body></html>";
+  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: { "api-key": key, "content-type": "application/json", accept: "application/json" },
+    body: JSON.stringify({
+      sender: { email: from, name: "Sidhi Gym" },
+      to: [{ email: email }],
+      subject: "Your SIDHI GYM email is verified",
+      textContent: "Your email has been successfully verified and linked to SIDHI GYM account @" + safeName + ". Continue: " + appUrl,
+      htmlContent: html
+    })
+  });
+  if (!response.ok) throw new Error("Brevo confirmation email request failed");
 }
 
 module.exports = function (app) {
@@ -207,7 +223,14 @@ module.exports = function (app) {
     const result = await users().updateOne({ username: username, emailVerified: { $ne: true } }, { $set: { email: email, emailVerified: true } });
     if (!result.modifiedCount) return res.status(409).json({ error: "Email pehle se verify/lock hai." });
     await Otp().deleteMany({ username: username, purpose: "profile-email" });
-    res.json({ ok: true, email: email, emailVerified: true });
+    let confirmationEmailSent = false;
+    try {
+      await sendProfileVerifiedEmail(email, username);
+      confirmationEmailSent = true;
+    } catch (mailErr) {
+      console.error("SIDHI GYM verification confirmation email failed:", mailErr && mailErr.message);
+    }
+    res.json({ ok: true, email: email, emailVerified: true, confirmationEmailSent: confirmationEmailSent });
   });
 
   app.post("/api/profile-email", async function (req, res) {
