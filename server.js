@@ -148,6 +148,16 @@ const foodLogSchema = new mongoose.Schema({
 foodLogSchema.index({ owner: 1, date: 1, time: 1 });
 const FoodLog = model("FoodLog", foodLogSchema);
 
+const DailySummaryDelivery = model("DailySummaryDelivery", new mongoose.Schema({
+  owner: { type: String, required: true, index: true },
+  date: { type: String, required: true, index: true },
+  email: { type: String, required: true },
+  status: { type: String, enum: ["sent", "failed"], default: "sent" },
+  messageId: { type: String, default: "" },
+  sentAt: { type: Date, default: Date.now }
+}, { timestamps: true }));
+DailySummaryDelivery.schema.index({ owner: 1, date: 1 }, { unique: true });
+
 const premiumFeatureSettingsSchema = new mongoose.Schema({
   _id: { type: String, default: "global" },
   masterEnabled: { type: Boolean, default: true },
@@ -315,6 +325,179 @@ async function auth(req, res, next) {
   req.gymUser = row.username;
   next();
 }
+
+function htmlEscape(value) {
+  return String(value == null ? "" : value).replace(/[&<>"']/g, function (ch) {
+    return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch];
+  });
+}
+function indiaDateNow(date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit"
+  }).formatToParts(date || new Date());
+  const part = {};
+  parts.forEach(function (x) { part[x.type] = x.value; });
+  return part.year + "-" + part.month + "-" + part.day;
+}
+function previousIndiaDate() {
+  const today = indiaDateNow(new Date()).split("-").map(Number);
+  return new Date(Date.UTC(today[0], today[1] - 1, today[2]) - 86400000).toISOString().slice(0, 10);
+}
+function timeMinutes(value) {
+  const m = String(value || "").match(/^(\d{1,2}):(\d{2})$/);
+  return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+}
+function durationText(totalSeconds) {
+  const total = Math.max(0, Math.round(Number(totalSeconds) || 0));
+  const h = Math.floor(total / 3600), m = Math.floor((total % 3600) / 60), sec = total % 60;
+  return h ? h + " hr " + m + " min" : m ? m + " min" : sec + " sec";
+}
+async function sendDailySummaryEmail(user, date, session, foods) {
+  const key = process.env.BREVO_API_KEY || "";
+  const from = process.env.BREVO_SENDER || "";
+  if (!key || !from) throw new Error("Brevo sender is not configured (BREVO_API_KEY / BREVO_SENDER)");
+  const runs = session && Array.isArray(session.runs) ? session.runs : [];
+  const runKm = runs.reduce((sum, r) => sum + (Number(r.distanceKm) || 0), 0);
+  const runSeconds = runs.reduce((sum, r) => sum + (Number(r.durationSec) || 0), 0);
+  const runCalories = runs.reduce((sum, r) => sum + (Number(r.calories) || 0), 0);
+  const treadmillKm = (Number(session && session.beforeTreadmillKm) || 0) + (Number(session && session.afterTreadmillKm) || 0);
+  const treadmillMinutes = (Number(session && session.beforeTreadmillMins) || 0) + (Number(session && session.afterTreadmillMins) || 0);
+  const startTime = timeMinutes(session && session.entryTime);
+  const endTime = timeMinutes(session && session.afterTreadmillTime);
+  let gymMinutes = startTime == null || endTime == null ? 0 : endTime - startTime;
+  if (gymMinutes < 0) gymMinutes += 1440;
+  const foodCalories = foods.reduce((sum, x) => sum + (Number(x.calories) || 0), 0);
+  const protein = foods.reduce((sum, x) => sum + (Number(x.proteinG) || 0), 0);
+  const carbs = foods.reduce((sum, x) => sum + (Number(x.carbsG) || 0), 0);
+  const fat = foods.reduce((sum, x) => sum + (Number(x.fatG) || 0), 0);
+  const lifts = session && Array.isArray(session.lifts) ? session.lifts.map(function (x) {
+    if (typeof x === "string") return x;
+    return x && (x.name || x.exercise || x.title) || "";
+  }).filter(Boolean) : [];
+  const name = user.displayName || user.username;
+  const workoutDone = !!(session && (session.finished || session.entryWeight != null || lifts.length || session.after1HourNote));
+  const dateLabel = new Date(date + "T12:00:00+05:30").toLocaleDateString("en-IN", {
+    timeZone: "Asia/Kolkata", weekday: "long", day: "2-digit", month: "long", year: "numeric"
+  });
+  const safeName = htmlEscape(name);
+  const safeUsername = htmlEscape(user.username);
+  const workoutName = htmlEscape(session && session.workoutName || "Workout not logged");
+  const liftText = htmlEscape(lifts.join(", ") || session && session.after1HourNote || "No exercise notes added");
+  const runRows = runs.map(function (r, i) {
+    return "<tr><td style='padding:9px 0;color:#c8d5e5;border-bottom:1px solid #26364a'>" +
+      htmlEscape(String(r.mode || "Run").toUpperCase()) + " " + (i + 1) +
+      "</td><td align='right' style='padding:9px 0;color:#f6d28f;border-bottom:1px solid #26364a'>" +
+      (Number(r.distanceKm) || 0).toFixed(2) + " km · " + durationText(r.durationSec) + " · " +
+      Math.round(Number(r.calories) || 0) + " kcal</td></tr>";
+  }).join("");
+  const foodRows = foods.map(function (x) {
+    return "<tr><td style='padding:7px 0;color:#c8d5e5;border-bottom:1px solid #26364a'>" +
+      htmlEscape(x.food) + (x.quantity ? " · " + htmlEscape(x.quantity) : "") +
+      "</td><td align='right' style='padding:7px 0;color:#b7eadc;border-bottom:1px solid #26364a'>" +
+      Math.round(Number(x.calories) || 0) + " kcal</td></tr>";
+  }).join("");
+  const appUrl = "https://sidhi-gym-tracker.vercel.app/";
+  const metric = function (label, value) {
+    return "<td width='50%' style='padding:13px;border:1px solid #293a50;border-radius:14px;background:#0b1625'>" +
+      "<div style='font:11px Arial,sans-serif;color:#91a4b9;letter-spacing:1px'>" + label + "</div>" +
+      "<div style='margin-top:7px;font:700 20px Arial,sans-serif;color:#f6d28f'>" + value + "</div></td>";
+  };
+  const html = "<!doctype html><html><body style='margin:0;background:#07111f;padding:24px 10px;font-family:Arial,sans-serif'>" +
+    "<table role='presentation' width='100%' cellpadding='0' cellspacing='0'><tr><td align='center'>" +
+    "<table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='max-width:560px;background:#101b2c;border:1px solid #293a50;border-radius:24px;overflow:hidden'>" +
+    "<tr><td style='padding:26px;background:linear-gradient(135deg,#172b43,#101827)'><div style='color:#f0c27a;font-size:12px;font-weight:800;letter-spacing:5px'>SIDHI GYM</div><div style='margin-top:9px;color:#a9bfd4;font-size:12px;letter-spacing:2px'>YOUR DAILY TRAINING RECAP</div></td></tr>" +
+    "<tr><td style='padding:26px 24px 12px'><div style='color:#a8edea;font-size:11px;letter-spacing:2px'>DAY COMPLETE · " + htmlEscape(dateLabel.toUpperCase()) + "</div><h1 style='margin:10px 0;color:#f8fafc;font-size:26px'>Good work, " + safeName + ".</h1><p style='margin:0;color:#b8c5d5;font-size:14px;line-height:1.7'>Here is your complete activity summary for today. Keep showing up, one day at a time.</p></td></tr>" +
+    "<tr><td style='padding:12px 20px'><table role='presentation' width='100%' cellspacing='7'><tr>" +
+    metric("GPS DISTANCE", runKm.toFixed(2) + " km") + metric("RUN TIME", durationText(runSeconds)) +
+    "</tr><tr>" + metric("RUN CALORIES", runCalories + " kcal") + metric("TREADMILL", treadmillKm.toFixed(2) + " km") +
+    "</tr></table></td></tr>" +
+    "<tr><td style='padding:12px 24px'><h2 style='margin:8px 0;color:#f0c27a;font-size:16px'>Gym workout</h2>" +
+    "<div style='padding:15px;border:1px solid #293a50;border-radius:14px;background:#0b1625;color:#c8d5e5;font-size:13px;line-height:1.8'>" +
+    "<b style='color:#f8fafc'>" + (workoutDone ? workoutName : "Rest day / no workout logged") + "</b><br>" +
+    "Status: " + (workoutDone ? "Workout logged" : "No workout recorded") + "<br>" +
+    "Gym time: " + (gymMinutes ? durationText(gymMinutes * 60) : "Not recorded") + "<br>" +
+    "Start weight: " + (session && session.entryWeight != null ? htmlEscape(session.entryWeight) + " kg" : "—") + "<br>" +
+    "End weight: " + (session && session.afterTreadmillWeight != null ? htmlEscape(session.afterTreadmillWeight) + " kg" : "—") + "<br>" +
+    "Treadmill: " + treadmillKm.toFixed(2) + " km · " + treadmillMinutes + " min<br>" +
+    "Exercises / notes: " + liftText + "</div></td></tr>" +
+    (runs.length ? "<tr><td style='padding:8px 24px'><h2 style='color:#f0c27a;font-size:16px'>Running details</h2><table width='100%' cellspacing='0'>" + runRows + "</table></td></tr>" : "") +
+    "<tr><td style='padding:12px 24px'><h2 style='margin:8px 0;color:#f0c27a;font-size:16px'>Nutrition log</h2>" +
+    (foods.length ? "<table width='100%' cellspacing='0'>" + foodRows + "</table>" : "<p style='color:#91a4b9;font-size:13px'>No food entries were logged today.</p>") +
+    "<p style='color:#b8c5d5;font-size:13px;line-height:1.8'>Logged intake: <b style='color:#a8edea'>" + Math.round(foodCalories) + " kcal</b> · Protein " + Math.round(protein) + " g · Carbs " + Math.round(carbs) + " g · Fat " + Math.round(fat) + " g</p></td></tr>" +
+    "<tr><td style='padding:22px 24px 26px;text-align:center'><a href='" + appUrl + "' style='display:inline-block;padding:14px 25px;border-radius:999px;background:linear-gradient(135deg,#a8edea,#63e2b3);color:#062019;text-decoration:none;font-weight:800;font-size:13px'>OPEN SIDHI GYM →</a><p style='margin:16px 0 0;color:#71849a;font-size:11px'>Account @" + safeUsername + " · This recap is sent automatically at 12:00 AM IST.</p></td></tr>" +
+    "</table></td></tr></table></body></html>";
+  const textBody = "SIDHI GYM DAILY RECAP — " + dateLabel + "\nAccount: @" + user.username +
+    "\nGPS: " + runKm.toFixed(2) + " km, " + durationText(runSeconds) + ", " + runCalories + " kcal" +
+    "\nTreadmill: " + treadmillKm.toFixed(2) + " km / " + treadmillMinutes + " min" +
+    "\nGym: " + (workoutDone ? workoutName : "Rest day / no workout logged") +
+    "\nFood logged: " + foods.length + " entries, " + Math.round(foodCalories) + " kcal, protein " + Math.round(protein) + " g" +
+    "\nOpen: " + appUrl;
+  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: { "api-key": key, "content-type": "application/json", accept: "application/json" },
+    body: JSON.stringify({
+      sender: { email: from, name: "Sidhi Gym" },
+      to: [{ email: user.email }],
+      subject: "Your SIDHI GYM daily recap — " + date,
+      textContent: textBody,
+      htmlContent: html
+    })
+  });
+  const raw = await response.text();
+  let data = {};
+  try { data = raw ? JSON.parse(raw) : {}; } catch (_) {}
+  if (!response.ok) throw new Error("Brevo HTTP " + response.status + ": " + raw.slice(0, 400));
+  return data.messageId || (data.messageIds && data.messageIds[0]) || "";
+}
+
+app.get("/api/cron/daily-summary", async function (req, res) {
+  const secret = process.env.CRON_SECRET || "";
+  if (!secret) return res.status(503).json({ error: "CRON_SECRET is not configured in Vercel." });
+  const authHeader = String(req.headers.authorization || "");
+  if (authHeader !== "Bearer " + secret) return res.status(401).json({ error: "Unauthorized cron request." });
+  const date = previousIndiaDate();
+  try {
+    const recipients = await User.find({ emailVerified: true, email: { $regex: /@/ } })
+      .select("username email displayName").lean();
+    const owners = recipients.map(function (u) { return u.username; });
+    const [sessionsForDay, foodsForDay] = owners.length ? await Promise.all([
+      GymSession.find({ owner: { $in: owners }, date: date }).lean(),
+      FoodLog.find({ owner: { $in: owners }, date: date }).lean()
+    ]) : [[], []];
+    const sessionByOwner = new Map(sessionsForDay.map(function (x) { return [x.owner, x]; }));
+    const foodByOwner = new Map();
+    foodsForDay.forEach(function (x) {
+      if (!foodByOwner.has(x.owner)) foodByOwner.set(x.owner, []);
+      foodByOwner.get(x.owner).push(x);
+    });
+    let sent = 0, skipped = 0, failed = 0;
+    for (const user of recipients) {
+      const alreadySent = await DailySummaryDelivery.findOne({ owner: user.username, date: date, status: "sent" }).lean();
+      if (alreadySent) { skipped++; continue; }
+      try {
+        const messageId = await sendDailySummaryEmail(user, date, sessionByOwner.get(user.username) || null, foodByOwner.get(user.username) || []);
+        await DailySummaryDelivery.findOneAndUpdate(
+          { owner: user.username, date: date },
+          { $set: { email: user.email, status: "sent", messageId: messageId, sentAt: new Date() } },
+          { upsert: true, new: true }
+        );
+        sent++;
+      } catch (mailErr) {
+        failed++;
+        console.error("SIDHI GYM daily summary failed for @" + user.username + ":", mailErr && mailErr.message);
+        await DailySummaryDelivery.findOneAndUpdate(
+          { owner: user.username, date: date },
+          { $set: { email: user.email, status: "failed", messageId: "", sentAt: null } },
+          { upsert: true, new: true }
+        ).catch(function () {});
+      }
+    }
+    res.json({ ok: true, date: date, eligible: recipients.length, sent: sent, skipped: skipped, failed: failed, timezone: "Asia/Kolkata" });
+  } catch (err) {
+    console.error("SIDHI GYM daily summary cron failed:", err && err.message);
+    res.status(500).json({ error: err.message || "Daily summary failed" });
+  }
+});
 
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true, mongo: mongoose.connection.readyState === 1, cacheSize: cache.size });
