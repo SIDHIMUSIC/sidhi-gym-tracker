@@ -94,8 +94,14 @@
     var ptab = document.querySelector('.tab[data-tab="profile"]');
     if (ptab) ptab.classList.add("on");
     var opts = window.SIDHI_DAY_OPTIONS || OPTIONS;
-    var row = typeof todayRow === "function" ? todayRow() : null;
-    var w = row && (row.afterTreadmillWeight || row.entryWeight);
+    var weightRows = (typeof sessions !== "undefined" && Array.isArray(sessions) ? sessions : []).filter(function (x) {
+      return Number(x.entryWeight) > 0 || Number(x.afterTreadmillWeight) > 0;
+    }).slice().sort(function (a, b) { return String(a.date).localeCompare(String(b.date)); });
+    var startWeightRow = weightRows.find(function (x) { return Number(x.entryWeight) > 0; }) || weightRows[0] || null;
+    var latestWeightRow = weightRows.length ? weightRows[weightRows.length - 1] : null;
+    var startWeight = startWeightRow ? Number(startWeightRow.entryWeight || startWeightRow.afterTreadmillWeight) : null;
+    var latestWeight = latestWeightRow ? Number(latestWeightRow.afterTreadmillWeight || latestWeightRow.entryWeight) : null;
+    var weightDelta = startWeight != null && latestWeight != null ? Math.round((latestWeight - startWeight) * 100) / 100 : null;
     var since = profile.createdAt ? new Date(profile.createdAt).toLocaleDateString("en-IN") : "—";
     var sched = DAYS.map(function (d) {
       var val = (profile.schedule && profile.schedule[d]) || (typeof SPLIT === "object" ? SPLIT[d] : opts[DAYS.indexOf(d)]);
@@ -109,12 +115,24 @@
       '<div class="kv"><span>email</span><b>' + (profile.email ? escHtml(profile.email) : '—') + (profile.emailVerified ? ' · ✓ verified' : ' · not verified') + '</b></div>' +
       '<div class="kv"><span>member since</span><b>' + since + '</b></div>' +
       '<div class="kv"><span>workouts</span><b>' + ((typeof sessions !== "undefined" ? sessions.filter(function (s) { return s.finished; }).length : 0)) + '</b></div>' +
-      '<div class="kv"><span>weight</span><b>' + (w != null ? w + " kg" : "—") + '</b></div>' +
+      '<div class="kv"><span>starting weight</span><b>' + (startWeight != null ? startWeight + " kg" : "Add first workout") + '</b></div>' +
+      '<div class="kv"><span>latest weight</span><b>' + (latestWeight != null ? latestWeight + " kg" : "—") + '</b></div>' +
+      '<div class="kv"><span>change since start</span><b>' + (weightDelta != null ? (weightDelta > 0 ? "+" : "") + weightDelta + " kg" : "—") + '</b></div>' +
       '<div class="kv"><span>goal weight</span><b>' + (typeof goalWeight !== "undefined" && goalWeight != null ? goalWeight + " kg" : "—") + '</b></div>' +
       '<div class="profile-quick-actions"><button type="button" class="profile-logout" id="logoutBtn"><span>↗</span> Sign out</button><span>Quick account action</span></div></div>' +
       '<div class="glass card" id="pfEmailCard"><h2>email verification</h2>' + (profile.emailVerified ? '<div class="email-verified-panel"><div class="email-verified-icon">✓</div><div><b>Email verified successfully</b><p>@' + escHtml(username || "") + ' · Your email is now locked to this account.</p></div></div><div class="kv"><span>verified email</span><b>' + escHtml(profile.email) + '</b></div>' : '<div class="email-verify"><label>email address</label><input id="pfEmailInput" type="email" autocomplete="email" value="' + escHtml(profile.email) + '" placeholder="you@example.com" /><button type="button" class="btn email-send full" id="pfEmailSend" style="margin-top:10px">✉ Send verification code</button><div class="email-instructions"><b>Check your inbox</b><span>We will send a 6-digit code. Also check Spam or Promotions. Code expires in 10 minutes.</span></div><label>6-digit verification code</label><div class="otp-entry"><input id="pfEmailCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="Enter 6-digit code" /><button type="button" id="pfEmailCopy" class="otp-copy">Copy code</button></div><button type="button" class="btn ok full" id="pfEmailVerify" style="margin-top:12px">✓ Verify & lock email</button><p class="sub" id="pfEmailNote">Your email becomes permanent after successful verification.</p></div>') + '</div>' + '<div class="glass card"><h2>edit profile</h2><label>full name</label><input id="pfName" value="' + (profile.displayName || "") + '" /><label>gender</label><div class="seg" id="pfGen"><button type="button" data-g="male" class="' + (profile.gender === "male" ? "on" : "") + '">Male</button><button type="button" data-g="female" class="' + (profile.gender === "female" ? "on" : "") + '">Female</button></div><button class="btn ok full" id="pfSave" style="margin-top:12px">save changes</button></div>' +
       '<div class="glass card"><h2>choose official plan day</h2>' + sched + '<button class="btn full" id="pfSched" style="margin-top:12px">save schedule</button></div>' +
       '';
+    var emailCodeMatch = (window.location.hash || "").match(/^#email-code=(\d{6})$/);
+    if (emailCodeMatch && !profile.emailVerified) {
+      var codeInput = el("pfEmailCode");
+      if (codeInput) {
+        codeInput.value = emailCodeMatch[1];
+        var codeNote = el("pfEmailNote");
+        if (codeNote) codeNote.textContent = "✓ Code opened from your email. Check it and verify below.";
+      }
+      try { history.replaceState(null, "", window.location.pathname + window.location.search); } catch (e) {}
+    }
     document.querySelectorAll("#pfGen button").forEach(function (b) {
       b.onclick = function () {
         document.querySelectorAll("#pfGen button").forEach(function (x) { x.classList.remove("on"); });
@@ -140,7 +158,7 @@
     var emailCopy = el("pfEmailCopy");
     if (emailCopy) emailCopy.onclick = async function () {
       var codeValue = (el("pfEmailCode").value || "").trim();
-      if (!/^\\d{6}$/.test(codeValue)) { toast("Enter the 6-digit code first"); return; }
+      if (!/^\d{6}$/.test(codeValue)) { toast("Enter the 6-digit code first"); return; }
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(codeValue);
         else {
@@ -161,7 +179,9 @@
         var verified = await api("/api/profile-email/verify", { method: "POST", body: { email: address, code: code } });
         profile.email = verified.email; profile.emailVerified = true;
         showProfile();
-        toast("Email verified successfully for @" + (username || "your account"));
+        toast(verified.confirmationEmailSent
+          ? "Email verified! Confirmation email sent to your inbox."
+          : "Email verified! Confirmation email could not be sent; your account is verified.");
       } catch (e) { toast(e.message || "Verification fail"); }
       finally { emailVerify.disabled = false; }
     };
