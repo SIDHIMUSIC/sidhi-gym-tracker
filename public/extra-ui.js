@@ -209,7 +209,7 @@
   if (setup) setup.addEventListener("click", function (e) { e.preventDefault(); e.stopImmediatePropagation(); signupModal(); }, true);
   if (typeof paintHome === "function") {
     var _ph = paintHome;
-    paintHome = function () { applySplit(); clearProfileTab(); _ph(); if (el("hello")) el("hello").textContent = greetText(); };
+    paintHome = function () { applySplit(); var profileOpen = !!(el("view-profile") && !el("view-profile").classList.contains("hidden")); if (!profileOpen) clearProfileTab(); _ph(); if (el("hello")) el("hello").textContent = greetText(); };
   }
   if (typeof afterAuth === "function") {
     var _aa = afterAuth;
