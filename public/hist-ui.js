@@ -19,7 +19,7 @@
   if (!document.getElementById("hist-ui-css")) {
     var st = document.createElement("style");
     st.id = "hist-ui-css";
-    st.textContent = ".hist-list{display:flex;flex-direction:column;gap:10px}.hist-item{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px;border-radius:18px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}.hist-item b{display:block;font-size:14px}.hist-item .sub{margin:3px 0 0;font-size:12px}.hist-acts{display:flex;flex-direction:column;gap:6px;min-width:72px}.hist-acts .btn{min-height:36px;padding:6px 10px;font-size:11px}";
+    st.textContent = ".hist-list{display:flex;flex-direction:column;gap:10px}.hist-item{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px;border-radius:18px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}.hist-item b{display:block;font-size:14px}.hist-item .sub{margin:3px 0 0;font-size:12px}.hist-acts{display:flex;flex-direction:column;gap:6px;min-width:72px}.hist-acts .btn{min-height:36px;padding:6px 10px;font-size:11px}.hist-day-card{padding:14px;margin:0 0 10px;border-radius:18px;background:rgba(10,17,28,.92);border:1px solid rgba(255,255,255,.1)}.hist-day-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;color:#f4d6a1}.hist-day-head span{font-size:11px;color:#9aa7b8}.hist-run-line{display:grid;grid-template-columns:64px minmax(0,1fr);gap:8px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:12px;line-height:1.5}.hist-run-line b{color:#f0c27a}.hist-run-line span{color:#dbe4f0;text-align:right}.hist-day-total{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid rgba(240,194,122,.28);color:#a8edea;font-size:12px}.hist-day-total small{width:100%;font-size:10px;letter-spacing:.12em;color:#f0c27a;font-weight:800}.hist-day-total b{font-size:13px}.hist-day-actions{display:flex;justify-content:flex-end;margin-top:8px}";
     document.head.appendChild(st);
   }
   var view = el("view-history");
@@ -105,28 +105,39 @@
     var dailyRuns = {};
     list.forEach(function (s) {
       (Array.isArray(s.runs) ? s.runs : []).forEach(function (r) {
-        var date = String(s.date || r.date || "");
+        var date = String(s.date || r.date || (r.endedAt || r.startedAt || "").slice(0, 10));
         if (!date) return;
-        if (!dailyRuns[date]) dailyRuns[date] = { date: date, runs: [], km: 0, seconds: 0, calories: 0, modes: [] };
+        if (!dailyRuns[date]) dailyRuns[date] = { date: date, runs: [], km: 0, seconds: 0, calories: 0 };
         var day = dailyRuns[date];
         day.runs.push(r);
         day.km += Number(r.distanceKm) || 0;
         day.seconds += Number(r.durationSec) || 0;
         day.calories += Number(r.calories) || 0;
-        var mode = String(r.mode || "run");
-        if (day.modes.indexOf(mode) === -1) day.modes.push(mode);
       });
     });
+    function runDuration(seconds) {
+      var total = Math.max(0, Math.round(Number(seconds) || 0));
+      var mins = Math.floor(total / 60), secs = total % 60;
+      return mins ? mins + " min" + (secs ? " " + secs + " sec" : "") : secs + " sec";
+    }
     var runCards = Object.keys(dailyRuns).sort(function (a, b) { return b.localeCompare(a); }).map(function (date) {
       var day = dailyRuns[date];
-      var min = Math.round(day.seconds / 60);
-      var modeLabel = day.modes.map(function (mode) { return fancy(escapeHtml(mode)); }).join(" + ");
-      var countLabel = day.runs.length > 1 ? " • " + day.runs.length + " runs combined" : "";
-      var html = '<div class="hist-item" data-date="' + escapeHtml(date) + '"><div><b>' + modeLabel + '</b>';
-      html += '<div class="sub">' + escapeHtml(date) + countLabel + '</div>';
-      html += '<div class="sub">' + day.km.toFixed(2) + " km • " + min + " min • " + Math.round(day.calories) + " kcal</div></div>";
-      html += '<div class="hist-acts"><button class="btn ghost" data-open="' + escapeHtml(date) + '">' + fancy("open") + '</button></div></div>';
-      return html;
+      day.runs.sort(function (a, b) {
+        return String(a.startedAt || a.id || "").localeCompare(String(b.startedAt || b.id || ""));
+      });
+      var dateLabel = new Date(date + "T00:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+      var rows = day.runs.map(function (r, i) {
+        var ordinal = i === 0 ? "1st run" : i === 1 ? "2nd run" : i === 2 ? "3rd run" : (i + 1) + "th run";
+        var mode = escapeHtml(r.mode || "run");
+        return '<div class="hist-run-line"><b>' + ordinal + '</b><span>' + mode + ' · ' +
+          (Number(r.distanceKm) || 0).toFixed(2) + ' km · ' + runDuration(r.durationSec) + ' · ' +
+          Math.round(Number(r.calories) || 0) + ' kcal</span></div>';
+      }).join("");
+      return '<div class="hist-day-card" data-date="' + escapeHtml(date) + '">' +
+        '<div class="hist-day-head"><b>' + escapeHtml(dateLabel) + '</b><span>' + day.runs.length + (day.runs.length === 1 ? ' run' : ' runs') + '</span></div>' +
+        rows +
+        '<div class="hist-day-total"><small>DAILY TOTAL</small><b>' + day.km.toFixed(2) + ' km</b><b>' + runDuration(day.seconds) + '</b><b>' + Math.round(day.calories) + ' kcal</b></div>' +
+        '<div class="hist-day-actions"><button class="btn ghost" data-open="' + escapeHtml(date) + '">' + fancy("details") + '</button></div></div>';
     });
     runBox.innerHTML = runCards.join("") || '<p class="sub">' + fancy("no runs yet") + "</p>";
   }
