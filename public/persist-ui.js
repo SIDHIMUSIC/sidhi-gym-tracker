@@ -69,6 +69,13 @@
   function placeLogout() {
     var view = el("view-profile");
     if (!view) return;
+    // The redesigned profile already has its primary logout action in the top summary card.
+    var quickLogout = el("logoutBtn");
+    if (quickLogout && quickLogout.closest(".glass")) {
+      var duplicate = el("pfLogout");
+      if (duplicate) duplicate.remove();
+      return;
+    }
     var old = el("pfLogout");
     if (old) old.remove();
     var btn = document.createElement("button");
