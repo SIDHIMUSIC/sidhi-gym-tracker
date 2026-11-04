@@ -99,7 +99,19 @@
     ctx.stroke();
   }
   function paintSummary() {
-    const box = el("runSum"); if (!box) return;
+    let box = el("runSum");
+    if (!box) {
+      box = document.createElement("section");
+      box.id = "runSum";
+      box.className = "glass card";
+      const start = el("runStartBtn");
+      const controls = start && start.parentNode;
+      if (controls && controls.parentNode) controls.parentNode.insertBefore(box, controls.nextSibling);
+      else {
+        const wrap = document.querySelector("#runOv .wrap");
+        if (wrap) wrap.appendChild(box);
+      }
+    }
     const runs = allRuns();
     const week = runs.filter(function (r) { return inRange(r.endedAt || r.startedAt || r.date, 7); });
     const month = runs.filter(function (r) { return inRange(r.endedAt || r.startedAt || r.date, 30); });
@@ -111,24 +123,55 @@
         return a;
       }, { km: 0, min: 0, cal: 0 });
     }
+    function durationLabel(seconds) {
+      const total = Math.max(0, Math.round(Number(seconds) || 0));
+      const mins = Math.floor(total / 60), secs = total % 60;
+      return mins ? mins + " min" + (secs ? " " + secs + " sec" : "") : secs + " sec";
+    }
     const w = tot(week), mo = tot(month);
     let bestRun = runs[0] || null;
-    runs.forEach(function (r) {
-      if (!bestRun || (Number(r.distanceKm) || 0) > (Number(bestRun.distanceKm) || 0)) bestRun = r;
-    });
-    const gymDays = ((typeof sessions !== "undefined" && sessions) || []).filter(function (s) { return s.finished === true; });
+    runs.forEach(function (r) { if (!bestRun || (Number(r.distanceKm) || 0) > (Number(bestRun.distanceKm) || 0)) bestRun = r; });
+    const gymDays = ((typeof sessions !== "undefined" && sessions) || []).filter(function (x) { return x.finished === true; });
     let bestGym = gymDays[0] || null;
-    gymDays.forEach(function (s) {
-      const noteLen = String(s.after1HourNote || "").length;
-      const prev = String((bestGym && bestGym.after1HourNote) || "").length;
-      if (noteLen > prev) bestGym = s;
+    gymDays.forEach(function (x) {
+      if (String(x.after1HourNote || "").length > String((bestGym && bestGym.after1HourNote) || "").length) bestGym = x;
     });
+    const daily = {};
+    runs.forEach(function (r) {
+      const date = String(r.date || (r.endedAt || r.startedAt || "").slice(0, 10));
+      if (!date) return;
+      if (!daily[date]) daily[date] = { runs: [], km: 0, sec: 0, cal: 0 };
+      const d = daily[date];
+      d.runs.push(r);
+      d.km += Number(r.distanceKm) || 0;
+      d.sec += Number(r.durationSec) || 0;
+      d.cal += Number(r.calories) || 0;
+    });
+    const dailyCards = Object.keys(daily).sort(function (x, y) { return y.localeCompare(x); }).map(function (date) {
+      const d = daily[date];
+      d.runs.sort(function (x, y) { return String(x.startedAt || x.id || "").localeCompare(String(y.startedAt || y.id || "")); });
+      const label = new Date(date + "T00:00:00").toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+      const lines = d.runs.map(function (r, i) {
+        const ordinal = i === 0 ? "1st run" : i === 1 ? "2nd run" : i === 2 ? "3rd run" : (i + 1) + "th run";
+        const mode = String(r.mode || "run").replace(/[&<>"]/g, "");
+        return '<div class="run-day-line"><b class="run-day-index">' + ordinal + '</b><span class="run-day-detail">' + mode + ' · ' + (Number(r.distanceKm) || 0).toFixed(2) + ' km · ' + durationLabel(r.durationSec) + ' · ' + Math.round(Number(r.calories) || 0) + ' kcal</span></div>';
+      }).join("");
+      return '<article class="run-day-card"><div class="run-day-head"><b>' + label + '</b><span>' + d.runs.length + (d.runs.length === 1 ? " run" : " runs") + '</span></div>' +
+        lines + '<div class="run-day-total"><span>DAILY TOTAL</span><b>' + d.km.toFixed(2) + ' km</b><b>' + durationLabel(d.sec) + '</b><b>' + Math.round(d.cal) + ' kcal</b></div></article>';
+    }).join("");
     box.innerHTML = '<div class="sum-grid">' +
       '<div class="glass run-stat"><b>' + w.km.toFixed(1) + '</b><span>' + fancy("week km") + '</span></div>' +
       '<div class="glass run-stat"><b>' + mo.km.toFixed(1) + '</b><span>' + fancy("month km") + '</span></div>' +
       '<div class="glass run-stat"><b>' + (bestRun ? Number(bestRun.distanceKm).toFixed(2) : "—") + '</b><span>' + fancy("best run km") + (bestRun && bestRun.date ? " • " + bestRun.date : "") + '</span></div>' +
       '<div class="glass run-stat"><b>' + (bestGym ? (bestGym.date || "—") : "—") + '</b><span>' + fancy("top gym day") + '</span></div></div>' +
-      '<p class="sub" style="text-align:center;margin-top:8px">' + fancy("pace = min per km") + " • " + fancy("go outside + allow location") + '</p>';
+      '<p class="sub" style="text-align:center;margin-top:8px">' + fancy("pace = min per km") + " • " + fancy("go outside + allow location") + '</p>' +
+      '<section class="run-history-wrap"><h3>morning run history</h3>' + (dailyCards || '<p class="sub">No runs yet</p>') + '</section>';
+    const empty = el("runEmpty");
+    if (empty) {
+      const oldCard = empty.closest(".glass.card");
+      if (oldCard && oldCard !== box) oldCard.remove();
+      else empty.remove();
+    }
   }
   function paintRunEmpty() {
     var box = el("runEmpty");
@@ -147,7 +190,7 @@
   if (!document.getElementById("run-fix-css")) {
     var fx = document.createElement("style");
     fx.id = "run-fix-css";
-    fx.textContent = ".run-ov{z-index:90 !important;padding-bottom:140px}.run-ov.on~#tabbar,#tabbar.run-hide{display:none !important}.run-acts{position:sticky;bottom:10px;z-index:30;background:#070b12;padding-top:8px}.run-acts .btn{position:relative;z-index:31;pointer-events:auto;touch-action:manipulation}.btn.ok::after{pointer-events:none}";
+    fx.textContent = ".run-ov{z-index:90 !important;padding-bottom:140px}.run-ov.on~#tabbar,#tabbar.run-hide{display:none !important}.run-acts{position:sticky;bottom:10px;z-index:30;background:#070b12;padding-top:8px}.run-acts .btn{position:relative;z-index:31;pointer-events:auto;touch-action:manipulation}.btn.ok::after{pointer-events:none}.run-history-wrap{margin-top:18px}.run-history-wrap h3{font:800 17px Comfortaa,sans-serif;color:#ffe4b5;margin:0 0 12px;text-transform:lowercase}.run-day-card{padding:14px;margin:0 0 10px;border-radius:18px;background:rgba(10,17,28,.92);border:1px solid rgba(255,255,255,.1)}.run-day-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;color:#f4d6a1}.run-day-head span{font-size:11px;color:#9aa7b8}.run-day-line{display:grid;grid-template-columns:64px minmax(0,1fr);gap:8px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:12px;line-height:1.5}.run-day-index{color:#f0c27a;font-weight:800}.run-day-detail{color:#dbe4f0;text-align:right}.run-day-total{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid rgba(240,194,122,.28);color:#a8edea;font-size:12px}.run-day-total span{width:100%;font-size:10px;letter-spacing:.12em;color:#f0c27a;font-weight:800}.run-day-total b{font-size:13px}";
     document.head.appendChild(fx);
   }
 
