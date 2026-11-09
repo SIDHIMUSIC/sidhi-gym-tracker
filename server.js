@@ -1,6 +1,4 @@
-const zlib = require("zlib");
-const b64 = require("./blob_a") + require("./blob_b");
-const code = zlib.gunzipSync(Buffer.from(b64, "base64")).toString("utf8");
+const code = require("./server_part_0") + require("./server_part_1") + require("./server_part_2") + require("./server_part_3");
 const Module = require("module");
 const path = require("path");
 const m = new Module(path.join(__dirname, "server_assembled.js"));
