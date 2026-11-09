@@ -33,7 +33,7 @@ module.exports = function (app, deps) {
   });
 
   async function requireAdminToken(req, res) {
-    const token = String(req.headers.authorization || "").replace(/^Bearer\\s+/i, "").trim();
+    const token = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "").trim();
     if (!token) { res.status(401).json({ error: "Login to SIDHI GYM first." }); return null; }
     const row = await Token.findOne({ token: token, exp: { $gt: new Date() } }).lean();
     if (!row) { res.status(401).json({ error: "Session expired. Login again." }); return null; }
@@ -119,6 +119,29 @@ module.exports = function (app, deps) {
     } catch (err) {
       console.error("SIDHI admin dashboard:", err && err.message);
       res.status(500).json({ error: "Admin dashboard could not load." });
+    }
+  });
+
+  // Admin-only password reset, authenticated with the existing gym login token.
+  app.post("/api/admin/users/:username/reset-password", async function (req, res) {
+    try {
+      const admin = await requireAdminToken(req, res);
+      if (!admin) return;
+      const username = String(req.params.username || "").trim().toLowerCase();
+      const password = String((req.body && req.body.password) || "");
+      if (!username) return res.status(400).json({ error: "Username required." });
+      if (password.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters." });
+      const user = await User.findOne({ username: username });
+      if (!user) return res.status(404).json({ error: "Member not found." });
+      const salt = crypto.randomBytes(16).toString("hex");
+      user.salt = salt;
+      user.passHash = hashPass(password, salt);
+      await user.save();
+      await Token.deleteMany({ username: username });
+      res.json({ ok: true, username: username, message: "Password updated. Member must log in again." });
+    } catch (err) {
+      console.error("SIDHI admin password reset:", err && err.message);
+      res.status(500).json({ error: "Password could not be updated." });
     }
   });
 
