@@ -9,9 +9,11 @@
 :root{color-scheme:dark;--bg:#080f1b;--panel:#111d2d;--line:#26364a;--muted:#94a7bd;--text:#f4f7fb;--gold:#f0c27a;--mint:#63e2b3;--red:#ff8585;--blue:#86bfff}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 85% -10%,#26324b 0,transparent 36%),var(--bg);color:var(--text);font:14px system-ui,-apple-system,Segoe UI,sans-serif}
 main{max-width:1180px;margin:auto;padding:22px 16px 50px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}.brand{color:var(--gold);font-size:12px;letter-spacing:.2em;font-weight:900}.top h1{font-size:26px;margin:5px 0}.muted{color:var(--muted)}button,a{font:inherit}.btn{border:1px solid var(--line);background:#17263a;color:var(--text);border-radius:12px;padding:10px 14px;text-decoration:none;cursor:pointer}.btn.primary{background:linear-gradient(120deg,#d8a85e,#f0c27a);color:#16130e;border:0;font-weight:800}.btn:disabled{opacity:.5;cursor:wait}
-.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.card{background:linear-gradient(145deg,#142237,#0f1928);border:1px solid var(--line);border-radius:18px;padding:16px;min-width:0}.metric .label{color:var(--muted);font-size:12px}.metric strong{display:block;font-size:29px;margin-top:7px;letter-spacing:-.04em}.metric small{color:var(--muted)}.section{margin-top:18px}.section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}.section h2{font-size:17px;margin:0}.filters{display:flex;gap:8px;flex-wrap:wrap}.filters .btn.active{border-color:var(--gold);color:var(--gold);background:#f0c27a14}input{background:#0a1422;color:var(--text);border:1px solid var(--line);border-radius:11px;padding:11px 12px;min-width:180px;outline:none}input:focus{border-color:var(--gold)}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.card{background:linear-gradient(145deg,#142237,#0f1928);border:1px solid var(--line);border-radius:18px;padding:16px;min-width:0}.metric .label{color:var(--muted);font-size:12px}.metric strong{display:block;font-size:29px;margin-top:7px;letter-spacing:-.04em}.metric small{color:var(--muted)}.section{margin-top:18px}.section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}.section h2{font-size:17px;margin:0}.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.filters .btn.active{border-color:var(--gold);color:var(--gold);background:#f0c27a14}input{background:#0a1422;color:var(--text);border:1px solid var(--line);border-radius:11px;padding:11px 12px;min-width:140px;outline:none;width:100%}input:focus{border-color:var(--gold)}
 .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:13px}table{border-collapse:collapse;width:100%;min-width:700px}th,td{text-align:left;padding:12px 13px;border-bottom:1px solid #26364a;font-size:12px;white-space:nowrap}th{color:var(--muted);font-weight:700;background:#0c1726;position:sticky;top:0}tr:last-child td{border-bottom:0}.pill{display:inline-flex;padding:5px 9px;border-radius:99px;font-size:11px;font-weight:800}.pill.active{background:#63e2b31c;color:var(--mint)}.pill.inactive{background:#ff85851a;color:var(--red)}.pill.sent{background:#63e2b31c;color:var(--mint)}.pill.failed{background:#ff85851a;color:var(--red)}.notice{border:1px solid #d8a85e55;background:#d8a85e12;color:#f3d7a7;border-radius:13px;padding:12px 14px;line-height:1.5;margin-bottom:14px}.empty{padding:24px;text-align:center;color:var(--muted)}.subhead{font-size:12px;color:var(--muted);margin-top:5px}.err{color:var(--red);padding:12px}.foot{color:var(--muted);font-size:11px;line-height:1.6;margin-top:12px}
-@media(max-width:760px){main{padding:16px 12px 36px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.metric strong{font-size:25px}.top h1{font-size:22px}}
+.reset-form{display:grid;grid-template-columns:1.2fr 1.2fr auto;gap:10px;align-items:end}.reset-form label{display:block;font-size:11px;color:var(--muted);margin-bottom:6px}.msg{margin-top:10px;font-size:13px;min-height:20px}.msg.ok{color:var(--mint)}.msg.err{color:var(--red)}
+.btn.reset-row{padding:7px 10px;font-size:11px;border-radius:9px}
+@media(max-width:760px){main{padding:16px 12px 36px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.metric strong{font-size:25px}.top h1{font-size:22px}.reset-form{grid-template-columns:1fr}}
 @media(max-width:390px){.grid{gap:8px}.card{padding:12px}.metric strong{font-size:22px}}
 </style>
 </head>
@@ -28,17 +30,29 @@ main{max-width:1180px;margin:auto;padding:22px 16px 50px}.top{display:flex;align
  <div class="card metric"><div class="label">Inactive members</div><strong id="inactive">—</strong><small>No check-in in last 7 days</small></div>
  <div class="card metric"><div class="label">Verified emails</div><strong id="verified">—</strong><small>Eligible email addresses</small></div>
 </section>
+
+<section class="section card">
+ <div class="section-head"><div><h2>Password reset</h2><div class="subhead">Admin login token se kisi member ka password reset. User ko naya password se login karna hoga.</div></div></div>
+ <div class="reset-form">
+  <div><label>Username</label><input id="resetUser" placeholder="username" autocomplete="off" list="userList"></div>
+  <div><label>New password (min 6)</label><input id="resetPass" type="password" placeholder="new password" autocomplete="new-password"></div>
+  <div><button class="btn primary" id="resetBtn" type="button">Reset password</button></div>
+ </div>
+ <datalist id="userList"></datalist>
+ <div class="msg" id="resetMsg"></div>
+</section>
+
 <section class="section card">
  <div class="section-head"><div><h2>Email delivery report</h2><div class="subhead">Last 30 days · Brevo API submission records</div></div><div class="filters"><span class="pill sent" id="sent">Accepted: —</span><span class="pill failed" id="failed">Failed: —</span></div></div>
  <div class="table-wrap"><table><thead><tr><th>Member</th><th>Report date</th><th>Email</th><th>Status</th><th>Last attempt</th><th>Provider reference</th></tr></thead><tbody id="deliveries"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody></table></div>
- <p class="foot">“Accepted” means the email provider accepted the send request; it does not prove inbox delivery or that the recipient opened the email. Failed records show the latest failed attempt stored by SIDHI GYM.</p>
+ <p class="foot">“Accepted” means the email provider accepted the send request; it does not prove inbox delivery.</p>
 </section>
 <section class="section card">
  <div class="section-head"><div><h2>Member activity</h2><div class="subhead" id="memberSub">Active = at least one gym check-in in the last 7 IST calendar days.</div></div><div class="filters"><input id="search" placeholder="Search name, username, email"><button class="btn active" data-filter="all">All</button><button class="btn" data-filter="active">Active</button><button class="btn" data-filter="inactive">Inactive</button><button class="btn" id="csv">Export CSV</button></div></div>
- <div class="table-wrap"><table><thead><tr><th>Member</th><th>Username</th><th>Email</th><th>Email verified</th><th>Last check-in</th><th>Activity</th><th>Joined</th></tr></thead><tbody id="members"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody></table></div>
- <p class="foot" id="limitNote">Member list is read-only. No member records, workouts or subscriptions can be changed from this page.</p>
+ <div class="table-wrap"><table><thead><tr><th>Member</th><th>Username</th><th>Email</th><th>Email verified</th><th>Last check-in</th><th>Activity</th><th>Joined</th><th>Action</th></tr></thead><tbody id="members"><tr><td colspan="8" class="empty">Loading…</td></tr></tbody></table></div>
+ <p class="foot" id="limitNote">Use Reset on a row or the form above to set a new password.</p>
 </section>
 </main>
-<script src="/admin-dashboard.js?v=1"></script>
+<script src="/admin-dashboard.js?v=3"></script>
 </body>
 </html>
