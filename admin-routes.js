@@ -29,7 +29,7 @@ module.exports = function (app, deps) {
 
   app.get("/api/public-config", function (_req, res) {
     const admin = String(process.env.ADMIN_USER || "harryashu").trim().toLowerCase();
-    res.json({ ok: true, adminUser: admin });
+    res.json({ ok: true, adminUser: admin, adminUsers: Array.isArray(deps.adminUsers) ? deps.adminUsers.map(function (x) { return String(x).toLowerCase(); }) : [admin] });
   });
 
   async function requireAdminToken(req, res) {
