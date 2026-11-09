@@ -190,14 +190,18 @@ module.exports = function (app) {
   });
 
   app.post("/api/otp/reset-finish", async function (req, res) {
+    if (!otpAllowed(req, "password-reset-check", 20)) return res.status(429).json({ error: "Too many OTP attempts. 10 minutes baad try karo." });
     const key = String((req.body && (req.body.key || req.body.username)) || "").trim();
     const code = String((req.body && req.body.code) || "").trim();
     const pass = String((req.body && (req.body.password || req.body.pass)) || "");
     if (pass.length < 6) return res.status(400).json({ error: "Password kam se kam 6" });
     const u = await findAccount(key);
     if (!u) return res.status(404).json({ error: "User nahi mila" });
-    const row = await Otp().findOne({ username: u.username, purpose: "password-reset", code: code, exp: { $gt: new Date() } });
-    if (!row) return res.status(401).json({ error: "OTP galat ya expire" });
+    const row = await Otp().findOne({ username: u.username, purpose: "password-reset", code: code, attempts: { $lt: 5 }, exp: { $gt: new Date() } });
+    if (!row) {
+      await Otp().updateOne({ username: u.username, purpose: "password-reset", exp: { $gt: new Date() } }, { $inc: { attempts: 1 } });
+      return res.status(401).json({ error: "OTP galat, expire, ya maximum attempts use ho gaye." });
+    }
     const salt = crypto.randomBytes(16).toString("hex");
     const passHash = crypto.scryptSync(pass, salt, 32).toString("hex");
     await users().updateOne({ username: u.username }, { $set: { salt: salt, passHash: passHash } });
