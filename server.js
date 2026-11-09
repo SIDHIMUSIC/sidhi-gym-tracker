@@ -1,5 +1,6 @@
 const zlib = require("zlib");
-const code = zlib.gunzipSync(Buffer.from(require("./server_blob"), "base64")).toString("utf8");
+const b64 = require("./blob_a") + require("./blob_b");
+const code = zlib.gunzipSync(Buffer.from(b64, "base64")).toString("utf8");
 const Module = require("module");
 const path = require("path");
 const m = new Module(path.join(__dirname, "server_assembled.js"));
