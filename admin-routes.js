@@ -5,17 +5,124 @@ function uid(name) {
   return "S" + (n >>> 0).toString(16).toUpperCase().padStart(8, "0").slice(0, 8);
 }
 
+function indiaDateNow(date) {
+  var parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit"
+  }).formatToParts(date || new Date());
+  var p = {};
+  parts.forEach(function (x) { p[x.type] = x.value; });
+  return p.year + "-" + p.month + "-" + p.day;
+}
+function daysBefore(dateString, days) {
+  var p = dateString.split("-").map(Number);
+  return new Date(Date.UTC(p[0], p[1] - 1, p[2]) - days * 86400000).toISOString().slice(0, 10);
+}
+
 module.exports = function (app, deps) {
   const crypto = require("crypto");
-  const mongoose = require("mongoose");
   const User = deps.User;
   const Token = deps.Token;
+  const GymSession = deps.GymSession;
+  const DailySummaryDelivery = deps.DailySummaryDelivery;
+  const isAdminUser = deps.isAdminUser;
   const hashPass = deps.hashPass;
+
   app.get("/api/public-config", function (_req, res) {
     const admin = String(process.env.ADMIN_USER || "harryashu").trim().toLowerCase();
-    res.json({ ok: true, adminUser: admin });
+    res.json({ ok: true, adminUser: admin, adminUsers: Array.isArray(deps.adminUsers) ? deps.adminUsers.map(function (x) { return String(x).toLowerCase(); }) : [admin] });
   });
 
+  async function requireAdminToken(req, res) {
+    const token = String(req.headers.authorization || "").replace(/^Bearer\\s+/i, "").trim();
+    if (!token) { res.status(401).json({ error: "Login to SIDHI GYM first." }); return null; }
+    const row = await Token.findOne({ token: token, exp: { $gt: new Date() } }).lean();
+    if (!row) { res.status(401).json({ error: "Session expired. Login again." }); return null; }
+    if (!isAdminUser || !isAdminUser(row.username)) { res.status(403).json({ error: "Admin access only." }); return null; }
+    return row.username;
+  }
+
+  // Read-only admin overview: user activity and email-provider submission history.
+  app.get("/api/admin/dashboard", async function (req, res) {
+    try {
+      const admin = await requireAdminToken(req, res);
+      if (!admin) return;
+      res.setHeader("Cache-Control", "no-store");
+      const today = indiaDateNow(new Date());
+      const activeFrom = daysBefore(today, 6); // today + previous 6 IST calendar days
+      const reportFrom = new Date(Date.now() - 30 * 86400000);
+
+      const [users, totalUsers, verifiedEmails, activeOwners, lastCheckins, deliveryCounts, recentDeliveries] = await Promise.all([
+        User.find({}, {
+          username: 1, displayName: 1, email: 1, emailVerified: 1, createdAt: 1
+        }).sort({ createdAt: -1 }).limit(2000).lean(),
+        User.countDocuments({}),
+        User.countDocuments({ emailVerified: true, email: { $regex: /@/ } }),
+        GymSession.distinct("owner", { date: { $gte: activeFrom, $lte: today } }),
+        GymSession.aggregate([
+          { $group: { _id: "$owner", lastCheckIn: { $max: "$date" } } }
+        ]),
+        DailySummaryDelivery.aggregate([
+          { $match: { updatedAt: { $gte: reportFrom } } },
+          { $group: { _id: "$status", count: { $sum: 1 } } }
+        ]),
+        DailySummaryDelivery.find({ updatedAt: { $gte: reportFrom } })
+          .sort({ updatedAt: -1 }).limit(100)
+          .select("owner date email status messageId sentAt updatedAt").lean()
+      ]);
+
+      const lastByOwner = new Map(lastCheckins.map(function (x) { return [x._id, x.lastCheckIn]; }));
+      const activityUsers = users.map(function (u) {
+        const lastCheckIn = lastByOwner.get(u.username) || null;
+        const active = !!lastCheckIn && lastCheckIn >= activeFrom && lastCheckIn <= today;
+        return {
+          username: u.username,
+          displayName: u.displayName || "",
+          email: u.email || "",
+          emailVerified: !!u.emailVerified,
+          createdAt: u.createdAt || null,
+          lastCheckIn: lastCheckIn,
+          active: active
+        };
+      });
+      const activeUserCount = await User.countDocuments({ username: { $in: activeOwners } });
+      const delivery = { sent: 0, failed: 0, other: 0 };
+      deliveryCounts.forEach(function (x) {
+        if (x._id === "sent") delivery.sent = x.count;
+        else if (x._id === "failed") delivery.failed = x.count;
+        else delivery.other += x.count;
+      });
+
+      res.json({
+        ok: true,
+        generatedAt: new Date().toISOString(),
+        timezone: "Asia/Kolkata",
+        activeFrom: activeFrom,
+        activeTo: today,
+        reportFrom: reportFrom.toISOString(),
+        counts: {
+          totalUsers: totalUsers,
+          activeUsers: activeUserCount,
+          inactiveUsers: Math.max(0, totalUsers - activeUserCount),
+          verifiedEmails: verifiedEmails,
+          usersLimited: totalUsers > users.length
+        },
+        email: delivery,
+        users: activityUsers,
+        deliveries: recentDeliveries.map(function (d) {
+          return {
+            username: d.owner, date: d.date, email: d.email || "",
+            status: d.status || "unknown", messageId: d.messageId || "",
+            sentAt: d.sentAt || null, updatedAt: d.updatedAt || null
+          };
+        })
+      });
+    } catch (err) {
+      console.error("SIDHI admin dashboard:", err && err.message);
+      res.status(500).json({ error: "Admin dashboard could not load." });
+    }
+  });
+
+  // Legacy secret-protected admin actions are retained for compatibility.
   function check(req, res) {
     const secret = process.env.ADMIN_SECRET || "";
     if (!secret) {
@@ -23,7 +130,8 @@ module.exports = function (app, deps) {
       return null;
     }
     const given = String((req.body && req.body.secret) || req.headers["x-admin-secret"] || "");
-    if (given !== secret) {
+    const a = Buffer.from(given), b = Buffer.from(secret);
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
       res.status(401).json({ error: "Galat admin secret" });
       return null;
     }

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b1220">
+<title>SIDHI GYM — Admin</title>
+<style>
+:root{color-scheme:dark;--bg:#080f1b;--panel:#111d2d;--line:#26364a;--muted:#94a7bd;--text:#f4f7fb;--gold:#f0c27a;--mint:#63e2b3;--red:#ff8585;--blue:#86bfff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 85% -10%,#26324b 0,transparent 36%),var(--bg);color:var(--text);font:14px system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:1180px;margin:auto;padding:22px 16px 50px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}.brand{color:var(--gold);font-size:12px;letter-spacing:.2em;font-weight:900}.top h1{font-size:26px;margin:5px 0}.muted{color:var(--muted)}button,a{font:inherit}.btn{border:1px solid var(--line);background:#17263a;color:var(--text);border-radius:12px;padding:10px 14px;text-decoration:none;cursor:pointer}.btn.primary{background:linear-gradient(120deg,#d8a85e,#f0c27a);color:#16130e;border:0;font-weight:800}.btn:disabled{opacity:.5;cursor:wait}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.card{background:linear-gradient(145deg,#142237,#0f1928);border:1px solid var(--line);border-radius:18px;padding:16px;min-width:0}.metric .label{color:var(--muted);font-size:12px}.metric strong{display:block;font-size:29px;margin-top:7px;letter-spacing:-.04em}.metric small{color:var(--muted)}.section{margin-top:18px}.section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}.section h2{font-size:17px;margin:0}.filters{display:flex;gap:8px;flex-wrap:wrap}.filters .btn.active{border-color:var(--gold);color:var(--gold);background:#f0c27a14}input{background:#0a1422;color:var(--text);border:1px solid var(--line);border-radius:11px;padding:11px 12px;min-width:180px;outline:none}input:focus{border-color:var(--gold)}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:13px}table{border-collapse:collapse;width:100%;min-width:700px}th,td{text-align:left;padding:12px 13px;border-bottom:1px solid #26364a;font-size:12px;white-space:nowrap}th{color:var(--muted);font-weight:700;background:#0c1726;position:sticky;top:0}tr:last-child td{border-bottom:0}.pill{display:inline-flex;padding:5px 9px;border-radius:99px;font-size:11px;font-weight:800}.pill.active{background:#63e2b31c;color:var(--mint)}.pill.inactive{background:#ff85851a;color:var(--red)}.pill.sent{background:#63e2b31c;color:var(--mint)}.pill.failed{background:#ff85851a;color:var(--red)}.notice{border:1px solid #d8a85e55;background:#d8a85e12;color:#f3d7a7;border-radius:13px;padding:12px 14px;line-height:1.5;margin-bottom:14px}.empty{padding:24px;text-align:center;color:var(--muted)}.subhead{font-size:12px;color:var(--muted);margin-top:5px}.err{color:var(--red);padding:12px}.foot{color:var(--muted);font-size:11px;line-height:1.6;margin-top:12px}
+@media(max-width:760px){main{padding:16px 12px 36px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.metric strong{font-size:25px}.top h1{font-size:22px}}
+@media(max-width:390px){.grid{gap:8px}.card{padding:12px}.metric strong{font-size:22px}}
+</style>
+</head>
+<body>
+<main>
+<header class="top">
+ <div><div class="brand">SIDHI GYM / CONTROL ROOM</div><h1>Admin dashboard</h1><div class="subhead" id="generated">Secure admin overview</div></div>
+ <div style="display:flex;gap:8px"><a class="btn" href="/">Gym app</a><button class="btn" id="refresh">Refresh</button></div>
+</header>
+<div id="notice" class="notice">Loading protected admin data…</div>
+<section class="grid" aria-label="Member overview">
+ <div class="card metric"><div class="label">Total members</div><strong id="total">—</strong><small>Registered accounts</small></div>
+ <div class="card metric"><div class="label">Active members</div><strong id="active">—</strong><small id="activeWindow">Check-in in last 7 days</small></div>
+ <div class="card metric"><div class="label">Inactive members</div><strong id="inactive">—</strong><small>No check-in in last 7 days</small></div>
+ <div class="card metric"><div class="label">Verified emails</div><strong id="verified">—</strong><small>Eligible email addresses</small></div>
+</section>
+<section class="section card">
+ <div class="section-head"><div><h2>Email delivery report</h2><div class="subhead">Last 30 days · Brevo API submission records</div></div><div class="filters"><span class="pill sent" id="sent">Accepted: —</span><span class="pill failed" id="failed">Failed: —</span></div></div>
+ <div class="table-wrap"><table><thead><tr><th>Member</th><th>Report date</th><th>Email</th><th>Status</th><th>Last attempt</th><th>Provider reference</th></tr></thead><tbody id="deliveries"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody></table></div>
+ <p class="foot">“Accepted” means the email provider accepted the send request; it does not prove inbox delivery or that the recipient opened the email. Failed records show the latest failed attempt stored by SIDHI GYM.</p>
+</section>
+<section class="section card">
+ <div class="section-head"><div><h2>Member activity</h2><div class="subhead" id="memberSub">Active = at least one gym check-in in the last 7 IST calendar days.</div></div><div class="filters"><input id="search" placeholder="Search name, username, email"><button class="btn active" data-filter="all">All</button><button class="btn" data-filter="active">Active</button><button class="btn" data-filter="inactive">Inactive</button><button class="btn" id="csv">Export CSV</button></div></div>
+ <div class="table-wrap"><table><thead><tr><th>Member</th><th>Username</th><th>Email</th><th>Email verified</th><th>Last check-in</th><th>Activity</th><th>Joined</th></tr></thead><tbody id="members"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody></table></div>
+ <p class="foot" id="limitNote">Member list is read-only. No member records, workouts or subscriptions can be changed from this page.</p>
+</section>
+</main>
+<script src="/admin-dashboard.js?v=1"></script>
+</body>
+</html>
