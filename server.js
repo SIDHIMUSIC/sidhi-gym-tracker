@@ -457,9 +457,14 @@ app.get("/api/cron/daily-summary", async function (req, res) {
   if (authHeader !== "Bearer " + secret) return res.status(401).json({ error: "Unauthorized cron request." });
   const date = previousIndiaDate();
   try {
-    const dateParts = date.split("-").map(Number);
-    const activeFrom = new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2]) - 6 * 86400000).toISOString().slice(0, 10);
-    const activeOwners = await GymSession.distinct("owner", { date: { $gte: activeFrom, $lte: date } });
+    // Eligibility uses the current India date, not the report date (yesterday).
+    // Include check-ins from today and the previous 6 calendar days.
+    const activeTo = indiaDateNow(new Date());
+    const activeParts = activeTo.split("-").map(Number);
+    const activeFrom = new Date(Date.UTC(activeParts[0], activeParts[1] - 1, activeParts[2]) - 6 * 86400000).toISOString().slice(0, 10);
+    const activeOwners = await GymSession.distinct("owner", {
+      date: { $gte: activeFrom, $lte: activeTo }
+    });
     const recipients = activeOwners.length
       ? await User.find({ emailVerified: true, email: { $regex: /@/ }, username: { $in: activeOwners } })
           .select("username email displayName").lean()
@@ -497,7 +502,7 @@ app.get("/api/cron/daily-summary", async function (req, res) {
         ).catch(function () {});
       }
     }
-    res.json({ ok: true, date: date, eligible: recipients.length, sent: sent, skipped: skipped, failed: failed, timezone: "Asia/Kolkata" });
+    res.json({ ok: true, date: date, activeFrom: activeFrom, activeTo: activeTo, eligible: recipients.length, sent: sent, skipped: skipped, failed: failed, timezone: "Asia/Kolkata" });
   } catch (err) {
     console.error("SIDHI GYM daily summary cron failed:", err && err.message);
     res.status(500).json({ error: err.message || "Daily summary failed" });
