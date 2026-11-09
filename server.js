@@ -1,1 +1,10 @@
-PLACEHOLDER_WILL_FAIL
+const zlib = require("zlib");
+const b64 = require("./blob_a") + require("./blob_b");
+const code = zlib.gunzipSync(Buffer.from(b64, "base64")).toString("utf8");
+const Module = require("module");
+const path = require("path");
+const m = new Module(path.join(__dirname, "server_assembled.js"));
+m.filename = path.join(__dirname, "server_assembled.js");
+m.paths = Module._nodeModulePaths(__dirname);
+m._compile(code, m.filename);
+module.exports = m.exports;

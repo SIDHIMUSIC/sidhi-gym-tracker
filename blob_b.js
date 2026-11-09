@@ -1,1 +1,1 @@
-temp
+module.exports = "temp";
