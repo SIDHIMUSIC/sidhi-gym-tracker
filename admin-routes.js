@@ -51,10 +51,13 @@ module.exports = function (app, deps) {
       const activeFrom = daysBefore(today, 6); // today + previous 6 IST calendar days
       const reportFrom = new Date(Date.now() - 30 * 86400000);
 
-      const [users, lastCheckins, deliveryCounts, recentDeliveries] = await Promise.all([
+      const [users, totalUsers, verifiedEmails, activeOwners, lastCheckins, deliveryCounts, recentDeliveries] = await Promise.all([
         User.find({}, {
           username: 1, displayName: 1, email: 1, emailVerified: 1, createdAt: 1
         }).sort({ createdAt: -1 }).limit(2000).lean(),
+        User.countDocuments({}),
+        User.countDocuments({ emailVerified: true, email: { $regex: /@/ } }),
+        GymSession.distinct("owner", { date: { $gte: activeFrom, $lte: today } }),
         GymSession.aggregate([
           { $group: { _id: "$owner", lastCheckIn: { $max: "$date" } } }
         ]),
@@ -81,6 +84,7 @@ module.exports = function (app, deps) {
           active: active
         };
       });
+      const activeUserCount = await User.countDocuments({ username: { $in: activeOwners } });
       const delivery = { sent: 0, failed: 0, other: 0 };
       deliveryCounts.forEach(function (x) {
         if (x._id === "sent") delivery.sent = x.count;
@@ -96,11 +100,11 @@ module.exports = function (app, deps) {
         activeTo: today,
         reportFrom: reportFrom.toISOString(),
         counts: {
-          totalUsers: users.length,
-          activeUsers: activityUsers.filter(function (u) { return u.active; }).length,
-          inactiveUsers: activityUsers.filter(function (u) { return !u.active; }).length,
-          verifiedEmails: activityUsers.filter(function (u) { return u.emailVerified && u.email; }).length,
-          usersLimited: users.length === 2000
+          totalUsers: totalUsers,
+          activeUsers: activeUserCount,
+          inactiveUsers: Math.max(0, totalUsers - activeUserCount),
+          verifiedEmails: verifiedEmails,
+          usersLimited: totalUsers > users.length
         },
         email: delivery,
         users: activityUsers,
