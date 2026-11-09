@@ -1,11 +1,7 @@
-const fs = require("fs");
-const path = require("path");
-const parts = 5;
-let code = "";
-for (let i = 0; i < parts; i++) {
-  code += fs.readFileSync(path.join(__dirname, "server_part_" + i + ".js"), "utf8");
-}
+const zlib = require("zlib");
+const code = zlib.gunzipSync(Buffer.from(require("./server_blob"), "base64")).toString("utf8");
 const Module = require("module");
+const path = require("path");
 const m = new Module(path.join(__dirname, "server_assembled.js"));
 m.filename = path.join(__dirname, "server_assembled.js");
 m.paths = Module._nodeModulePaths(__dirname);
