@@ -11,9 +11,8 @@ function Otp() {
   return mongoose.models.Otp || mongoose.model("Otp", new mongoose.Schema({
     email: { type: String, index: true },
     username: String,
-    purpose: { type: String, default: "signup" },
-    code: String,
     purpose: { type: String, default: "register", index: true },
+    code: String,
     attempts: { type: Number, default: 0 },
     exp: Date
   }, { timestamps: true }));
@@ -126,6 +125,7 @@ async function sendProfileVerifiedEmail(email, username) {
 module.exports = function (app) {
   app.post("/api/otp/send", async function (req, res) {
     try {
+      if (!otpAllowed(req, "register-send", 8)) return res.status(429).json({ error: "Too many OTP requests. 10 minutes baad try karo." });
       const email = String((req.body && req.body.email) || "").trim().toLowerCase();
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ error: "Email sahi likho" });
       const existingEmail = await users().findOne({ email: email });
@@ -135,11 +135,11 @@ module.exports = function (app) {
       const count = await Otp().countDocuments({ email: email, purpose: "register-rate", createdAt: { $gt: new Date(Date.now() - 60 * 60 * 1000) } });
       if (count >= 5) return res.status(429).json({ error: "Hourly OTP limit reached. 1 hour baad try karo." });
       const code = String(crypto.randomInt(100000, 1000000));
-      await Otp().deleteMany({ email: email });
+      await Otp().deleteMany({ email: email, purpose: { $in: ["signup", "register"] } });
       await Otp().create({ email: email, purpose: "signup", code: code, exp: new Date(Date.now() + 10 * 60 * 1000) });
-      await mail(email, code);
       await Otp().deleteMany({ email: email, purpose: "register-rate", createdAt: { $lt: new Date(Date.now() - 60 * 60 * 1000) } });
       await Otp().create({ email: email, purpose: "register-rate", code: "sent", exp: new Date(Date.now() + 60 * 60 * 1000) });
+      await mail(email, code);
       await Otp().deleteMany({ email: email, purpose: "register" });
       await Otp().create({ email: email, purpose: "register", code: code, exp: new Date(Date.now() + 10 * 60 * 1000) });
       res.json({ ok: true });
@@ -149,6 +149,7 @@ module.exports = function (app) {
   });
 
   app.post("/api/otp/check", async function (req, res) {
+    if (!otpAllowed(req, "register-check", 20)) return res.status(429).json({ error: "Too many OTP attempts. 10 minutes baad try karo." });
     const email = String((req.body && req.body.email) || "").trim().toLowerCase();
     const code = String((req.body && req.body.code) || "").trim();
     const row = await Otp().findOne({ email: email, purpose: "register", code: code, attempts: { $lt: 5 }, exp: { $gt: new Date() } });
@@ -159,12 +160,13 @@ module.exports = function (app) {
     await Otp().deleteMany({ email: email, purpose: "register" });
     const signupRow = await Otp().findOne({ email: email, purpose: "signup", code: code, exp: { $gt: new Date() } });
     if (!signupRow) return res.status(401).json({ error: "OTP galat ya expire" });
-    await Otp().deleteMany({ email: email });
+    await Otp().deleteMany({ email: email, purpose: { $in: ["signup", "register"] } });
     res.json({ ok: true, email: email });
   });
 
   app.post("/api/otp/reset-start", async function (req, res) {
     try {
+      if (!otpAllowed(req, "password-reset-send", 8)) return res.status(429).json({ error: "Too many OTP requests. 10 minutes baad try karo." });
       const u = await findAccount(req.body && (req.body.key || req.body.username || req.body.email));
       if (!u) return res.status(404).json({ error: "User nahi mila" });
       if (!u.email || u.emailVerified !== true) return res.status(400).json({ error: "Is account ka email verified nahi hai. Account recovery ke liye verified email zaroori hai." });
@@ -173,11 +175,11 @@ module.exports = function (app) {
       const count = await Otp().countDocuments({ username: u.username, purpose: "reset-rate", createdAt: { $gt: new Date(Date.now() - 60 * 60 * 1000) } });
       if (count >= 5) return res.status(429).json({ error: "Hourly OTP limit reached. 1 hour baad try karo." });
       const code = String(crypto.randomInt(100000, 1000000));
-      await Otp().deleteMany({ username: u.username });
+      await Otp().deleteMany({ username: u.username, purpose: { $in: ["password-reset", "reset"] } });
       await Otp().create({ email: u.email, username: u.username, purpose: "password-reset", code: code, exp: new Date(Date.now() + 10 * 60 * 1000) });
-      await mail(u.email, code);
       await Otp().deleteMany({ username: u.username, purpose: "reset-rate", createdAt: { $lt: new Date(Date.now() - 60 * 60 * 1000) } });
       await Otp().create({ username: u.username, email: u.email, purpose: "reset-rate", code: "sent", exp: new Date(Date.now() + 60 * 60 * 1000) });
+      await mail(u.email, code);
       await Otp().deleteMany({ username: u.username, purpose: "reset" });
       await Otp().create({ email: u.email, username: u.username, purpose: "reset", code: code, exp: new Date(Date.now() + 10 * 60 * 1000) });
       const hidden = u.email.replace(/(.{2}).+(@.+)/, "$1***$2");
