@@ -1,17 +1,21 @@
 (function () {
-  var adminUser = "harryashu";
+  var adminUsers = ["harryashu", "admin"];
   fetch("/api/public-config", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
-    if (d && d.adminUser) adminUser = String(d.adminUser).toLowerCase();
+    if (d && Array.isArray(d.adminUsers)) adminUsers = d.adminUsers.map(function (x) { return String(x).toLowerCase(); });
     inject();
   }).catch(function () {});
   function isAdmin() {
     var u = (typeof username === "string" ? username : "").toLowerCase();
-    return u && u === adminUser;
+    return !!u && adminUsers.indexOf(u) >= 0;
   }
   function inject() {
-    if (!isAdmin()) return;
+    var existing = document.getElementById("adminDashBtn");
+    if (!isAdmin()) {
+      if (existing) existing.remove();
+      return;
+    }
     var profile = document.getElementById("profileBtn");
-    if (!profile || document.getElementById("adminDashBtn")) return;
+    if (!profile || existing) return;
     var button = document.createElement("button");
     button.type = "button";
     button.id = "adminDashBtn";
