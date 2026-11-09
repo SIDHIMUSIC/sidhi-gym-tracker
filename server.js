@@ -1170,7 +1170,7 @@ app.get("/api/admin/premium-users", auth, async (req, res) => {
   res.json({ ok: true, users: list });
 });
 
-require("./admin-routes")(app, { User: User, Token: Token, hashPass: hashPass });
+require("./admin-routes")(app, { User: User, Token: Token, GymSession: GymSession, DailySummaryDelivery: DailySummaryDelivery, isAdminUser: isAdminUser, hashPass: hashPass });
 require("./otp-routes")(app);
 
 app.use(express.static(path.join(__dirname, "public")));
